@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10243a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="description" content="태진 P2 곡 번호를 음성과 노래 데이터로 검색합니다.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>느티나무 노래방 번호검색</title>
+  <style>
+    :root{color-scheme:dark;--bg:#081522;--panel:#10243a;--panel2:#142d47;--line:#27435e;--text:#f4f7fb;--muted:#aac0d4;--cyan:#72e0e7;--yellow:#ffd166;--green:#a9f0c0;--red:#ff9b9b}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#173451 0,#081522 56%);color:var(--text);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;min-height:100vh}
+    main{width:min(760px,100%);margin:0 auto;padding:24px 18px calc(36px + env(safe-area-inset-bottom))}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-size:13px;letter-spacing:.1em;color:var(--cyan);font-weight:800}.small{color:var(--muted);font-size:13px}
+    h1{font-size:clamp(27px,7vw,38px);line-height:1.15;margin:5px 0 8px}.lead{color:var(--muted);margin:0 0 20px;font-size:15px}
+    .panel{background:linear-gradient(145deg,#142d47,#0e2034);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 16px 42px #0004;margin-bottom:16px}
+    .status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-bottom:16px}.dot{width:10px;height:10px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px currentColor}.dot.ready{background:var(--green)}
+    .searchrow{display:flex;gap:9px}.searchrow input{flex:1;min-width:0;background:#081522;color:var(--text);border:1px solid #365571;border-radius:14px;padding:15px 14px;font-size:17px;outline:none}.searchrow input:focus{border-color:var(--cyan)}
+    button,.filebtn{font:inherit;color:var(--text);border:1px solid #43637e;background:#193750;padding:13px 15px;border-radius:14px;cursor:pointer;font-weight:750}.searchbtn{white-space:nowrap}.voice{width:100%;margin-top:10px;background:linear-gradient(90deg,#15a8b7,#16758a);border:0;font-size:19px;padding:17px}.voice:disabled{opacity:.65}.voice .mic{font-size:23px;margin-right:8px}
+    .hero{display:none;text-align:center;padding:18px 10px 14px}.hero.show{display:block}.hero .number{font-size:clamp(62px,18vw,118px);font-weight:950;line-height:.98;letter-spacing:.02em;color:var(--yellow);text-shadow:0 6px 30px #ffd16655;overflow-wrap:anywhere}.hero .title{font-size:clamp(22px,6vw,32px);font-weight:850;margin-top:14px}.hero .artist{font-size:17px;color:var(--muted);margin-top:5px}.matchlabel{font-size:12px;color:var(--cyan);letter-spacing:.12em;font-weight:800;margin-bottom:10px}
+    .message{min-height:22px;color:var(--muted);font-size:14px;margin:12px 0 0}.message.error{color:var(--red)}
+    .results{display:grid;gap:9px;margin-top:14px}.result{display:flex;align-items:center;gap:14px;text-align:left;background:#0b1b2c;border:1px solid #27435e;border-radius:14px;padding:12px 14px}.result .num{font-weight:900;color:var(--yellow);font-size:24px;min-width:82px;text-align:center}.result .meta{min-width:0}.result .songtitle{font-size:16px;font-weight:800}.result .songartist{font-size:13px;color:var(--muted);margin-top:2px}.result:active{transform:scale(.99)}
+    details{border-top:1px solid var(--line);padding-top:15px;margin-top:14px}summary{cursor:pointer;font-weight:800}.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.filebtn{text-align:center;display:block}.filebtn input{display:none}.secondary{background:#10243a}.danger{color:#ffc1c1}.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:13px 0 0}.dbcount{font-weight:900;color:var(--cyan)}.footer{color:#90a8be;font-size:12px;line-height:1.55;text-align:center;padding:8px}
+    @media(max-width:440px){main{padding:19px 14px}.searchrow{display:grid;grid-template-columns:1fr auto}.searchrow input{grid-column:1/-1}.tools{grid-template-columns:1fr}.panel{padding:15px;border-radius:18px}}
+  
+    h1{font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
+    .hero{padding:20px 0 14px}
+    .hero .number{font-family:Arial,sans-serif;font-size:100px;font-weight:900;line-height:1.05;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;width:100%}
+  </style>
+</head>
+<body>
+<main>
+  <header><div class="brand">TJ P2 · SONG FINDER</div><div><button id="installBtn" class="secondary" hidden style="padding:9px 11px;font-size:13px">홈 화면 설치</button><div id="dbCount" class="small">노래 데이터 확인 중</div></div></header>
+  <h1>느티나무 노래방 음성으로 노래 번호찾기</h1>
+  <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
+  <section class="panel">
+    <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
+    <div class="searchrow"><input id="query" type="search" placeholder="곡 제목 또는 가수 입력" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
+    <button id="voiceBtn" class="voice"><span class="mic">🎙</span>노래제목으로 번호검색</button>
+    <div id="message" class="message" aria-live="polite"></div>
+    <div id="hero" class="hero" aria-live="polite"><div class="matchlabel">가장 가까운 곡</div><div id="heroNumber" class="number"></div><div id="heroTitle" class="title"></div><div id="heroArtist" class="artist"></div></div>
+    <div id="results" class="results"></div>
+  </section>
+  <section class="panel">
+    <strong>곡 데이터</strong>
+    <p class="hint">곡번호·제목·가수 76,435곡이 앱에 들어 있습니다. 처음 실행할 때 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
+    <div class="tools">
+      <label class="filebtn">📥 데이터 파일 불러오기<input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
+      <button id="templateBtn" class="secondary">📄 입력 양식 받기</button>
+      <button id="exportBtn" class="secondary">💾 저장 데이터 내보내기</button>
+      <button id="clearBtn" class="secondary danger">저장 데이터 지우기</button>
+    </div>
+    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
+  </section>
+  <div class="footer">이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+</main>
+<script>
+const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
+const $=id=>document.getElementById(id);
+let db, cachedSongs=null;
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'code'});};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
+function allSongs(){if(cachedSongs)return Promise.resolve(cachedSongs);return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>{cachedSongs=r.result;resolve(cachedSongs)};r.onerror=()=>reject(r.error)})}
+function countSongs(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).count();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function normalize(s){return String(s??'').normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/[\s\p{P}\p{S}]/gu,'')}
+function setMessage(s,err=false){$('message').textContent=s;$('message').className='message'+(err?' error':'')}
+function renderCount(n){$('dbCount').innerHTML=`저장 곡 <span class="dbcount">${n.toLocaleString()}</span>곡`;$('statusDot').classList.toggle('ready',n>0);$('statusText').textContent=n?`이 휴대폰에 ${n.toLocaleString()}곡이 저장되어 있어요.`:'노래 데이터 파일을 불러오면 검색할 수 있어요.'}
+function csvParse(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(cell);cell=''}else if(c==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell=''}else cell+=c}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
+function headerKey(s){return normalize(s).replace(/^(tj|금영)/,'')}
+function fieldIndex(headers,options,fallback){const h=headers.map(headerKey);for(const opt of options){const i=h.indexOf(headerKey(opt));if(i>=0)return i}return fallback}
+async function importCSVText(raw){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
+ const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]??'').trim().replace(/\.0$/,'');const title=String(r[ti]??'').trim();const artist=String(r[ai]??'').trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
+ if(!out.length)throw Error('곡번호와 곡제목을 읽지 못했습니다. 입력 양식과 열 이름을 확인해 주세요.');
+ for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000))store.put(song);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
+async function importFile(file){return importCSVText(await file.text())}
+function fitHeroNumber(){
+ const el=$('heroNumber');if(!$('hero').classList.contains('show')||!el.textContent)return;
+ el.style.fontSize='100px';const range=document.createRange();range.selectNodeContents(el);const measured=range.getBoundingClientRect().width;const available=el.clientWidth-4;
+ if(measured>0&&available>0)el.style.fontSize=Math.floor(Math.min(420,window.innerHeight*.4,available/measured*100))+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(fitHeroNumber));
+function score(song,q,terms){if(song.code===q)return 1200;if(/^\d+$/.test(q))return 0;const t=song.titleN,a=song.artistN,h=song.hay;if(t===q)return 1000;if(a===q)return 900;if(t.startsWith(q))return 800;if(t.includes(q))return 700;if(a.includes(q))return 650;if(h.includes(q))return 600;let hits=0;for(const x of terms)if(x.length&&h.includes(x))hits++;return hits===terms.length?hits*100+80:0}
+async function search(){const query=$('query').value.trim();if(!query){setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.',true);return}const data=await allSongs();if(!data.length){setMessage('먼저 태진 곡 데이터 CSV 파일을 불러와 주세요.',true);return}const q=normalize(query),terms=query.split(/\s+/).map(normalize).filter(Boolean);const found=data.map(s=>({s,n:score(s,q,terms)})).filter(x=>x.n>0).sort((x,y)=>y.n-x.n||x.s.code.localeCompare(y.s.code)).slice(0,20);$('results').replaceChildren();$('hero').classList.remove('show');if(!found.length){setMessage(`“${query}”와 일치하는 곡이 저장 데이터에 없습니다. 태진 사이트에서 온라인으로 찾아볼 수도 있습니다.`);const a=document.createElement('a');a.className='filebtn';a.style.marginTop='10px';a.textContent='태진 공식 사이트에서 검색';a.href='https://www.tjmedia.com/song/accompaniment_search?strType=0&searchTxt='+encodeURIComponent(query);a.target='_self';a.rel='noopener';$('results').append(a);return}setMessage(`“${query}” 검색 결과 ${found.length}곡 · 가장 가까운 결과를 크게 표시합니다.`);const top=found[0].s;$('heroNumber').textContent=top.code;$('heroTitle').textContent=top.title;$('heroArtist').textContent=top.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'});for(const {s} of found){const b=document.createElement('button');b.className='result';b.innerHTML=`<span class="num"></span><span class="meta"><span class="songtitle"></span><span class="songartist"></span></span>`;b.querySelector('.num').textContent=s.code;b.querySelector('.songtitle').textContent=s.title;b.querySelector('.songartist').textContent=s.artist||'가수 정보 없음';b.onclick=()=>{$('heroNumber').textContent=s.code;$('heroTitle').textContent=s.title;$('heroArtist').textContent=s.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'})};$('results').append(b)}}
+function startVoice(){if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){setMessage('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.',true);$('query').focus();return}const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;$('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';setMessage('곡 제목이나 가수 이름을 말씀해 주세요.');rec.onresult=e=>{const alternatives=Array.from(e.results[0]).map(x=>x.transcript.trim());$('query').value=alternatives[0]||'';search()};rec.onerror=e=>setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':`음성 인식 오류: ${e.error}`,true);rec.onend=()=>{$('voiceBtn').disabled=false;$('voiceBtn').innerHTML='<span class="mic">🎙</span>노래제목으로 번호검색'};try{rec.start()}catch(e){setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true);$('voiceBtn').disabled=false}}
+window.onNativeSpeech=function(text){$('query').value=text;search()};window.setNativeSpeechError=function(message){setMessage(message,true)};
+function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function quoteCSV(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
+const template='\uFEFF곡번호,곡제목,가수\r\n';
+document.addEventListener('DOMContentLoaded',async()=>{
+ $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
+ try{await openDB();let currentCount=await countSongs();if(!localStorage.getItem('tj-p2-catalog-76435')||currentCount===0){setMessage('내장 곡 76,435곡을 준비합니다. 잠시 기다려 주세요…');const response=await fetch('./catalog-20261018.csv',{cache:'no-store'});if(!response.ok)throw Error('내장 곡 데이터를 읽지 못했습니다.');const n=await importCSVText(await response.text());if(n!==76435)throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');localStorage.setItem('tj-p2-catalog-76435','done');currentCount=await countSongs()}await allSongs();renderCount(currentCount);setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.');$('searchBtn').disabled=false;$('voiceBtn').disabled=false}
+ catch(e){setMessage('곡 데이터를 준비하지 못했습니다. 저장 공간을 확인하고 앱을 다시 실행해 주세요. '+e.message,true)}
+ $('searchBtn').onclick=search;$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
+ $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
+ $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
+ if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}let installPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true};window.addEventListener('appinstalled',()=>{$('installBtn').hidden=true;setMessage('홈 화면에 앱을 설치했습니다.')});
+});
+</script>
+</body>
+</html>

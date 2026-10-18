@@ -1,0 +1,4 @@
+TJ 공개 곡 목록 76,435곡
+기본: https://alfex4936.github.io/tj-media-karaoke-api/ (2026-10-13, 76432곡)
+추가: https://www.tjmedia.co.kr/chart/hot100 (2026-10-18 확인, 3곡)
+곡번호·제목·가수 메타데이터만 포함. 음원·가사 없음. P2 기기별 수록 여부는 검증되지 않음.

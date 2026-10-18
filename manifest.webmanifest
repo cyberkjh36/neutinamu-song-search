@@ -1,0 +1,26 @@
+{
+  "name": "느티나무 노래방 번호검색",
+  "short_name": "느티나무 번호검색",
+  "description": "노래 제목을 말하거나 입력해 태진 번호를 찾는 느티나무 노래방용 비공식 웹앱",
+  "lang": "ko-KR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#081522",
+  "theme_color": "#10243a",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
