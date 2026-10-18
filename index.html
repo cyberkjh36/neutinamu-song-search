@@ -39,6 +39,18 @@
     .install-help{background:#193750;border:1px solid #4387a0;border-radius:12px;padding:14px 16px;margin:-7px 0 16px;color:#fff;line-height:1.6;font-size:14px}
     [hidden]{display:none!important}
     @media(max-width:480px){.install-cta{flex-wrap:wrap}.install-cta button{width:100%}}
+    .voice-dialog{width:min(390px,calc(100% - 32px));max-height:calc(100% - 40px);overflow:auto;margin:auto;padding:32px 24px 24px;border:1px solid #39647b;border-radius:26px;background:#10243a;color:var(--text);text-align:center;box-shadow:0 24px 80px #0008}
+    .voice-dialog::backdrop{background:#020a14bb;backdrop-filter:blur(4px)}
+    .voice-dialog h2{font-size:30px;margin:22px 0 10px;word-break:keep-all}
+    .voice-dialog p{font-size:16px;line-height:1.6;color:var(--muted);margin:10px 0}
+    .voice-orb{display:grid;place-items:center;width:132px;height:132px;margin:12px auto 24px;border-radius:50%;background:#16758a;color:#fff;box-shadow:0 0 0 12px #72e0e712}
+    .voice-orb svg{width:70px;height:70px}
+    .voice-dialog.listening .voice-orb{animation:voicePulse 1.6s ease-in-out infinite}
+    .voice-dialog .voice-status{font-weight:800;color:var(--cyan);font-size:15px}
+    .voice-dialog .voice-example{font-size:14px;margin:18px 0 24px}
+    .voice-dialog button{width:100%;min-height:48px}
+    @keyframes voicePulse{50%{box-shadow:0 0 0 22px #72e0e709;background:#1b8fa2}}
+    @media(prefers-reduced-motion:reduce){.voice-dialog.listening .voice-orb{animation:none}}
   </style>
 </head>
 <body>
@@ -72,6 +84,14 @@
   </section>
   <div class="footer">이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
+<dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
+  <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
+  <h2 id="voiceDialogTitle">말씀해 주세요</h2>
+  <p id="voiceDialogHint">찾으시는 노래 제목이나<br>가수 이름을 말씀해 주세요.</p>
+  <p id="voiceDialogStatus" class="voice-status" role="status" aria-live="polite">마이크를 준비하고 있어요…</p>
+  <p class="voice-example">짧은 제목은 가수와 함께 말해 보세요.<br>예: “조용필 꿈”, “조관우 늪”</p>
+  <button id="voiceCancelBtn" type="button" class="secondary" autofocus>취소</button>
+</dialog>
 <script>
 const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
 const $=id=>document.getElementById(id);
@@ -136,19 +156,53 @@ async function useSpeechAlternatives(alternatives,revision){
   $('query').value=selected;await search();
  }catch(e){setMessage('검색하지 못했습니다. 다시 시도해 주세요.',true)}
 }
+let activeRecognition=null;
+function closeVoiceDialog(){
+ const dialog=$('voiceDialog');dialog.classList.remove('listening');
+ if(dialog.open)dialog.close();
+}
+function finishVoice(rec){
+ if(activeRecognition!==rec)return;
+ activeRecognition=null;resetVoiceButton();closeVoiceDialog();
+}
+function cancelVoice(){
+ const rec=activeRecognition;++searchRevision;
+ if(rec){finishVoice(rec);try{rec.abort()}catch(e){}}
+ else closeVoiceDialog();
+ setMessage('음성 검색을 취소했습니다. 다시 마이크를 눌러 주세요.');
+}
+$('voiceCancelBtn').onclick=cancelVoice;
+$('voiceDialog').addEventListener('cancel',event=>{event.preventDefault();cancelVoice()});
 function startVoice(){
+ if(activeRecognition)return;
  const revision=++searchRevision;
  $('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');setMessage('');
  if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){setMessage('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.',true);$('query').focus();return}
  const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;
+ activeRecognition=rec;
  $('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';
  setMessage('곡 제목을 말씀해 주세요. 한 글자 제목은 “조용필 꿈”처럼 가수도 함께 말하면 더 정확해요.');
- rec.onresult=e=>{const result=e.results[e.resultIndex||0];if(result)useSpeechAlternatives(Array.from(result).map(x=>x.transcript),revision)};
- rec.onerror=e=>{if(revision===searchRevision)setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`,true)};
- rec.onend=resetVoiceButton;
- try{rec.start()}catch(e){setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true);resetVoiceButton()}
+ $('voiceDialogStatus').textContent='마이크를 준비하고 있어요…';
+ rec.onaudiostart=()=>{if(activeRecognition===rec){$('voiceDialog').classList.add('listening');$('voiceDialogStatus').textContent='듣고 있어요…'}};
+ rec.onresult=e=>{
+  if(activeRecognition!==rec||revision!==searchRevision)return;
+  const result=e.results[e.resultIndex||0];
+  finishVoice(rec);
+  if(result){setMessage('말씀하신 노래를 찾고 있어요…');useSpeechAlternatives(Array.from(result).map(x=>x.transcript),revision)}
+ };
+ rec.onerror=e=>{
+  if(activeRecognition!==rec)return;
+  finishVoice(rec);
+  if(revision===searchRevision)setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`,true);
+ };
+ rec.onend=()=>{if(activeRecognition===rec){finishVoice(rec);if(revision===searchRevision)setMessage('말소리를 듣지 못했습니다. 다시 마이크를 눌러 주세요.',true)}};
+ try{
+  // Older browsers can still use speech recognition without a modal dialog.
+  if(typeof $('voiceDialog').showModal==='function')$('voiceDialog').showModal();
+  rec.start();
+ }catch(e){finishVoice(rec);setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true)}
 }
 window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
 window.setNativeSpeechError=function(message){setMessage(message,true)};

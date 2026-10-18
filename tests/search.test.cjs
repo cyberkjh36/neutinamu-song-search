@@ -7,7 +7,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 function app(){
  const elements=new Map();
- function element(){const classes=new Set();return {value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
+ function element(){const classes=new Set();return {open:false,showModal(){this.open=true},close(){this.open=false},value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
  const c={console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
  c.window=c;vm.createContext(c);
  vm.runInContext(fs.readFileSync(path.join(root,'index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1],c);
@@ -48,4 +48,19 @@ test('unsupported browser and failed microphone preserve retry and dictation fal
 });
 test('late recognition cannot overwrite a newer search',async()=>{
  const {c,el}=app();el('query').value='새 검색';await c.useSpeechAlternatives(['꿈'],-1);assert.equal(el('query').value,'새 검색');
+});
+
+for(const api of ['SpeechRecognition','webkitSpeechRecognition'])test(`${api}: dialog lifecycle and cancel ignore late callbacks`,()=>{
+ const {c,el}=app();const sessions=[];
+ c[api]=class{constructor(){sessions.push(this)}start(){}abort(){this.aborted=true}};
+ c.startVoice();const first=sessions[0];assert.equal(el('voiceDialog').open,true);
+ first.onaudiostart();assert.match(el('voiceDialogStatus').textContent,/듣고/);
+ el('voiceCancelBtn').onclick();assert.equal(el('voiceDialog').open,false);assert.equal(first.aborted,true);
+ assert.equal(el('voiceBtn').disabled,false);
+ c.startVoice();first.onend();first.onresult({results:[[{transcript:'오래된 결과'}]]});
+ assert.equal(el('voiceDialog').open,true);assert.equal(el('query').value,'');
+ sessions[1].onerror({error:'not-allowed'});assert.equal(el('voiceDialog').open,false);
+ assert.match(el('message').textContent,/권한/);
+ c.startVoice();sessions[2].onend();assert.equal(el('voiceDialog').open,false);
+ c.startVoice();sessions[3].onresult({results:[[{transcript:'꿈'}]]});assert.equal(el('voiceDialog').open,false);
 });
