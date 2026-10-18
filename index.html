@@ -40,6 +40,7 @@
     [hidden]{display:none!important}
     @media(max-width:480px){.install-cta{flex-wrap:wrap}.install-cta button{width:100%}}
     .voice-dialog{width:min(390px,calc(100% - 32px));max-height:calc(100% - 40px);overflow:auto;margin:auto;padding:32px 24px 24px;border:1px solid #39647b;border-radius:26px;background:#10243a;color:var(--text);text-align:center;box-shadow:0 24px 80px #0008}
+    .voice-dialog.fallback-open{display:block;position:fixed;inset:0;z-index:10000;outline:100vmax solid #020a14bb}
     .voice-dialog::backdrop{background:#020a14bb;backdrop-filter:blur(4px)}
     .voice-dialog h2{font-size:30px;margin:22px 0 10px;word-break:keep-all}
     .voice-dialog p{font-size:16px;line-height:1.6;color:var(--muted);margin:10px 0}
@@ -82,7 +83,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer">이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.10.19 · v6</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -159,7 +160,17 @@ async function useSpeechAlternatives(alternatives,revision){
 let activeRecognition=null;
 function closeVoiceDialog(){
  const dialog=$('voiceDialog');dialog.classList.remove('listening');
- if(dialog.open)dialog.close();
+ if(dialog.open&&typeof dialog.close==='function')dialog.close();
+ dialog.removeAttribute('open');dialog.classList.remove('fallback-open');
+}
+function showVoiceDialog(){
+ const dialog=$('voiceDialog');$('voiceDialogStatus').textContent='마이크를 준비하고 있어요…';$('voiceCancelBtn').textContent='취소';
+ if(typeof dialog.showModal==='function'){if(!dialog.open)dialog.showModal()}
+ else{dialog.setAttribute('open','');dialog.classList.add('fallback-open')}
+}
+function voiceFailure(message){
+ activeRecognition=null;resetVoiceButton();$('voiceDialog').classList.remove('listening');
+ $('voiceDialogStatus').textContent=message;$('voiceCancelBtn').textContent='닫기';setMessage(message,true);
 }
 function finishVoice(rec){
  if(activeRecognition!==rec)return;
@@ -178,8 +189,9 @@ function startVoice(){
  const revision=++searchRevision;
  $('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');setMessage('');
  if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}
+ showVoiceDialog();
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SR){setMessage('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.',true);$('query').focus();return}
+ if(!SR){voiceFailure('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 이 창을 닫고 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.');return}
  const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;
  activeRecognition=rec;
  $('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';
@@ -194,15 +206,12 @@ function startVoice(){
  };
  rec.onerror=e=>{
   if(activeRecognition!==rec)return;
-  finishVoice(rec);
-  if(revision===searchRevision)setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`,true);
+  if(revision===searchRevision)voiceFailure(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`);
  };
- rec.onend=()=>{if(activeRecognition===rec){finishVoice(rec);if(revision===searchRevision)setMessage('말소리를 듣지 못했습니다. 다시 마이크를 눌러 주세요.',true)}};
+ rec.onend=()=>{if(activeRecognition===rec)voiceFailure('말소리를 듣지 못했습니다. 창을 닫고 다시 마이크를 눌러 주세요.')};
  try{
-  // Older browsers can still use speech recognition without a modal dialog.
-  if(typeof $('voiceDialog').showModal==='function')$('voiceDialog').showModal();
   rec.start();
- }catch(e){finishVoice(rec);setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true)}
+ }catch(e){voiceFailure('마이크를 시작하지 못했습니다. 창을 닫고 다시 시도해 주세요.')}
 }
 window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
 window.setNativeSpeechError=function(message){setMessage(message,true)};
@@ -244,7 +253,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
  $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
- if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+ if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});}
 });
 </script>
 </body>

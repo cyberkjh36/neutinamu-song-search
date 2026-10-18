@@ -7,7 +7,7 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 function app(){
  const elements=new Map();
- function element(){const classes=new Set();return {open:false,showModal(){this.open=true},close(){this.open=false},value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
+ function element(){const classes=new Set();return {open:false,setAttribute(n,v){if(n==='open')this.open=true},removeAttribute(n){if(n==='open')this.open=false},showModal(){this.open=true},close(){this.open=false},value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
  const c={console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
  c.window=c;vm.createContext(c);
  vm.runInContext(fs.readFileSync(path.join(root,'index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1],c);
@@ -42,7 +42,7 @@ for(const api of ['SpeechRecognition','webkitSpeechRecognition'])test(`${api}: c
  rec.onend();assert.equal(el('voiceBtn').disabled,false);
 });
 test('unsupported browser and failed microphone preserve retry and dictation fallback',()=>{
- const {c,el}=app();el('query').value='이전';c.startVoice();assert.equal(el('query').value,'');assert.ok(el('query').focused);
+ const {c,el}=app();el('query').value='이전';c.startVoice();assert.equal(el('query').value,'');assert.equal(el('voiceDialog').open,true);c.cancelVoice();
  c.SpeechRecognition=class{start(){throw Error('unavailable')}};
  c.startVoice();assert.equal(el('voiceBtn').disabled,false);assert.match(el('voiceBtn').innerHTML,/노래제목으로 번호검색/);
 });
@@ -59,8 +59,10 @@ for(const api of ['SpeechRecognition','webkitSpeechRecognition'])test(`${api}: d
  assert.equal(el('voiceBtn').disabled,false);
  c.startVoice();first.onend();first.onresult({results:[[{transcript:'오래된 결과'}]]});
  assert.equal(el('voiceDialog').open,true);assert.equal(el('query').value,'');
- sessions[1].onerror({error:'not-allowed'});assert.equal(el('voiceDialog').open,false);
- assert.match(el('message').textContent,/권한/);
- c.startVoice();sessions[2].onend();assert.equal(el('voiceDialog').open,false);
+ sessions[1].onerror({error:'not-allowed'});assert.equal(el('voiceDialog').open,true);assert.match(el('voiceDialogStatus').textContent,/권한/);
+ assert.match(el('message').textContent,/권한/);c.cancelVoice();
+ c.startVoice();sessions[2].onend();assert.equal(el('voiceDialog').open,true);c.cancelVoice();
  c.startVoice();sessions[3].onresult({results:[[{transcript:'꿈'}]]});assert.equal(el('voiceDialog').open,false);
 });
+
+test('older browser shows fallback microphone overlay',()=>{const {c,el}=app();el('voiceDialog').showModal=undefined;c.startVoice();assert.equal(el('voiceDialog').open,true);assert.ok(el('voiceDialog').classList.contains('fallback-open'));c.cancelVoice();assert.equal(el('voiceDialog').open,false)});

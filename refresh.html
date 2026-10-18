@@ -1,0 +1,17 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>느티나무 앱 업데이트</title><style>body{margin:0;padding:60px 24px;background:#081522;color:#f4f7fb;font:18px/1.7 system-ui;text-align:center}button{padding:16px 24px;font:inherit;border:0;border-radius:12px;background:#72e0e7}p{max-width:480px;margin:20px auto}</style><h1>최신 화면을 준비합니다</h1><p id="status" role="status">잠시만 기다려 주세요. 저장된 곡 데이터는 유지됩니다.</p><button onclick="location.reload()" hidden id="retry">다시 시도</button><script>
+(async()=>{
+ try{
+  if('serviceWorker' in navigator){
+   const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});await reg.update();
+   const worker=reg.installing||reg.waiting;
+   if(worker&&worker.state!=='activated')await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(Error('업데이트 시간이 오래 걸립니다.')),25000);
+    const check=()=>{if(worker.state==='activated'){clearTimeout(timer);resolve()}else if(worker.state==='redundant'){clearTimeout(timer);reject(Error('업데이트를 다시 시도해 주세요.'))}};
+    worker.addEventListener('statechange',check);check();
+   });
+   await navigator.serviceWorker.ready;
+  }
+  location.replace('./');
+ }catch(e){document.getElementById('status').textContent='인터넷 연결을 확인한 뒤 다시 시도해 주세요. '+e.message;document.getElementById('retry').hidden=false}
+})();
+</script></html>
