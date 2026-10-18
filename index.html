@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10243a">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="느티나무 노래방 노래검색">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="description" content="태진 P2 곡 번호를 음성과 노래 데이터로 검색합니다.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <title>느티나무 노래방 번호검색</title>
+  <title>느티나무 노래방 노래검색</title>
   <style>
     :root{color-scheme:dark;--bg:#081522;--panel:#10243a;--panel2:#142d47;--line:#27435e;--text:#f4f7fb;--muted:#aac0d4;--cyan:#72e0e7;--yellow:#ffd166;--green:#a9f0c0;--red:#ff9b9b}
     *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#173451 0,#081522 56%);color:var(--text);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;min-height:100vh}
@@ -30,13 +31,26 @@
     h1{font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
     .hero{padding:20px 0 14px}
     .hero .number{font-family:Arial,sans-serif;font-size:100px;font-weight:900;line-height:1.05;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;width:100%}
+
+    .install-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#163a46;border:1px solid #317784;border-radius:16px;padding:13px 15px;margin:0 0 16px}
+    .install-cta strong{font-size:15px;line-height:1.4;display:block}
+    .install-cta p{font-size:12px;color:#c8e3e7;margin:4px 0 0;line-height:1.4}
+    .install-cta button{flex-shrink:0;color:#051822;background:#a4f1ed;border:0;font-size:15px;padding:12px 14px}
+    .install-help{background:#193750;border:1px solid #4387a0;border-radius:12px;padding:14px 16px;margin:-7px 0 16px;color:#fff;line-height:1.6;font-size:14px}
+    [hidden]{display:none!important}
+    @media(max-width:480px){.install-cta{flex-wrap:wrap}.install-cta button{width:100%}}
   </style>
 </head>
 <body>
 <main>
-  <header><div class="brand">TJ P2 · SONG FINDER</div><div><button id="installBtn" class="secondary" hidden style="padding:9px 11px;font-size:13px">홈 화면 설치</button><div id="dbCount" class="small">노래 데이터 확인 중</div></div></header>
+  <header><div class="brand">TJ P2 · SONG FINDER</div><div id="dbCount" class="small">노래 데이터 확인 중</div></header>
   <h1>느티나무 노래방 음성으로 노래 번호찾기</h1>
   <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
+  <section id="installCTA" class="install-cta" aria-label="휴대폰 홈 화면에 노래 검색 앱 추가">
+    <div><strong>📲 QR 없이 바로 노래 검색!</strong><p>휴대폰 홈 화면에 아이콘을 만들어 두세요.</p></div>
+    <button id="installBtn" type="button">홈 화면에 앱 추가</button>
+  </section>
+  <div id="installHelp" class="install-help" role="status" aria-live="polite" hidden></div>
   <section class="panel">
     <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
     <div class="searchrow"><input id="query" type="search" placeholder="곡 제목 또는 가수 입력" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
@@ -90,6 +104,33 @@ function download(name,content,type){const a=document.createElement('a');a.href=
 function quoteCSV(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
 const template='\uFEFF곡번호,곡제목,가수\r\n';
+
+let installPrompt=null;
+function isHomeScreenApp(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
+function installationInstructions(){
+  const ua=navigator.userAgent||'';
+  const ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios)return '아이폰: Safari 브라우저로 이 페이지를 열고 아래 또는 위의 공유 버튼(네모에서 위로 화살표)을 누른 다음, “홈 화면에 추가” → “추가”를 선택하세요. “웹 앱으로 열기”가 보이면 켜 주세요. 다른 앱 안에서 열었다면 먼저 Safari로 열어 주세요.';
+  if(/Android/.test(ua))return '안드로이드: 크롬에서 오른쪽 위 ⋮(메뉴)를 누르고 “앱 설치” 또는 “홈 화면에 추가”를 선택한 뒤 확인하세요. 카카오톡·QR스캐너 안에서 열린 화면이라면 먼저 크롬 브라우저로 열어 주세요.';
+  return '휴대폰 브라우저에서 열어 주세요. 안드로이드는 크롬 메뉴의 “앱 설치/홈 화면에 추가”, 아이폰은 Safari 공유 메뉴의 “홈 화면에 추가”를 이용할 수 있습니다.';
+}
+function showInstallHelp(message){const el=$('installHelp');el.textContent=message;el.hidden=false;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;});
+window.addEventListener('appinstalled',()=>{installPrompt=null;const c=$('installCTA');if(c)c.hidden=true;const help=$('installHelp');if(help)help.hidden=true;setMessage('홈 화면에 노래 검색 앱이 설치되었습니다.');});
+document.addEventListener('DOMContentLoaded',()=>{
+  if(isHomeScreenApp()){$('installCTA').hidden=true;return;}
+  $('installBtn').addEventListener('click',async()=>{
+    if(!installPrompt){showInstallHelp(installationInstructions());return;}
+    const event=installPrompt;installPrompt=null;
+    try{
+      event.prompt();
+      const choice=await event.userChoice;
+      if(choice&&choice.outcome==='accepted'){$('installCTA').hidden=true;setMessage('설치를 승인했습니다. 휴대폰 홈 화면을 확인하세요.');}
+      else showInstallHelp(installationInstructions());
+    }catch(e){showInstallHelp(installationInstructions());}
+  });
+});
+
 document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
  try{await openDB();let currentCount=await countSongs();if(!localStorage.getItem('tj-p2-catalog-76435')||currentCount===0){setMessage('내장 곡 76,435곡을 준비합니다. 잠시 기다려 주세요…');const response=await fetch('./catalog-20261018.csv',{cache:'no-store'});if(!response.ok)throw Error('내장 곡 데이터를 읽지 못했습니다.');const n=await importCSVText(await response.text());if(n!==76435)throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');localStorage.setItem('tj-p2-catalog-76435','done');currentCount=await countSongs()}await allSongs();renderCount(currentCount);setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.');$('searchBtn').disabled=false;$('voiceBtn').disabled=false}
@@ -97,7 +138,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').onclick=search;$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
  $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
- if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}let installPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').onclick=async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true};window.addEventListener('appinstalled',()=>{$('installBtn').hidden=true;setMessage('홈 화면에 앱을 설치했습니다.')});
+ if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
 });
 </script>
 </body>
