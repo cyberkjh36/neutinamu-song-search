@@ -96,10 +96,62 @@ function fitHeroNumber(){
  if(measured>0&&available>0)el.style.fontSize=Math.floor(Math.min(420,window.innerHeight*.4,available/measured*100))+'px';
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitHeroNumber));
-function score(song,q,terms){if(song.code===q)return 1200;if(/^\d+$/.test(q))return 0;const t=song.titleN,a=song.artistN,h=song.hay;if(t===q)return 1000;if(a===q)return 900;if(t.startsWith(q))return 800;if(t.includes(q))return 700;if(a.includes(q))return 650;if(h.includes(q))return 600;let hits=0;for(const x of terms)if(x.length&&h.includes(x))hits++;return hits===terms.length?hits*100+80:0}
-async function search(){const query=$('query').value.trim();if(!query){setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.',true);return}const data=await allSongs();if(!data.length){setMessage('먼저 태진 곡 데이터 CSV 파일을 불러와 주세요.',true);return}const q=normalize(query),terms=query.split(/\s+/).map(normalize).filter(Boolean);const found=data.map(s=>({s,n:score(s,q,terms)})).filter(x=>x.n>0).sort((x,y)=>y.n-x.n||x.s.code.localeCompare(y.s.code)).slice(0,20);$('results').replaceChildren();$('hero').classList.remove('show');if(!found.length){setMessage(`“${query}”와 일치하는 곡이 저장 데이터에 없습니다. 태진 사이트에서 온라인으로 찾아볼 수도 있습니다.`);const a=document.createElement('a');a.className='filebtn';a.style.marginTop='10px';a.textContent='태진 공식 사이트에서 검색';a.href='https://www.tjmedia.com/song/accompaniment_search?strType=0&searchTxt='+encodeURIComponent(query);a.target='_self';a.rel='noopener';$('results').append(a);return}setMessage(`“${query}” 검색 결과 ${found.length}곡 · 가장 가까운 결과를 크게 표시합니다.`);const top=found[0].s;$('heroNumber').textContent=top.code;$('heroTitle').textContent=top.title;$('heroArtist').textContent=top.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'});for(const {s} of found){const b=document.createElement('button');b.className='result';b.innerHTML=`<span class="num"></span><span class="meta"><span class="songtitle"></span><span class="songartist"></span></span>`;b.querySelector('.num').textContent=s.code;b.querySelector('.songtitle').textContent=s.title;b.querySelector('.songartist').textContent=s.artist||'가수 정보 없음';b.onclick=()=>{$('heroNumber').textContent=s.code;$('heroTitle').textContent=s.title;$('heroArtist').textContent=s.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'})};$('results').append(b)}}
-function startVoice(){if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){setMessage('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.',true);$('query').focus();return}const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;$('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';setMessage('곡 제목이나 가수 이름을 말씀해 주세요.');rec.onresult=e=>{const alternatives=Array.from(e.results[0]).map(x=>x.transcript.trim());$('query').value=alternatives[0]||'';search()};rec.onerror=e=>setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':`음성 인식 오류: ${e.error}`,true);rec.onend=()=>{$('voiceBtn').disabled=false;$('voiceBtn').innerHTML='<span class="mic">🎙</span>노래제목으로 번호검색'};try{rec.start()}catch(e){setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true);$('voiceBtn').disabled=false}}
-window.onNativeSpeech=function(text){$('query').value=text;search()};window.setNativeSpeechError=function(message){setMessage(message,true)};
+// Ignore trailing version/OST subtitles when matching a short song title.
+function mainTitle(song){return normalize(song.title.replace(/\s*[（(\[].*$/u,''))}
+function score(song,q,terms){
+ if(!q)return 0;
+ const t=song.titleN,a=song.artistN,h=song.hay,base=mainTitle(song);
+ if(song.code===q)return 1200;
+ if(t===q)return 1000;
+ if(base===q)return 980;
+ // Accept both “조용필 꿈” and “꿈 조용필”, including unspaced speech.
+ if(a&&(q===a+t||q===t+a||q===a+base||q===base+a))return 1100;
+ if(/^\d+$/.test(q))return 0;
+ if(a===q)return 900;
+ if(t.startsWith(q))return 800;
+ if(t.includes(q))return 700;
+ if(a.includes(q))return 650;
+ if(h.includes(q))return 600;
+ let hits=0;for(const x of terms)if(x.length&&h.includes(x))hits++;
+ return terms.length&&hits===terms.length?hits*100+80:0;
+}
+function findSongs(data,query){
+ const q=normalize(query),terms=query.split(/\s+/).map(normalize).filter(Boolean);
+ if(!q)return [];
+ let found=data.map(s=>({s,n:score(s,q,terms)})).filter(x=>x.n>0);
+ // A one-character title should not be buried among partial-title/artist matches.
+ if(Array.from(q).length===1&&found.some(x=>x.n>=980))found=found.filter(x=>x.n>=980);
+ return found.sort((x,y)=>y.n-x.n||x.s.code.localeCompare(y.s.code));
+}
+let searchRevision=0;
+async function search(){const revision=++searchRevision;const query=$('query').value.trim();if(!query){setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.',true);return}const data=await allSongs();if(revision!==searchRevision)return;if(!data.length){setMessage('먼저 태진 곡 데이터 CSV 파일을 불러와 주세요.',true);return}const matches=findSongs(data,query);const shortTitle=Array.from(normalize(query)).length===1&&matches.some(x=>x.n>=980);const found=shortTitle?matches:matches.slice(0,20);$('results').replaceChildren();$('hero').classList.remove('show');if(!found.length){setMessage(`“${query}”와 일치하는 곡이 저장 데이터에 없습니다. 태진 사이트에서 온라인으로 찾아볼 수도 있습니다.`);const a=document.createElement('a');a.className='filebtn';a.style.marginTop='10px';a.textContent='태진 공식 사이트에서 검색';a.href='https://www.tjmedia.com/song/accompaniment_search?strType=0&searchTxt='+encodeURIComponent(query);a.target='_self';a.rel='noopener';$('results').append(a);return}setMessage(`“${query}” 검색 결과 ${matches.length}곡${matches.length>found.length?` 중 ${found.length}곡 표시`:shortTitle?' · 제목이 일치하는 곡':''} · 가수를 확인해 선택하세요.`);const top=found[0].s;$('heroNumber').textContent=top.code;$('heroTitle').textContent=top.title;$('heroArtist').textContent=top.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'});for(const {s} of found){const b=document.createElement('button');b.className='result';b.innerHTML=`<span class="num"></span><span class="meta"><span class="songtitle"></span><span class="songartist"></span></span>`;b.querySelector('.num').textContent=s.code;b.querySelector('.songtitle').textContent=s.title;b.querySelector('.songartist').textContent=s.artist||'가수 정보 없음';b.onclick=()=>{$('heroNumber').textContent=s.code;$('heroTitle').textContent=s.title;$('heroArtist').textContent=s.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'})};$('results').append(b)}}
+function resetVoiceButton(){$('voiceBtn').disabled=false;$('voiceBtn').innerHTML='<span class="mic">🎙</span>노래제목으로 번호검색'}
+async function useSpeechAlternatives(alternatives,revision){
+ try{
+  const data=await allSongs();if(revision!==searchRevision)return;
+  const candidates=alternatives.map(text=>String(text).trim()).filter(Boolean);
+  if(!candidates.length){setMessage('말씀하신 제목을 듣지 못했습니다. 다시 눌러 주세요.',true);return}
+  let selected=candidates[0],best=-1;
+  for(const text of candidates){const top=findSongs(data,text)[0];const rank=top?top.n:0;if(rank>best){selected=text;best=rank}}
+  $('query').value=selected;await search();
+ }catch(e){setMessage('검색하지 못했습니다. 다시 시도해 주세요.',true)}
+}
+function startVoice(){
+ const revision=++searchRevision;
+ $('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');setMessage('');
+ if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){setMessage('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.',true);$('query').focus();return}
+ const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;
+ $('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';
+ setMessage('곡 제목을 말씀해 주세요. 한 글자 제목은 “조용필 꿈”처럼 가수도 함께 말하면 더 정확해요.');
+ rec.onresult=e=>{const result=e.results[e.resultIndex||0];if(result)useSpeechAlternatives(Array.from(result).map(x=>x.transcript),revision)};
+ rec.onerror=e=>{if(revision===searchRevision)setMessage(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`,true)};
+ rec.onend=resetVoiceButton;
+ try{rec.start()}catch(e){setMessage('마이크를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',true);resetVoiceButton()}
+}
+window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
+window.setNativeSpeechError=function(message){setMessage(message,true)};
 function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function quoteCSV(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
@@ -135,7 +187,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
  try{await openDB();let currentCount=await countSongs();if(!localStorage.getItem('tj-p2-catalog-76435')||currentCount===0){setMessage('내장 곡 76,435곡을 준비합니다. 잠시 기다려 주세요…');const response=await fetch('./catalog-20261018.csv',{cache:'no-store'});if(!response.ok)throw Error('내장 곡 데이터를 읽지 못했습니다.');const n=await importCSVText(await response.text());if(n!==76435)throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');localStorage.setItem('tj-p2-catalog-76435','done');currentCount=await countSongs()}await allSongs();renderCount(currentCount);setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.');$('searchBtn').disabled=false;$('voiceBtn').disabled=false}
  catch(e){setMessage('곡 데이터를 준비하지 못했습니다. 저장 공간을 확인하고 앱을 다시 실행해 주세요. '+e.message,true)}
- $('searchBtn').onclick=search;$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
+ $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
  $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
  if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
