@@ -121,7 +121,7 @@
   function installed(){try{return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}catch(e){return false}}
   function guide(){
     var agent=navigator.userAgent||'', el=byId('installHelp');if(!el)return;
-    var ios=/iPhone|iPad|iPod/i.test(agent),samsung=/SamsungBrowser/i.test(agent),inside=/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|Line\\/|;\\s*wv[);]|WebView/i.test(agent);
+    var ios=/iPhone|iPad|iPod/i.test(agent),samsung=/SamsungBrowser/i.test(agent),inside=/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|WebView|; wv[);]/i.test(agent);
     var heading=ios?'아이폰에 노래검색 추가':inside?'먼저 크롬으로 열어 주세요':samsung?'삼성 인터넷에서 추가하기':'갤럭시 홈 화면에 추가하기';
     var steps=ios?['아래쪽 공유 버튼(□↑)을 누르세요.','홈 화면에 추가를 누르세요.','오른쪽 위 추가를 누르세요.']:inside?['아래의 주소 복사 버튼을 누르세요.','크롬 또는 삼성 인터넷 앱을 열고 주소창에 붙여넣으세요.','웹페이지에서 홈 화면에 추가를 다시 누르세요.']:samsung?['화면 아래 ≡ 메뉴를 누르세요.','현재 페이지 추가를 누르세요.','홈 화면을 선택하고 추가를 누르세요.']:['크롬 오른쪽 위 점 3개(⋮)를 누르세요.','홈 화면에 추가 또는 앱 설치를 누르세요.','추가 또는 설치를 누르면 완료됩니다.'];
     el.replaceChildren();
