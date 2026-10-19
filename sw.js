@@ -1,4 +1,4 @@
-const CACHE='neutinamu-p2-v6-20261019-refresh';
+const CACHE='neutinamu-p2-v7-20261019-oldandroid';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./catalog-20261018.csv'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('neutinamu-p2-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
