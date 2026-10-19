@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10243a">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="느티나무 노래방 노래검색">
   <meta name="apple-mobile-web-app-title" content="느티나무 노래방 노래검색">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="description" content="태진 P2 곡 번호를 음성과 노래 데이터로 검색합니다.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" sizes="192x192" href="icon-192.png" type="image/png">
+  <link rel="shortcut icon" href="icon-192.png" type="image/png">
   <title>느티나무 노래방 노래검색</title>
   <style>
     :root{color-scheme:dark;--bg:#081522;--panel:#10243a;--panel2:#142d47;--line:#27435e;--text:#f4f7fb;--muted:#aac0d4;--cyan:#72e0e7;--yellow:#ffd166;--green:#a9f0c0;--red:#ff9b9b}
@@ -38,6 +42,13 @@
     .install-cta button{flex-shrink:0;color:#051822;background:#a4f1ed;border:0;font-size:15px;padding:12px 14px}
     .install-help{background:#193750;border:1px solid #4387a0;border-radius:12px;padding:14px 16px;margin:-7px 0 16px;color:#fff;line-height:1.6;font-size:14px}
     [hidden]{display:none!important}
+    .legacy-steps{background:#112d42;border:1px solid #39647b;border-radius:14px;padding:12px 15px;margin:-3px 0 17px}
+    .legacy-steps summary{font-size:14px;font-weight:800;cursor:pointer}
+    .legacy-steps ol{padding-left:23px;color:#d9eaf2;font-size:14px;line-height:1.8}
+    .legacy-steps li{margin:5px 0}
+    .install-help strong{color:#c1f7ee}
+    .install-help a{color:#c1f7ee;overflow-wrap:anywhere}
+    .install-help button{margin-top:11px;background:#c1f7ee;color:#081522}
     @media(max-width:480px){.install-cta{flex-wrap:wrap}.install-cta button{width:100%}}
     .voice-dialog{width:min(390px,calc(100% - 32px));max-height:calc(100% - 40px);overflow:auto;margin:auto;padding:32px 24px 24px;border:1px solid #39647b;border-radius:26px;background:#10243a;color:var(--text);text-align:center;box-shadow:0 24px 80px #0008}
     .voice-dialog.fallback-open{display:block;position:fixed;inset:0;z-index:10000;outline:100vmax solid #020a14bb}
@@ -64,6 +75,15 @@
     <button id="installBtn" type="button">홈 화면에 앱 추가</button>
   </section>
   <div id="installHelp" class="install-help" role="status" aria-live="polite" hidden></div>
+  <details class="legacy-steps">
+    <summary>구형 휴대전화에서 아이콘이 안 만들어지나요?</summary>
+    <ol>
+      <li>QR 스캐너·카카오톡 안에 열린 화면이라면 주소를 <b>Chrome 또는 삼성 인터넷</b>에서 다시 여세요.</li>
+      <li>Chrome: 오른쪽 위 <b>⋮ → 앱 설치 / 홈 화면에 추가 / 바로가기 만들기</b>를 누르세요.</li>
+      <li>삼성 인터넷: <b>≡ → 현재 페이지 추가 → 홈 화면</b>을 누르세요. 기종에 따라 명칭이 다를 수 있습니다.</li>
+      <li>추가했는데 안 보이면 <b>앱 목록 및 다른 홈 화면 페이지</b>를 살펴보고 <b>홈 화면 구성 잠금</b> 설정도 확인하세요.</li>
+    </ol>
+  </details>
   <section class="panel">
     <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
     <div class="searchrow"><input id="query" type="search" placeholder="곡 제목 또는 가수 입력" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
@@ -83,7 +103,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer"><b>앱 버전 2026.10.19 · v6</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.10.19 · v7</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -94,20 +114,68 @@
   <button id="voiceCancelBtn" type="button" class="secondary" autofocus>취소</button>
 </dialog>
 <script>
+/* Old Android-compatible home-screen button. Keep this script independent of modern search code. */
+(function(){
+  var pending=null,site='https://cyberkjh36.github.io/neutinamu-song-search/';
+  function byId(k){return document.getElementById(k)}
+  function installed(){try{return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}catch(e){return false}}
+  function guide(){
+    var agent=navigator.userAgent||'', text='';
+    if(/iPhone|iPad|iPod/i.test(agent)) text='Safari 공유 버튼(□↑) → 홈 화면에 추가 → 추가를 누르세요.';
+    else if(/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|Line\/|;\s*wv[);]|WebView/i.test(agent)) text='QR 스캐너 또는 앱 안에서 열린 브라우저에서는 아이콘 추가 기능이 제한될 수 있습니다. 아래 주소를 복사해 Chrome이나 삼성 인터넷에서 여세요.';
+    else if(/SamsungBrowser/i.test(agent)) text='삼성 인터넷의 ≡ 메뉴 → 현재 페이지 추가 → 홈 화면을 선택하세요. 구형폰에서는 메뉴 위치가 다를 수 있습니다.';
+    else if(/Android/i.test(agent)) text='Chrome 오른쪽 위 ⋮ 메뉴에서 앱 설치 / 홈 화면에 추가 / 바로가기 만들기를 선택하세요. 구형폰에서는 웹페이지 안의 설치 버튼이 직접 설치창을 열 수 없으므로 브라우저 메뉴를 사용해야 합니다.';
+    else text='Android는 Chrome ⋮ 메뉴 또는 삼성 인터넷 ≡ 메뉴, iPhone은 Safari 공유 메뉴에서 홈 화면에 추가를 선택하세요.';
+    var el=byId('installHelp');if(!el)return;
+    while(el.firstChild)el.removeChild(el.firstChild);
+    var title=document.createElement('strong');title.appendChild(document.createTextNode('홈 화면 아이콘 추가 방법'));
+    var p=document.createElement('p');p.appendChild(document.createTextNode(text));
+    var link=document.createElement('a');link.href=site;link.appendChild(document.createTextNode(site));
+    var copy=document.createElement('button');copy.type='button';copy.appendChild(document.createTextNode('웹앱 주소 복사'));
+    copy.onclick=function(){
+      var area=document.createElement('textarea');area.value=site;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.focus();area.select();
+      var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+      document.body.removeChild(area);
+      copy.textContent=ok?'주소가 복사되었습니다':'위 주소를 길게 눌러 복사해 주세요';
+    };
+    el.appendChild(title);el.appendChild(p);el.appendChild(link);el.appendChild(document.createElement('br'));el.appendChild(copy);el.hidden=false;
+    try{el.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){el.scrollIntoView()}
+  }
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e});
+  window.addEventListener('appinstalled',function(){pending=null;if(byId('installCTA'))byId('installCTA').hidden=true;if(byId('installHelp'))byId('installHelp').hidden=true});
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=byId('installBtn'),banner=byId('installCTA');if(!btn||!banner)return;
+    if(installed()){banner.hidden=true;return}
+    btn.addEventListener('click',function(){
+      if(pending&&typeof pending.prompt==='function'){
+        var e=pending;pending=null;
+        try{
+          e.prompt();
+          if(e.userChoice&&typeof e.userChoice.then==='function'){
+            e.userChoice.then(function(choice){if(!choice||choice.outcome!=='accepted')guide()},guide);
+          }
+        }catch(err){guide()}
+      }else guide();
+    });
+  });
+})();
+</script>
+<script>
+if(!Element.prototype.replaceChildren){Element.prototype.replaceChildren=function(){while(this.firstChild)this.removeChild(this.firstChild);for(var i=0;i<arguments.length;i++)this.appendChild(arguments[i]);};}
 const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
 const $=id=>document.getElementById(id);
 let db, cachedSongs=null;
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'code'});};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
 function allSongs(){if(cachedSongs)return Promise.resolve(cachedSongs);return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>{cachedSongs=r.result;resolve(cachedSongs)};r.onerror=()=>reject(r.error)})}
 function countSongs(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).count();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-function normalize(s){return String(s??'').normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/[\s\p{P}\p{S}]/gu,'')}
+function normalize(s){const raw=String(s==null?'':s),normalized=typeof raw.normalize==='function'?raw.normalize('NFKC'):raw;return normalized.toLocaleLowerCase('ko-KR').replace(/[\s\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u2000-\u206F\u20A0-\u20CF\u2100-\u214F\u2190-\u21FF\u2600-\u27BF\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65]/g,'')}
 function setMessage(s,err=false){$('message').textContent=s;$('message').className='message'+(err?' error':'')}
 function renderCount(n){$('dbCount').innerHTML=`저장 곡 <span class="dbcount">${n.toLocaleString()}</span>곡`;$('statusDot').classList.toggle('ready',n>0);$('statusText').textContent=n?`이 휴대폰에 ${n.toLocaleString()}곡이 저장되어 있어요.`:'노래 데이터 파일을 불러오면 검색할 수 있어요.'}
 function csvParse(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(cell);cell=''}else if(c==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell=''}else cell+=c}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
 function headerKey(s){return normalize(s).replace(/^(tj|금영)/,'')}
 function fieldIndex(headers,options,fallback){const h=headers.map(headerKey);for(const opt of options){const i=h.indexOf(headerKey(opt));if(i>=0)return i}return fallback}
 async function importCSVText(raw){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
- const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]??'').trim().replace(/\.0$/,'');const title=String(r[ti]??'').trim();const artist=String(r[ai]??'').trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
+ const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]==null?'':r[ci]).trim().replace(/\.0$/,'');const title=String(r[ti]==null?'':r[ti]).trim();const artist=String(r[ai]==null?'':r[ai]).trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
  if(!out.length)throw Error('곡번호와 곡제목을 읽지 못했습니다. 입력 양식과 열 이름을 확인해 주세요.');
  for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000))store.put(song);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
 async function importFile(file){return importCSVText(await file.text())}
@@ -216,35 +284,9 @@ function startVoice(){
 window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
 window.setNativeSpeechError=function(message){setMessage(message,true)};
 function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function quoteCSV(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+function quoteCSV(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}
 async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
 const template='\uFEFF곡번호,곡제목,가수\r\n';
-
-let installPrompt=null;
-function isHomeScreenApp(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
-function installationInstructions(){
-  const ua=navigator.userAgent||'';
-  const ios=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  if(ios)return '아이폰: Safari 브라우저로 이 페이지를 열고 아래 또는 위의 공유 버튼(네모에서 위로 화살표)을 누른 다음, “홈 화면에 추가” → “추가”를 선택하세요. “웹 앱으로 열기”가 보이면 켜 주세요. 다른 앱 안에서 열었다면 먼저 Safari로 열어 주세요.';
-  if(/Android/.test(ua))return '안드로이드: 크롬에서 오른쪽 위 ⋮(메뉴)를 누르고 “앱 설치” 또는 “홈 화면에 추가”를 선택한 뒤 확인하세요. 카카오톡·QR스캐너 안에서 열린 화면이라면 먼저 크롬 브라우저로 열어 주세요.';
-  return '휴대폰 브라우저에서 열어 주세요. 안드로이드는 크롬 메뉴의 “앱 설치/홈 화면에 추가”, 아이폰은 Safari 공유 메뉴의 “홈 화면에 추가”를 이용할 수 있습니다.';
-}
-function showInstallHelp(message){const el=$('installHelp');el.textContent=message;el.hidden=false;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
-window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;});
-window.addEventListener('appinstalled',()=>{installPrompt=null;const c=$('installCTA');if(c)c.hidden=true;const help=$('installHelp');if(help)help.hidden=true;setMessage('홈 화면에 노래 검색 앱이 설치되었습니다.');});
-document.addEventListener('DOMContentLoaded',()=>{
-  if(isHomeScreenApp()){$('installCTA').hidden=true;return;}
-  $('installBtn').addEventListener('click',async()=>{
-    if(!installPrompt){showInstallHelp(installationInstructions());return;}
-    const event=installPrompt;installPrompt=null;
-    try{
-      event.prompt();
-      const choice=await event.userChoice;
-      if(choice&&choice.outcome==='accepted'){$('installCTA').hidden=true;setMessage('설치를 승인했습니다. 휴대폰 홈 화면을 확인하세요.');}
-      else showInstallHelp(installationInstructions());
-    }catch(e){showInstallHelp(installationInstructions());}
-  });
-});
 
 document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
