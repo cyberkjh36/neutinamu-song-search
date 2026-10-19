@@ -71,8 +71,8 @@
   <h1>느티나무 노래방 음성으로 노래 번호찾기</h1>
   <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
   <section id="installCTA" class="install-cta" aria-label="휴대폰 홈 화면에 노래 검색 앱 추가">
-    <div><strong>📲 QR 없이 바로 노래 검색!</strong><p>휴대폰 홈 화면에 아이콘을 만들어 두세요.</p></div>
-    <button id="installBtn" type="button">홈 화면에 앱 추가</button>
+    <div><strong>📲 다음부터 QR 없이 바로 실행!</strong><p>처음 한 번만 휴대폰에 노래검색 아이콘을 추가하세요.</p></div>
+    <button id="installBtn" type="button" style="font-size:1.35rem;min-height:64px;padding:14px 20px">📲 내 휴대폰에 노래검색 추가</button>
   </section>
   <div id="installHelp" class="install-help" role="status" aria-live="polite" hidden></div>
   <details class="legacy-steps">
@@ -120,26 +120,18 @@
   function byId(k){return document.getElementById(k)}
   function installed(){try{return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}catch(e){return false}}
   function guide(){
-    var agent=navigator.userAgent||'', text='';
-    if(/iPhone|iPad|iPod/i.test(agent)) text='Safari 공유 버튼(□↑) → 홈 화면에 추가 → 추가를 누르세요.';
-    else if(/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|Line\/|;\s*wv[);]|WebView/i.test(agent)) text='QR 스캐너 또는 앱 안에서 열린 브라우저에서는 아이콘 추가 기능이 제한될 수 있습니다. 아래 주소를 복사해 Chrome이나 삼성 인터넷에서 여세요.';
-    else if(/SamsungBrowser/i.test(agent)) text='삼성 인터넷의 ≡ 메뉴 → 현재 페이지 추가 → 홈 화면을 선택하세요. 구형폰에서는 메뉴 위치가 다를 수 있습니다.';
-    else if(/Android/i.test(agent)) text='Chrome 오른쪽 위 ⋮ 메뉴에서 앱 설치 / 홈 화면에 추가 / 바로가기 만들기를 선택하세요. 구형폰에서는 웹페이지 안의 설치 버튼이 직접 설치창을 열 수 없으므로 브라우저 메뉴를 사용해야 합니다.';
-    else text='Android는 Chrome ⋮ 메뉴 또는 삼성 인터넷 ≡ 메뉴, iPhone은 Safari 공유 메뉴에서 홈 화면에 추가를 선택하세요.';
-    var el=byId('installHelp');if(!el)return;
-    while(el.firstChild)el.removeChild(el.firstChild);
-    var title=document.createElement('strong');title.appendChild(document.createTextNode('홈 화면 아이콘 추가 방법'));
-    var p=document.createElement('p');p.appendChild(document.createTextNode(text));
-    var link=document.createElement('a');link.href=site;link.appendChild(document.createTextNode(site));
-    var copy=document.createElement('button');copy.type='button';copy.appendChild(document.createTextNode('웹앱 주소 복사'));
-    copy.onclick=function(){
-      var area=document.createElement('textarea');area.value=site;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.focus();area.select();
-      var ok=false;try{ok=document.execCommand('copy')}catch(e){}
-      document.body.removeChild(area);
-      copy.textContent=ok?'주소가 복사되었습니다':'위 주소를 길게 눌러 복사해 주세요';
-    };
-    el.appendChild(title);el.appendChild(p);el.appendChild(link);el.appendChild(document.createElement('br'));el.appendChild(copy);el.hidden=false;
-    try{el.scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){el.scrollIntoView()}
+    var agent=navigator.userAgent||'', el=byId('installHelp');if(!el)return;
+    var ios=/iPhone|iPad|iPod/i.test(agent),samsung=/SamsungBrowser/i.test(agent),inside=/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|Line\\/|;\\s*wv[);]|WebView/i.test(agent);
+    var heading=ios?'아이폰에 노래검색 추가':inside?'먼저 크롬으로 열어 주세요':samsung?'삼성 인터넷에서 추가하기':'갤럭시 홈 화면에 추가하기';
+    var steps=ios?['아래쪽 공유 버튼(□↑)을 누르세요.','홈 화면에 추가를 누르세요.','오른쪽 위 추가를 누르세요.']:inside?['아래의 주소 복사 버튼을 누르세요.','크롬 또는 삼성 인터넷 앱을 열고 주소창에 붙여넣으세요.','웹페이지에서 홈 화면에 추가를 다시 누르세요.']:samsung?['화면 아래 ≡ 메뉴를 누르세요.','현재 페이지 추가를 누르세요.','홈 화면을 선택하고 추가를 누르세요.']:['크롬 오른쪽 위 점 3개(⋮)를 누르세요.','홈 화면에 추가 또는 앱 설치를 누르세요.','추가 또는 설치를 누르면 완료됩니다.'];
+    el.replaceChildren();
+    var h=document.createElement('h2');h.textContent='📱 '+heading;h.style.cssText='font-size:1.45rem;margin:0 0 12px;color:#fff';el.appendChild(h);
+    var note=document.createElement('p');note.textContent='이 작업은 처음 한 번만 하시면 됩니다. 다음부터는 QR코드를 찍지 않아도 됩니다.';note.style.cssText='font-size:1.1rem;font-weight:700;line-height:1.6';el.appendChild(note);
+    var ol=document.createElement('ol');ol.style.cssText='font-size:1.22rem;line-height:1.7;padding-left:1.5em;font-weight:700';steps.forEach(function(t){var li=document.createElement('li');li.textContent=t;li.style.marginBottom='12px';ol.appendChild(li)});el.appendChild(ol);
+    var copy=document.createElement('button');copy.type='button';copy.textContent='📋 노래검색 주소 복사';copy.style.cssText='font-size:1.1rem;min-height:54px;padding:12px;border-radius:12px;background:#fff;color:#10243a;font-weight:800';
+    copy.onclick=function(){var area=document.createElement('textarea');area.value=site;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.focus();area.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(area);copy.textContent=ok?'✅ 복사 완료! 크롬 주소창에 붙여넣으세요':'주소를 길게 눌러 복사해 주세요';};el.appendChild(copy);
+    var link=document.createElement('p');link.style.cssText='font-size:.85rem;overflow-wrap:anywhere';link.textContent=site;el.appendChild(link);
+    el.hidden=false;try{el.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){el.scrollIntoView()}
   }
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e});
   window.addEventListener('appinstalled',function(){pending=null;if(byId('installCTA'))byId('installCTA').hidden=true;if(byId('installHelp'))byId('installHelp').hidden=true});
