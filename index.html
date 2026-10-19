@@ -46,6 +46,7 @@
     .legacy-steps summary{font-size:14px;font-weight:800;cursor:pointer}
     .legacy-steps ol{padding-left:23px;color:#d9eaf2;font-size:14px;line-height:1.8}
     .legacy-steps li{margin:5px 0}
+    .install-cta{flex-wrap:wrap}.install-cta p{font-size:16px}.browser-buttons{display:grid;grid-template-columns:1fr;gap:10px;width:100%}.browser-buttons a{font-size:20px;min-height:56px;text-decoration:none;background:#f5d36a;color:#081522}.browser-buttons a.secondary{background:#d3f5ef}.install-help{font-size:19px}.install-help li{margin-bottom:12px}
     .install-help strong{color:#c1f7ee}
     .install-help a{color:#c1f7ee;overflow-wrap:anywhere}
     .install-help button{margin-top:11px;background:#c1f7ee;color:#081522}
@@ -71,8 +72,9 @@
   <h1>느티나무 노래방 음성으로 노래 번호찾기</h1>
   <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
   <section id="installCTA" class="install-cta" aria-label="휴대폰 홈 화면에 노래 검색 앱 추가">
-    <div><strong>📲 다음부터 QR 없이 바로 실행!</strong><p>처음 한 번만 휴대폰에 노래검색 아이콘을 추가하세요.</p></div>
+    <div><strong>📲 다음부터 QR 없이 바로 실행!</strong><p>처음 한 번만 휴대폰에 노래검색 아이콘을 추가하세요.</p><p id="installStatus" role="status" aria-live="polite">설치 기능을 준비하고 있어요…</p></div>
     <button id="installBtn" type="button" style="font-size:1.35rem;min-height:64px;padding:14px 20px">📲 내 휴대폰에 노래검색 추가</button>
+    <div id="browserButtons" class="browser-buttons" hidden><a id="openChrome" class="filebtn">크롬으로 열기</a><a id="openSamsung" class="filebtn secondary">삼성 인터넷으로 열기</a></div>
   </section>
   <div id="installHelp" class="install-help" role="status" aria-live="polite" hidden></div>
   <details class="legacy-steps">
@@ -103,7 +105,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer"><b>앱 버전 2026.10.19 · v7</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.10.20 · v8</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -114,42 +116,70 @@
   <button id="voiceCancelBtn" type="button" class="secondary" autofocus>취소</button>
 </dialog>
 <script>
-/* Old Android-compatible home-screen button. Keep this script independent of modern search code. */
+/* Install UI is independent of song import and speech support. */
 (function(){
-  var pending=null,site='https://cyberkjh36.github.io/neutinamu-song-search/';
-  function byId(k){return document.getElementById(k)}
-  function installed(){try{return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}catch(e){return false}}
-  function guide(){
-    var agent=navigator.userAgent||'', el=byId('installHelp');if(!el)return;
-    var ios=/iPhone|iPad|iPod/i.test(agent),samsung=/SamsungBrowser/i.test(agent),inside=/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|FB_IAB|WebView|; wv[);]/i.test(agent);
-    var heading=ios?'아이폰에 노래검색 추가':inside?'먼저 크롬으로 열어 주세요':samsung?'삼성 인터넷에서 추가하기':'갤럭시 홈 화면에 추가하기';
-    var steps=ios?['아래쪽 공유 버튼(□↑)을 누르세요.','홈 화면에 추가를 누르세요.','오른쪽 위 추가를 누르세요.']:inside?['아래의 주소 복사 버튼을 누르세요.','크롬 또는 삼성 인터넷 앱을 열고 주소창에 붙여넣으세요.','웹페이지에서 홈 화면에 추가를 다시 누르세요.']:samsung?['화면 아래 ≡ 메뉴를 누르세요.','현재 페이지 추가를 누르세요.','홈 화면을 선택하고 추가를 누르세요.']:['크롬 오른쪽 위 점 3개(⋮)를 누르세요.','홈 화면에 추가 또는 앱 설치를 누르세요.','추가 또는 설치를 누르면 완료됩니다.'];
-    el.replaceChildren();
-    var h=document.createElement('h2');h.textContent='📱 '+heading;h.style.cssText='font-size:1.45rem;margin:0 0 12px;color:#fff';el.appendChild(h);
-    var note=document.createElement('p');note.textContent='이 작업은 처음 한 번만 하시면 됩니다. 다음부터는 QR코드를 찍지 않아도 됩니다.';note.style.cssText='font-size:1.1rem;font-weight:700;line-height:1.6';el.appendChild(note);
-    var ol=document.createElement('ol');ol.style.cssText='font-size:1.22rem;line-height:1.7;padding-left:1.5em;font-weight:700';steps.forEach(function(t){var li=document.createElement('li');li.textContent=t;li.style.marginBottom='12px';ol.appendChild(li)});el.appendChild(ol);
-    var copy=document.createElement('button');copy.type='button';copy.textContent='📋 노래검색 주소 복사';copy.style.cssText='font-size:1.1rem;min-height:54px;padding:12px;border-radius:12px;background:#fff;color:#10243a;font-weight:800';
-    copy.onclick=function(){var area=document.createElement('textarea');area.value=site;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.focus();area.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(area);copy.textContent=ok?'✅ 복사 완료! 크롬 주소창에 붙여넣으세요':'주소를 길게 눌러 복사해 주세요';};el.appendChild(copy);
-    var link=document.createElement('p');link.style.cssText='font-size:.85rem;overflow-wrap:anywhere';link.textContent=site;el.appendChild(link);
-    el.hidden=false;try{el.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){el.scrollIntoView()}
+  var pending=null, busy=false, site='https://cyberkjh36.github.io/neutinamu-song-search/';
+  var ua=navigator.userAgent||'', android=/Android/i.test(ua), ios=/iPhone|iPad|iPod/i.test(ua), samsung=/SamsungBrowser/i.test(ua);
+  function byId(id){return document.getElementById(id)}
+  function installed(){return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}
+  function message(text){var el=byId('installHelp');el.textContent=text;el.hidden=false}
+  function sync(){
+    if(!byId('installBtn'))return;
+    byId('installCTA').hidden=!!installed();
+    byId('browserButtons').hidden=!android||!!pending||!!installed();
+    byId('installBtn').disabled=busy;
+    byId('installBtn').textContent=pending?'📲 홈 화면에 노래검색 설치':'📲 홈 화면에 추가하기';
+    byId('installStatus').textContent=pending?'설치 준비 완료! 아래 버튼을 눌러 주세요.':'아이콘 추가가 안 되면 아래 ‘크롬으로 열기’를 눌러 주세요.';
+    if(!android&&!pending)byId('installStatus').textContent='아래 버튼을 누르면 홈 화면 추가 방법을 안내합니다.';
   }
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e});
-  window.addEventListener('appinstalled',function(){pending=null;if(byId('installCTA'))byId('installCTA').hidden=true;if(byId('installHelp'))byId('installHelp').hidden=true});
-  document.addEventListener('DOMContentLoaded',function(){
-    var btn=byId('installBtn'),banner=byId('installCTA');if(!btn||!banner)return;
-    if(installed()){banner.hidden=true;return}
-    btn.addEventListener('click',function(){
-      if(pending&&typeof pending.prompt==='function'){
-        var e=pending;pending=null;
-        try{
-          e.prompt();
-          if(e.userChoice&&typeof e.userChoice.then==='function'){
-            e.userChoice.then(function(choice){if(!choice||choice.outcome!=='accepted')guide()},guide);
-          }
-        }catch(err){guide()}
-      }else guide();
-    });
+  function guide(){
+    var el=byId('installHelp');
+    while(el.firstChild)el.removeChild(el.firstChild);
+    var h=document.createElement('strong');h.textContent='📱 '+(ios?'아이폰 홈 화면에 추가':samsung?'삼성 인터넷에서 추가':'설치 메뉴가 안 보이나요?');el.appendChild(h);
+    var steps=ios?['Safari에서 공유(□↑)를 누르세요.','홈 화면에 추가 → 추가를 누르세요.']:samsung?['삼성 인터넷의 ≡ 메뉴를 누르세요.','현재 페이지 추가(또는 페이지 추가) → 홈 화면 → 추가를 누르세요.','메뉴가 없으면 아래 크롬으로 열기를 눌러 주세요.']:android?['아래 크롬으로 열기를 눌러 전체 크롬 화면으로 이동하세요. QR로 열린 작은 창에서는 설치 메뉴가 없을 수 있습니다.','화면이 열리면 홈 화면에 노래검색 설치 버튼을 누르세요.','버튼이 안내만 보여주면 크롬 ⋮ → 홈 화면에 추가 또는 앱 설치를 확인하세요.','계속 메뉴가 없으면 삼성 인터넷으로 열기를 이용하세요. 시크릿 모드는 종료해 주세요.']:['브라우저 메뉴에서 앱 설치 또는 홈 화면에 추가를 확인하세요.'];
+    var ol=document.createElement('ol');steps.forEach(function(s){var li=document.createElement('li');li.textContent=s;ol.appendChild(li)});el.appendChild(ol);
+    var note=document.createElement('p');note.textContent='이미 설치했다면 앱 목록에서 ‘느티나무’를 찾아 길게 눌러 홈 화면에 추가하세요. 이 웹페이지가 휴대폰 아이콘을 자동으로 만들 수는 없습니다.';el.appendChild(note);
+    var copy=document.createElement('button');copy.type='button';copy.textContent='📋 주소 복사';copy.onclick=function(){
+      function fallback(){var a=document.createElement('textarea');a.value=site;el.appendChild(a);a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}el.removeChild(a);copy.textContent=ok?'주소가 복사되었습니다':'아래 주소를 길게 눌러 복사하세요';}
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(site).then(function(){copy.textContent='주소가 복사되었습니다'},fallback);else fallback();
+    };el.appendChild(copy);
+    var p=document.createElement('p');p.textContent=site;p.style.overflowWrap='anywhere';el.appendChild(p);
+    el.hidden=false;
+  }
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();pending=e;busy=false;sync();
+    if(byId('installHelp')&&!byId('installHelp').hidden)message('설치가 준비되었습니다. 위의 ‘홈 화면에 노래검색 설치’ 버튼을 눌러 주세요.');
   });
+  window.addEventListener('appinstalled',function(){pending=null;busy=false;byId('installCTA').hidden=true;message('설치되었습니다. 홈 화면이나 앱 목록에서 ‘느티나무’를 찾아 주세요.');});
+  function init(){
+    ['Chrome','Samsung'].forEach(function(name){
+      var a=byId('open'+name),pkg=name==='Chrome'?'com.android.chrome':'com.sec.android.app.sbrowser';
+      a.href='intent://cyberkjh36.github.io/neutinamu-song-search/#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';S.browser_fallback_url='+encodeURIComponent(site)+';end';
+    });
+    sync();
+    byId('installBtn').onclick=function(){
+      if(busy)return;
+      if(!pending){guide();return}
+      var event=pending;pending=null;busy=true;sync();
+      function failed(){busy=false;sync();guide()}
+      try{
+        var result=event.prompt();
+        if(result&&result.catch)result.catch(failed);
+        event.userChoice.then(function(choice){
+          busy=false;sync();
+          if(choice.outcome==='accepted')message('설치 요청을 보냈습니다. 휴대폰의 설치 안내를 완료한 뒤 홈 화면이나 앱 목록을 확인하세요.');
+          else guide();
+        },failed);
+      }catch(e){failed()}
+    };
+    // Register before the 76,435-song IndexedDB import, even when storage fails.
+    if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
+      navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(reg){reg.update().catch(function(){});}).catch(function(){
+        byId('installStatus').textContent='설치 준비에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.';
+      });
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 <script>
@@ -287,7 +317,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
  $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
- if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});}
 });
 </script>
 </body>

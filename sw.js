@@ -1,5 +1,5 @@
-const CACHE='neutinamu-p2-v7-20261019-oldandroid';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./catalog-20261018.csv'];
+const CACHE='neutinamu-p2-v8-20261020-install';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('neutinamu-p2-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
 self.addEventListener('fetch',event=>{
@@ -14,5 +14,14 @@ self.addEventListener('fetch',event=>{
    catch(error){const saved=await cache.match('./index.html');if(saved)return saved;throw error}
   })());return;
  }
- event.respondWith(caches.open(CACHE).then(cache=>cache.match(req,{ignoreSearch:true})).then(hit=>hit||fetch(req)));
+ event.respondWith((async()=>{
+   const cache=await caches.open(CACHE);
+   const hit=await cache.match(req);
+   if(hit)return hit;
+   const response=await fetch(req);
+   if(response.ok&&url.pathname===new URL('./catalog-20261018.csv',self.location).pathname){
+     await cache.put(req,response.clone());
+   }
+   return response;
+ })());
 });
