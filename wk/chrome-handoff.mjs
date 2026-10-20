@@ -22,7 +22,7 @@ export function readHandoff(hash = '') {
 
 export function chromeLinks({room = '', language = '', query = ''} = {}) {
   const target = new URL(PAGE);
-  target.searchParams.set('v','2.2');
+  target.searchParams.set('v','2.3');
   const state = new URLSearchParams();
   if (/^\d{8}$/.test(room)) state.set('room',room);
   if (LOCALES.has(language)) state.set('language',language);

@@ -1,13 +1,15 @@
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
 import { KaraokeConnection } from './relay-client.mjs?v=2.1';
-import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.2';
+import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
+import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
 
 const $ = id => document.getElementById(id);
 const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);
 let currentLanguage = LANGUAGES[0], recognition = null, voiceGeneration = 0, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
+let searchComplete = false;
 const countryButtons = new Map();
 const actionKeys = {queryHint:3, connected:6, disconnected:7, sent:8, sending:9};
 function message(key, error = false) {
@@ -45,6 +47,7 @@ function refreshControls() {
   $('code').disabled = active;
   $('disconnect').hidden = !active;
   $('send').disabled = state !== 'ready' || !supported || Boolean(recognition) || !$('query').value.trim();
+  $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : currentLanguage.text[1];
   $('query').disabled = busy;
   for (const button of countryButtons.values()) button.disabled = busy || Boolean(recognition);
   $('voice').disabled = busy || Boolean(recognition) || !secure;
@@ -97,7 +100,7 @@ function selectLanguage(code) {
   for (const [locale,button] of countryButtons) button.setAttribute('aria-pressed', String(locale === currentLanguage.code));
   $('connection-title').textContent = t[2]; $('connect').textContent = t[2]; $('code-label').textContent = t[4];
   $('search-title').textContent = t[0].replace('🎙 ', ''); $('voice-text').textContent = t[0].replace('🎙 ', '');
-  $('query-label').textContent = t[3]; $('query').placeholder = t[3]; $('send').textContent = t[1]; $('listening-title').textContent = t[5];
+  $('query-label').textContent = t[3]; $('query').placeholder = t[3]; $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : t[1]; $('listening-title').textContent = t[5];
   $('help-list').replaceChildren(...words.steps.map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
@@ -130,11 +133,16 @@ $('connect').addEventListener('click', () => {
   });
 });
 $('disconnect').addEventListener('click', () => { connectionAttempt++; void connection.disconnect(); });
-$('query').addEventListener('input', refreshControls);
+$('query').addEventListener('input', () => { searchComplete = false; refreshControls(); });
 $('send').addEventListener('click', async () => {
   if ($('send').disabled) return;
+  if (searchComplete) {
+    searchComplete = false; $('query').value = ''; $('interim').textContent = '';
+    feedback('queryHint'); refreshControls(); $('query').focus();
+    return;
+  }
   feedback('sending');
-  try { const result = await connection.search($('query').value, currentLanguage.code); if (result.ok) feedback('sent'); else showError(result.code); }
+  try { const result = await connection.search($('query').value, currentLanguage.code); if (result.ok) { searchComplete = true; feedback('sent'); } else showError(result.code); }
   catch (error) { showError(error); }
   finally { refreshControls(); }
 });
@@ -159,7 +167,7 @@ $('voice').addEventListener('click', () => {
     }
     $('interim').textContent = finalText || interim.join(' ');
     // Dictation fills the input only. No search is sent until the user taps Send.
-    if (finalText.trim()) $('query').value = finalText.trim().slice(0,300);
+    if (finalText.trim()) { $('query').value = finalText.trim().slice(0,300); searchComplete = false; }
   };
   instance.onerror = event => {
     if (recognition !== instance || voiceGeneration !== generation) return;

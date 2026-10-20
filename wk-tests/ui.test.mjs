@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { LANGUAGES } from '../wk/labels.mjs?v=2.1';
 import { MESSAGES } from '../wk/network-text.mjs?v=2.1';
 import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
-import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.2';
+import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.3';
+import { NEXT_SEARCH } from '../wk/search-text.mjs?v=2.3';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -21,7 +22,7 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
 test('UI event harness: explicit search, dictation and reconnect states',async t=>{
   const html=await readFile(new URL('../wk/index.html',import.meta.url),'utf8');
   const elements=new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(x=>[x[1],new Element()]));
-  const head=new Element(),events=new Map(),sent=[],storage=new Map();let speech;
+  const head=new Element(),events=new Map(),sent=[],storage=new Map();let speech, nextResult=true;
   globalThis.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
   globalThis.document={getElementById:id=>{assert.ok(elements.has(id),id);return elements.get(id);},querySelector:()=>head,documentElement:{},createElement:()=>new Element()};
   globalThis.location={protocol:'https:',hostname:'example.test',hash:'#12345678'};
@@ -32,7 +33,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     abort(){this.onend?.();}
   }
   globalThis.window={isSecureContext:true,SpeechRecognition:Speech,addEventListener:(k,v)=>events.set(k,v)};
-  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:true});};
+  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:nextResult});};
   window.fetch=globalThis.fetch;window.crypto=globalThis.crypto;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR',userAgent:'Mozilla/5.0 (Linux; Android 10) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36'}});
   const $=id=>elements.get(id);
@@ -95,6 +96,38 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     });
     await t.test('missing recognition API leaves keyboard dictation and manual sending available',()=>{
       window.webkitSpeechRecognition=undefined;$('voice').fire('click');assert.equal($('query').focused,true);assert.equal($('send').disabled,false);
+    });
+    await t.test('successful search offers translated Next Song; one tap clears only the draft',async()=>{
+      for(const language of LANGUAGES){choose(language.code);assert.equal($('send').textContent,NEXT_SEARCH[language.code]);}
+      choose('ko-KR');const count=sent.length,room=$('code').value,status=$('connection-state').textContent;
+      await $('send').fire('click');
+      assert.equal($('query').value,'');assert.equal($('interim').textContent,'');assert.equal($('query').focused,true);
+      assert.equal($('code').value,room);assert.equal($('connection-state').textContent,status);assert.equal(document.documentElement.lang,'ko-KR');
+      assert.equal(sent.length,count);assert.equal($('connect').disabled,true);assert.equal($('send').disabled,true);assert.equal($('send').textContent,LANGUAGES[0].text[1]);
+      const intent=$('chrome-open').href;const target=new URL(intent.slice(0,intent.lastIndexOf('#Intent;')).replace(/^intent:/,'https:'));
+      assert.equal(readHandoff(target.hash).query,'');
+      await $('send').fire('click');assert.equal(sent.length,count);
+    });
+    await t.test('next typed song is sent once only after explicit search without reconnecting',async()=>{
+      const count=sent.length;$('query').value='두 번째 노래';$('query').fire('input');assert.equal(sent.length,count);
+      await $('send').fire('click');assert.equal(sent.length,count+2);assert.equal(sent[count].op,'search');assert.equal(sent[count].text,'두 번째 노래');assert.equal(sent[count].language,'ko-KR');
+      assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
+      await $('send').fire('click');await $('send').fire('click');assert.equal(sent.length,count+2);assert.equal($('query').value,'');
+    });
+    await t.test('failed search keeps the title and retry action; editing a successful title starts a new search',async()=>{
+      $('query').value='재시도할 노래';$('query').fire('input');nextResult=false;
+      await $('send').fire('click');assert.equal($('query').value,'재시도할 노래');assert.equal($('send').textContent,LANGUAGES[0].text[1]);assert.equal($('send').disabled,false);
+      nextResult=true;await $('send').fire('click');assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
+      $('query').value='직접 고친 노래';$('query').fire('input');assert.equal($('send').textContent,LANGUAGES[0].text[1]);
+      const count=sent.length;await $('send').fire('click');assert.equal(sent[count].text,'직접 고친 노래');assert.equal($('query').value,'직접 고친 노래');
+    });
+    await t.test('new voice result after a successful search replaces the title and still waits for Search',async()=>{
+      window.webkitSpeechRecognition=Speech;choose('th-TH');const count=sent.length;
+      $('voice').fire('click');const result=[{transcript:'เพลงใหม่'}];result.isFinal=true;
+      speech.onresult({resultIndex:0,results:[result]});speech.onend();
+      assert.equal($('query').value,'เพลงใหม่');assert.equal(sent.length,count);assert.equal($('send').textContent,LANGUAGES.find(x=>x.code==='th-TH').text[1]);
+      await $('send').fire('click');assert.equal(sent[count].text,'เพลงใหม่');assert.equal(sent[count].language,'th-TH');
+      await $('send').fire('click');assert.equal($('query').value,'');assert.equal(sent.length,count+2);
     });
     await t.test('Chrome button preserves current fields, releases session and never claims app-launch success',async()=>{
       choose('vi-VN');$('query').value='Bài hát & 노래';let prevented=false;

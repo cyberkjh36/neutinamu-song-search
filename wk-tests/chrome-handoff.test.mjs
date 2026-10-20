@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { needsChrome, readHandoff, chromeLinks } from '../wk/chrome-handoff.mjs?v=2.2';
+import { needsChrome, readHandoff, chromeLinks } from '../wk/chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
 import { LANGUAGES } from '../wk/labels.mjs?v=2.1';
 
@@ -30,7 +30,7 @@ test('Chrome intent targets this app and preserves room, language and Unicode dr
   const url=new URL(data);
   assert.equal(url.origin,'https://cyberkjh36.github.io');
   assert.equal(url.pathname,'/neutinamu-song-search/wk/');
-  assert.equal(url.search,'?v=2.2');
+  assert.equal(url.search,'?v=2.3');
   assert.deepEqual(readHandoff(url.hash),input);
   const fallback=new URL(decodeURIComponent(links.intent.match(/S\.browser_fallback_url=([^;]+)/)[1]));
   assert.equal(fallback.origin,url.origin);assert.equal(fallback.searchParams.get('chromeFallback'),'1');
