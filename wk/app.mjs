@@ -1,8 +1,11 @@
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
 import { KaraokeConnection } from './relay-client.mjs?v=2.1';
+import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.2';
+import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 
 const $ = id => document.getElementById(id);
+const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);
 let currentLanguage = LANGUAGES[0], recognition = null, voiceGeneration = 0, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 const countryButtons = new Map();
@@ -23,6 +26,16 @@ function renderConnection() {
   $('connection-state').classList.toggle('error', Boolean(connectionError));
   $('connection-state').textContent = connectionError ? message(connectionError, true) : message(['ready','sending'].includes(state) ? 'connected' : ['choosing','connecting'].includes(state) ? 'connecting' : 'disconnected');
 }
+function renderChromeHandoff() {
+  $('chrome-handoff').hidden = !showChromeHandoff;
+  if (!showChromeHandoff) return;
+  const words = CHROME_TEXT[currentLanguage.code];
+  ['chrome-title','chrome-description','chrome-open','chrome-feedback','chrome-default','chrome-install'].forEach((id,i) => $(id).textContent = words[i]);
+  $('chrome-open').href = chromeLinks({room:$('code').value.trim(),language:currentLanguage.code,query:$('query').value}).intent;
+  const blocked = ['choosing','connecting','sending'].includes(connection.state) || Boolean(recognition);
+  $('chrome-open').setAttribute('aria-disabled', String(blocked));
+  $('chrome-open').tabIndex = blocked ? -1 : 0;
+}
 function refreshControls() {
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
@@ -35,6 +48,7 @@ function refreshControls() {
   $('query').disabled = busy;
   for (const button of countryButtons.values()) button.disabled = busy || Boolean(recognition);
   $('voice').disabled = busy || Boolean(recognition) || !secure;
+  renderChromeHandoff();
 }
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
@@ -87,16 +101,25 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...words.steps.map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback();
+  renderConnection(); renderFeedback(); renderChromeHandoff();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
 const validSaved = LANGUAGES.some(x => x.code === savedLanguage);
 const browserLanguage = (navigator.language || '').toLowerCase();
-selectLanguage(validSaved ? savedLanguage : LANGUAGES.find(x => x.code.toLowerCase().split('-')[0] === browserLanguage.split('-')[0] || x.code === 'fil-PH' && browserLanguage.startsWith('tl'))?.code);
-$('country-picker').open = !validSaved;
-if (/^#\d{8}$/.test(location.hash)) $('code').value = location.hash.slice(1);
-$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); });
+$('code').value = handoff.room; $('query').value = handoff.query;
+selectLanguage(handoff.language || (validSaved ? savedLanguage : LANGUAGES.find(x => x.code.toLowerCase().split('-')[0] === browserLanguage.split('-')[0] || x.code === 'fil-PH' && browserLanguage.startsWith('tl'))?.code));
+if (handoff.language) { try { localStorage.setItem('wk-bt-language',handoff.language); } catch {} }
+$('country-picker').open = !validSaved && !handoff.language;
+$('chrome-feedback').hidden = !new URLSearchParams(location.search || '').has('chromeFallback');
+$('chrome-open').addEventListener('click', event => {
+  if (!showChromeHandoff || ['choosing','connecting','sending'].includes(connection.state) || recognition) { event.preventDefault(); return; }
+  // Preserve the trusted tap: the browser follows this anchor without a timer or awaited work.
+  renderChromeHandoff();
+  $('chrome-feedback').hidden = false;
+  connectionAttempt++; void connection.disconnect();
+});
+$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); renderChromeHandoff(); });
 $('connect').addEventListener('click', () => {
   if ($('connect').disabled) return;
   const attempt = ++connectionAttempt;

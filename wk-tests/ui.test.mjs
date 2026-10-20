@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { LANGUAGES } from '../wk/labels.mjs?v=2.1';
 import { MESSAGES } from '../wk/network-text.mjs?v=2.1';
+import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
+import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.2';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -32,7 +34,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
   globalThis.window={isSecureContext:true,SpeechRecognition:Speech,addEventListener:(k,v)=>events.set(k,v)};
   globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:true});};
   window.fetch=globalThis.fetch;window.crypto=globalThis.crypto;
-  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR'}});
+  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR',userAgent:'Mozilla/5.0 (Linux; Android 10) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36'}});
   const $=id=>elements.get(id);
   const choose=code=>$('countries').children[LANGUAGES.findIndex(l=>l.code===code)].fire('click');
   try {
@@ -47,6 +49,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
         assert.equal($('privacy-help').textContent,words.privacyHelp);assert.equal($('disconnect').textContent,words.disconnect);
         assert.equal($('stop-voice').textContent,words.done);assert.equal($('send').textContent,language.text[1]);
         assert.equal($('listening-title').textContent,language.text[5]);assert.equal($('connection-state').textContent,language.text[7]);
+        assert.equal($('chrome-handoff').hidden,false);assert.equal($('chrome-open').textContent,CHROME_TEXT[language.code][2]);assert.equal($('chrome-default').textContent,CHROME_TEXT[language.code][4]);
         assert.equal($('query').value,'보존할 노래');assert.equal($('code').value,'12345678');assert.equal(storage.get('wk-bt-language'),language.code);
         assert.equal($('countries').children.filter(b=>b.attributes['aria-pressed']==='true').length,1);
       }
@@ -93,6 +96,16 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     await t.test('missing recognition API leaves keyboard dictation and manual sending available',()=>{
       window.webkitSpeechRecognition=undefined;$('voice').fire('click');assert.equal($('query').focused,true);assert.equal($('send').disabled,false);
     });
+    await t.test('Chrome button preserves current fields, releases session and never claims app-launch success',async()=>{
+      choose('vi-VN');$('query').value='Bài hát & 노래';let prevented=false;
+      $('chrome-open').fire('click',{preventDefault(){prevented=true;}});await tick();
+      assert.equal(prevented,false);assert.equal(sent.at(-1).op,'leave');assert.equal($('connect').disabled,false);
+      const intent=$('chrome-open').href;
+      const target=new URL(intent.slice(0,intent.lastIndexOf('#Intent;')).replace(/^intent:/,'https:'));
+      assert.deepEqual(readHandoff(target.hash),{room:'12345678',language:'vi-VN',query:'Bài hát & 노래'});
+      assert.equal($('chrome-feedback').hidden,false);assert.equal($('chrome-feedback').textContent,CHROME_TEXT['vi-VN'][3]);
+      choose('ja-JP');
+    });
     await t.test('page close releases session',async()=>{events.get('pagehide')();await tick();assert.equal($('connect').disabled,false);assert.equal($('send').disabled,true);});
     await t.test('saved language restores on reopen; unsupported browser guidance is translated',async()=>{
       // Reset the DOM model to simulate another page load; retain only browser storage.
@@ -115,9 +128,24 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       await import('../wk/app.mjs?http');
       for(const language of LANGUAGES){choose(language.code);assert.equal($('compatibility').textContent,MESSAGES[language.code].errors.insecure);assert.equal($('connect').disabled,true);}
     });
+    await t.test('Chrome arrival restores the transferred room, language and draft without sending anything',async()=>{
+      events.get('pagehide')?.();elements.forEach(element=>{element.children=[];element.value='';element.events.clear();});
+      location.protocol='https:';location.hash='#room=87654321&language=th-TH&query=เพลงไทย';window.isSecureContext=true;window.fetch=globalThis.fetch;
+      navigator.userAgent='Mozilla/5.0 (Linux; Android 10) Chrome/130.0.0.0 Mobile Safari/537.36';
+      const before=sent.length;await import('../wk/app.mjs?chrome-arrival');
+      assert.equal($('chrome-handoff').hidden,true);assert.equal($('code').value,'87654321');assert.equal($('query').value,'เพลงไทย');
+      assert.equal(document.documentElement.lang,'th-TH');assert.equal($('country-picker').open,false);assert.equal(sent.length,before);assert.equal($('send').disabled,true);
+      $('connect').fire('click');await tick();assert.equal(sent.at(-1).op,'join');assert.equal(sent.at(-1).room,'87654321');assert.equal(sent.length,before+1);
+      events.get('pagehide')?.();await tick();
+    });
+    await t.test('iPhone stays in Safari and does not offer an Android app link',async()=>{
+      elements.forEach(element=>{element.children=[];element.value='';element.events.clear();element.href=undefined;});
+      navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Version/18.0 Mobile Safari/604.1';location.hash='#12345678';
+      await import('../wk/app.mjs?iphone');assert.equal($('chrome-handoff').hidden,true);assert.equal($('chrome-open').href,undefined);assert.equal($('code').value,'12345678');
+    });
     await t.test('served assets exist and text stays within a responsive phone layout',async()=>{
       assert.match(html,/viewport-fit=cover/);assert.match(html,/maxlength="300"/);assert.match(html,/type="button" disabled/);
-      for(const m of html.matchAll(/(?:src|href)="([^"#]+)"/g))assert.ok((await readFile(new URL('../wk/'+m[1],import.meta.url))).length>0);
+      for(const m of html.matchAll(/(?:src|href)="([^"#]+)"/g))if(!/^https?:/.test(m[1]))assert.ok((await readFile(new URL('../wk/'+m[1],import.meta.url))).length>0);
     });
   }finally{events.get('pagehide')?.();}
 });

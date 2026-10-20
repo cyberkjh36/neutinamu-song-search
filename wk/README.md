@@ -1,4 +1,4 @@
-# WORLD KARAOKE · 휴대폰 음성검색 (WEB 2.1)
+# WORLD KARAOKE · 휴대폰 음성검색 (WEB 2.2)
 
 공유 주소: https://cyberkjh36.github.io/neutinamu-song-search/wk/
 
@@ -23,3 +23,11 @@ GitHub Pages는 화면을 제공하고, 별도 HTTPS 서버가 검색어를 전�
 검증: Node UI 이벤트/번역 검사, HTTPS 전달/인증/3대 제한/중복 방지 검사 및 PC 클라이언트 검사. 실제 Android·iPhone 마이크와 Windows UI 실기 검증은 별도로 필요합니다.
 
 WEB 2.1: 브라우저 fetch의 호출 대상을 고정해 PC 연결 전 통신 오류를 수정했습니다. 연결 진행/실패는 PC 연결 버튼 아래에 표시합니다. 10초 응답 제한과 재시도를 지원합니다. PC 1.3.54는 QR 위 설명 높이를 자동 조절하고 새 웹 버전 주소를 QR에 넣습니다.
+
+WEB 2.2: Android의 삼성 인터넷 등에서는 화면 맨 위에 **Google Chrome으로 열기** 버튼을 표시합니다. 버튼을 직접 누르면 Android Intent로 Chrome을 지정하여 같은 화면을 엽니다. 연결번호·선택 언어·입력한 곡명은 주소의 fragment로 전달되어 GitHub 요청에 포함되지 않습니다. 기존 연결은 해제하고 Chrome에서 PC 연결을 다시 누릅니다. 기존 8자리 QR은 그대로 사용할 수 있으며 PC 1.3.54를 다시 받을 필요가 없습니다.
+
+Chrome과 iPhone Safari에서는 전환 안내를 숨깁니다. Chrome 실행을 확인하지 않고 성공했다고 표시하거나 자동으로 반복 실행하지 않습니다. Chrome이 없거나 브라우저가 실행을 막으면 설치/확인 링크와 기본 브라우저 안내를 사용하세요. QR을 처음 여는 앱은 휴대폰 설정 또는 QR 스캐너가 결정하며 웹페이지가 그 기본값을 바꿀 수는 없습니다. 삼성 휴대폰: 설정 → 애플리케이션 → 기본 앱 선택 → 브라우저 앱 → Chrome. 메뉴 이름은 기기 버전에 따라 다를 수 있습니다.
+
+검증: 기존 연결/검색/11개 언어/캐시 검사와 Android 브라우저 구분, Chrome 전환 상태 전달, iPhone 유지 검사를 통과했습니다. 실제 Galaxy의 앱 전환과 마이크 사용은 별도 실기 확인이 필요합니다.
+
+참고: [Chrome Android Intents](https://developer.chrome.com/docs/android/intents), [Android Intent 구문](https://android.googlesource.com/platform/frameworks/base/+/android10-release/core/java/android/content/Intent.java), [Chrome 기본 브라우저 설정](https://support.google.com/chrome/answer/95417?co=GENIE.Platform%3DAndroid&hl=ko).
