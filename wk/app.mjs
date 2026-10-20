@@ -1,9 +1,9 @@
-import { LANGUAGES } from './labels.mjs';
-import { MESSAGES } from './network-text.mjs';
-import { KaraokeConnection } from './relay-client.mjs';
+import { LANGUAGES } from './labels.mjs?v=2.1';
+import { MESSAGES } from './network-text.mjs?v=2.1';
+import { KaraokeConnection } from './relay-client.mjs?v=2.1';
 
 const $ = id => document.getElementById(id);
-let currentLanguage = LANGUAGES[0], recognition = null, voiceGeneration = 0, serverName = '', busy = false;
+let currentLanguage = LANGUAGES[0], recognition = null, voiceGeneration = 0, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 const countryButtons = new Map();
 const actionKeys = {queryHint:3, connected:6, disconnected:7, sent:8, sending:9};
@@ -20,13 +20,15 @@ function feedback(key, error = false) { feedbackState = {key,error}; renderFeedb
 function showError(error) { feedback(error?.code || error || 'connect', true); }
 function renderConnection() {
   const state = connection.state;
-  $('connection-state').textContent = message(['ready','sending'].includes(state) ? 'connected' : ['choosing','connecting'].includes(state) ? 'connecting' : 'disconnected');
+  $('connection-state').classList.toggle('error', Boolean(connectionError));
+  $('connection-state').textContent = connectionError ? message(connectionError, true) : message(['ready','sending'].includes(state) ? 'connected' : ['choosing','connecting'].includes(state) ? 'connecting' : 'disconnected');
 }
 function refreshControls() {
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
   busy = state === 'sending';
   $('connect').disabled = !supported || active;
+  $('connect').textContent = state === 'connecting' ? message('connecting') : currentLanguage.text[2];
   $('code').disabled = active;
   $('disconnect').hidden = !active;
   $('send').disabled = state !== 'ready' || !supported || Boolean(recognition) || !$('query').value.trim();
@@ -35,6 +37,7 @@ function refreshControls() {
   $('voice').disabled = busy || Boolean(recognition) || !secure;
 }
 const connection = new KaraokeConnection(undefined, (state, detail) => {
+  connectionError = state === 'error' ? detail : null;
   if (state === 'ready' && detail) serverName = detail;
   renderConnection();
   if (state === 'error') showError(detail);
@@ -95,10 +98,15 @@ $('country-picker').open = !validSaved;
 if (/^#\d{8}$/.test(location.hash)) $('code').value = location.hash.slice(1);
 $('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); });
 $('connect').addEventListener('click', () => {
+  if ($('connect').disabled) return;
+  const attempt = ++connectionAttempt;
   feedback('connecting');
-  connection.connect($('code').value, currentLanguage.name).catch(showError);
+  connection.connect($('code').value.trim(), currentLanguage.name).catch(error => {
+    if (attempt !== connectionAttempt) return;
+    connectionError = error?.code || 'connect'; renderConnection(); showError(error); refreshControls();
+  });
 });
-$('disconnect').addEventListener('click', () => { void connection.disconnect(); });
+$('disconnect').addEventListener('click', () => { connectionAttempt++; void connection.disconnect(); });
 $('query').addEventListener('input', refreshControls);
 $('send').addEventListener('click', async () => {
   if ($('send').disabled) return;

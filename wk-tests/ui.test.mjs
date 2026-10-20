@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { LANGUAGES } from '../wk/labels.mjs';
-import { MESSAGES } from '../wk/network-text.mjs';
+import { LANGUAGES } from '../wk/labels.mjs?v=2.1';
+import { MESSAGES } from '../wk/network-text.mjs?v=2.1';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -30,7 +30,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     abort(){this.onend?.();}
   }
   globalThis.window={isSecureContext:true,SpeechRecognition:Speech,addEventListener:(k,v)=>events.set(k,v)};
-  globalThis.fetch=async (url,options)=>{const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:true});};
+  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:true});};
   window.fetch=globalThis.fetch;window.crypto=globalThis.crypto;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR'}});
   const $=id=>elements.get(id);
@@ -57,6 +57,11 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal(sent.length,0);assert.equal($('send').disabled,true);
     });
     await t.test('room input strips nonnumeric characters',()=>{$('code').value='12x3456a789';$('code').fire('input');assert.equal($('code').value,'12345678');});
+    await t.test('invalid code is shown beside Connect in all eleven languages',async()=>{
+      $('code').value='123';$('connect').fire('click');await tick();
+      for(const language of LANGUAGES){choose(language.code);assert.equal($('connection-state').textContent,MESSAGES[language.code].errors.pairing);}
+      assert.equal(sent.length,0);assert.equal($('connect').disabled,false);$('code').value='12345678';choose('th-TH');
+    });
     await t.test('connect authenticates without submitting a search',async()=>{
       $('connect').fire('click');await tick();assert.equal(sent.length,1);assert.equal(sent[0].op,'join');assert.equal($('connect').disabled,true);assert.equal($('send').disabled,false);
     });

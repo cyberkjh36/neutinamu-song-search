@@ -1,4 +1,4 @@
-# WORLD KARAOKE · 휴대폰 음성검색
+# WORLD KARAOKE · 휴대폰 음성검색 (WEB 2.1)
 
 공유 주소: https://cyberkjh36.github.io/neutinamu-song-search/wk/
 
@@ -21,3 +21,5 @@ GitHub Pages는 화면을 제공하고, 별도 HTTPS 서버가 검색어를 전�
 기존 저장소의 노래번호 검색 화면은 루트 주소에 유지합니다. /wk/는 별도 캐시 범위를 사용합니다.
 
 검증: Node UI 이벤트/번역 검사, HTTPS 전달/인증/3대 제한/중복 방지 검사 및 PC 클라이언트 검사. 실제 Android·iPhone 마이크와 Windows UI 실기 검증은 별도로 필요합니다.
+
+WEB 2.1: 브라우저 fetch의 호출 대상을 고정해 PC 연결 전 통신 오류를 수정했습니다. 연결 진행/실패는 PC 연결 버튼 아래에 표시합니다. 10초 응답 제한과 재시도를 지원합니다. PC 1.3.54는 QR 위 설명 높이를 자동 조절하고 새 웹 버전 주소를 QR에 넣습니다.

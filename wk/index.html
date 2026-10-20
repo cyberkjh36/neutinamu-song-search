@@ -9,11 +9,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://world-karaoke-connect.almondjoy11.chatgpt.site; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>세계가라오케 · Android · iPhone 음성검색</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2.1">
 </head>
 <body>
 <main>
-  <header><span class="brand">WORLD KARAOKE</span><span class="version">WEB 2.0</span><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
+  <header><span class="brand">WORLD KARAOKE</span><span class="version">WEB 2.1</span><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
   <noscript>브라우저에서 JavaScript를 허용해 주세요. Enable JavaScript in your browser.</noscript>
   <div id="compatibility" class="notice" role="alert" hidden></div>
   <details class="card language-card" id="country-picker" open>
@@ -27,7 +27,7 @@
     <label id="code-label" for="code">PC에 나온 연결번호 8자리</label>
     <input id="code" type="text" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" autocomplete="off" placeholder="00000000" aria-describedby="pair-help">
     <button id="connect" class="secondary" type="button">PC 연결</button>
-    <div class="connection-line"><span id="connection-state" role="status">연결 안 됨</span><button id="disconnect" class="quiet" type="button" hidden>연결 해제 / Disconnect</button></div>
+    <div class="connection-line"><span id="connection-state" role="status" aria-live="polite" aria-atomic="true">연결 안 됨</span><button id="disconnect" class="quiet" type="button" hidden>연결 해제 / Disconnect</button></div>
   </section>
   <section class="card search-card">
     <h2><b>2</b><span id="search-title">노래 제목 말하기</span></h2>
@@ -42,6 +42,6 @@
   <footer>Made by cyberkjh <span>PC Launcher 1.3.52+</span></footer>
 </main>
 <dialog id="listening" aria-labelledby="listening-title"><div class="pulse" aria-hidden="true">🎙</div><h2 id="listening-title">노래 제목을 말씀해 주세요</h2><p id="interim" aria-live="polite"></p><button id="stop-voice" class="secondary" type="button">완료 / Done</button></dialog>
-<script type="module" src="app.mjs"></script>
+<script type="module" src="app.mjs?v=2.1"></script>
 </body>
 </html>

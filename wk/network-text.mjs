@@ -1,5 +1,5 @@
-import { MESSAGES } from './translations.mjs';
-import { LANGUAGES } from './labels.mjs';
+import { MESSAGES } from './translations.mjs?v=2.1';
+import { LANGUAGES } from './labels.mjs?v=2.1';
 // The UI and recognition locale are independent of the phone's system language.
 const rows={
 'ko-KR':['PC에 나온 연결번호 8자리','PC 런처의 휴대폰 버튼을 눌러 연결창을 열고, 8자리 번호를 입력하세요. QR로 열면 번호가 채워집니다.','PC와 휴대폰 모두 인터넷이 필요합니다. 같은 와이파이와 블루투스 페어링은 필요 없습니다.','안드로이드는 Chrome, 아이폰은 Safari로 여세요. 음성인식이 안 되면 키보드의 마이크(받아쓰기)나 직접 입력을 사용하세요.','검색 버튼으로 확인한 글자는 연결 서버를 거쳐 PC로 전송되고, PC 처리 확인 후 서버에서 지워집니다. 음성은 브라우저 음성인식 서비스에서 처리될 수 있으며 이 페이지는 녹음을 저장하지 않습니다.','Chrome 메뉴에서 북마크, 아이폰 Safari 공유 메뉴에서 즐겨찾기로 저장하면 다시 쉽게 열 수 있습니다. APK 설치는 필요 없습니다.','PC에 표시된 8자리 번호와 인터넷 연결을 확인하세요.','PC 런처의 휴대폰 연결창을 열어 두고 인터넷 연결을 확인하세요.','PC 런처에서 국기를 선택하고 휴대폰 버튼을 누르세요.','이 페이지를 Android Chrome 또는 iPhone Safari에서 여세요.','8자리 번호 입력 → PC 연결. QR로 열면 번호가 자동 입력됩니다.'],
@@ -15,4 +15,18 @@ const rows={
  'ja-JP':['PCに表示された8桁の番号','PCランチャーのスマートフォン接続画面を開いて8桁の番号を入力します。QRなら自動入力されます。','PCとスマートフォンの両方にインターネットが必要です。同じWi-FiやBluetoothのペアリングは不要です。','AndroidはChrome、iPhoneはSafariで開いてください。認識できない場合はキーボードの音声入力か手入力を使ってください。','確定した文字は接続サーバーを経由してPCへ送られ、PCの処理確認後に削除されます。ブラウザーが音声認識サービスを利用する場合があります。このページは録音を保存しません。','Chromeのブックマーク、またはSafariの共有メニューからお気に入りに追加すると便利です。APKは不要です。','PCの8桁の番号とインターネットを確認してください。','PCのスマートフォン接続画面を開いたまま、インターネットを確認してください。','PCで国旗を選び、スマートフォンボタンを押します。','Android ChromeまたはiPhone Safariで開きます。','8桁の番号 → PCに接続。QRなら番号が自動入力されます。']
 };
 for(const language of LANGUAGES){const r=rows[language.code],m=MESSAGES[language.code];language.text[4]=r[0];m.subtitle='Android · iPhone · WEB';m.pairHelp=r[1];m.networkHelp=r[2];m.browserHelp=r[3];m.privacyHelp=r[4];m.shortcutHelp=r[5];m.errors.pairing=r[6];m.errors.connect=r[7];m.errors.permission=r[6];m.errors.unsupported=r[3];m.choosePc=m.connecting;m.steps=[r[8],r[9],r[10],m.steps[3],m.steps[4]];}
+const connectionErrors={
+'ko-KR':['연결 서버 응답이 없습니다. 인터넷을 확인하고 PC 연결을 다시 누르세요.','연결 서버가 정상 응답을 보내지 않았습니다. 이 페이지를 Chrome 또는 Safari에서 다시 열어 주세요.'],
+ 'th-TH':['เซิร์ฟเวอร์ไม่ตอบกลับ ตรวจอินเทอร์เน็ตแล้วกดเชื่อมต่อ PC อีกครั้ง','การตอบกลับจากเซิร์ฟเวอร์ไม่ถูกต้อง เปิดหน้านี้ใหม่ใน Chrome หรือ Safari'],
+ 'fil-PH':['Walang tugon ang server. Suriin ang internet at pindutin muli ang PC connection.','Hindi wasto ang tugon ng server. Buksan muli ang pahinang ito sa Chrome o Safari.'],
+ 'vi-VN':['Máy chủ không phản hồi. Kiểm tra Internet rồi nhấn kết nối PC lại.','Máy chủ trả lời không hợp lệ. Mở lại trang bằng Chrome hoặc Safari.'],
+ 'ne-NP':['सर्भरबाट जवाफ आएन। इन्टरनेट जाँचेर PC जडान फेरि थिच्नुहोस्।','सर्भरको जवाफ सही छैन। यो पृष्ठ Chrome वा Safari मा फेरि खोल्नुहोस्।'],
+ 'mn-MN':['Серверээс хариу ирсэнгүй. Интернэтээ шалгаад PC холболтыг дахин дарна уу.','Серверийн хариу буруу байна. Хуудсыг Chrome эсвэл Safari дээр дахин нээнэ үү.'],
+ 'id-ID':['Server tidak merespons. Periksa internet lalu tekan koneksi PC lagi.','Respons server tidak valid. Buka kembali halaman ini di Chrome atau Safari.'],
+ 'lo-LA':['ເຊີບເວີບໍ່ຕອບ. ກວດອິນເຕີເນັດ ແລ້ວກົດເຊື່ອມ PC ອີກຄັ້ງ.','ຄຳຕອບຈາກເຊີບເວີບໍ່ຖືກຕ້ອງ. ເປີດໜ້ານີ້ໃໝ່ໃນ Chrome ຫຼື Safari.'],
+ 'my-MM':['ဆာဗာမှ အကြောင်းမပြန်ပါ။ အင်တာနက်စစ်ပြီး PC ချိတ်ဆက်ရန် ပြန်နှိပ်ပါ။','ဆာဗာအကြောင်းပြန်မှု မမှန်ပါ။ ဤစာမျက်နှာကို Chrome သို့မဟုတ် Safari တွင် ပြန်ဖွင့်ပါ။'],
+ 'zh-CN':['连接服务器未响应。请检查网络，再次点击连接电脑。','服务器响应异常。请在Chrome或Safari中重新打开此页。'],
+ 'ja-JP':['接続サーバーから応答がありません。通信を確認してPC接続を押し直してください。','サーバーの応答が正常ではありません。ChromeまたはSafariでこのページを開き直してください。']
+};
+for(const [code,errors] of Object.entries(connectionErrors)){MESSAGES[code].errors.networkTimeout=errors[0];MESSAGES[code].errors.response=errors[1];}
 export { MESSAGES };
