@@ -1,10 +1,12 @@
-const CACHE='neutinamu-p2-v8-20261020-install';
+const CACHE='neutinamu-p2-v9-20261020-wk';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('neutinamu-p2-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
 self.addEventListener('fetch',event=>{
  const req=event.request,url=new URL(req.url);
  if(req.method!=='GET'||url.origin!==self.location.origin)return;
+ // WORLD KARAOKE has its own scope and must not overwrite the song-number app shell.
+ if(url.pathname.startsWith(new URL('./wk/',self.location).pathname))return;
  // Always fetch the recovery page fresh, even when the app shell is cached.
  if(url.pathname.endsWith('/refresh.html')){event.respondWith(fetch(req,{cache:'no-store'}));return}
  if(req.mode==='navigate'){
