@@ -1,7 +1,9 @@
 // Recognition must start in the original tap, without permission probes, fetches or timers.
 // Some WebKit versions expose the API but never send start/error/end. Bound every session.
 export class VoiceInput {
-  constructor({ getRecognition, onState = () => {}, onResult = () => {}, onError = () => {}, onFinish = () => {}, setTimer = setTimeout, clearTimer = clearTimeout }) {
+  // Window timers require their global receiver. Storing the native function
+  // directly makes this.setTimer(...) throw Illegal invocation in real browsers.
+  constructor({ getRecognition, onState = () => {}, onResult = () => {}, onError = () => {}, onFinish = () => {}, setTimer = (fn, ms) => globalThis.setTimeout(fn, ms), clearTimer = id => globalThis.clearTimeout(id) }) {
     Object.assign(this, { getRecognition, onState, onResult, onError, onFinish, setTimer, clearTimer });
     this.session = null;
   }

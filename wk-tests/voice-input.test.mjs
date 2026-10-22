@@ -33,6 +33,24 @@ function fixture({ missing = false, constructError, startError, endOnStop = fals
 }
 const event = (text, final = true) => { const result = [{transcript:text}]; result.isFinal = final; return {resultIndex:0,results:[result]}; };
 
+test('default timer adapters preserve the global receiver through startup, results, stop and cancel', () => {
+  // Model the Window receiver check that Node timers and Playwright fake clocks lack.
+  const originalSet=globalThis.setTimeout, originalClear=globalThis.clearTimeout;
+  const timers=new Map(); let id=0, recognition;
+  globalThis.setTimeout=function(fn,ms){assert.equal(this,globalThis,'Window timer receiver');timers.set(++id,{fn,ms});return id;};
+  globalThis.clearTimeout=function(id){assert.equal(this,globalThis,'Window cancel receiver');timers.delete(id);};
+  class Speech {constructor(){recognition=this;}start(){this.started=true;}stop(){}abort(){}}
+  const voice=new VoiceInput({getRecognition:()=>Speech});
+  try {
+    assert.equal(voice.start('ko-KR'),true);assert.equal(recognition.started,true);assert.equal(timers.size,2);
+    recognition.onstart();assert.equal(timers.size,1);
+    recognition.onresult(event('노래'));recognition.onend();assert.equal(timers.size,0);assert.equal(voice.active,false);
+    voice.start('th-TH');voice.stop();assert.equal(timers.size,1);assert.equal([...timers.values()][0].ms,2500);
+    [...timers.values()][0].fn();assert.equal(timers.size,0);assert.equal(voice.active,false);
+    voice.start('ja-JP');voice.cancel();assert.equal(timers.size,0);
+  } finally {voice.cancel();globalThis.setTimeout=originalSet;globalThis.clearTimeout=originalClear;}
+});
+
 test('prefixed Safari and Android-compatible recognition starts synchronously in the tap with all eleven locales', () => {
   for (const {code} of LANGUAGES) {
     const f = fixture(); assert.equal(f.instances.length,0);

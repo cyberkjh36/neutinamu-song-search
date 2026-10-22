@@ -1,4 +1,5 @@
 // Controlled real browser checks. Speech/relay are test doubles, not device microphone tests.
+// Never install a fake clock here: it masked WEB 2.4's native timer receiver error.
 // NODE_MODULES path may be supplied through CODEX_PRIMARY_RUNTIME_NODE_MODULES.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -14,10 +15,10 @@ const output=process.env.WK_TEST_OUTPUT || path.join(root,'../iphone-browser-val
 await mkdir(output,{recursive:true});
 const server=createServer(async(req,res)=>{
   try{
-    const url=new URL(req.url,'http://localhost'), isBaseline=url.pathname.startsWith('/baseline/');
-    const base=isBaseline?process.env.WK_BASELINE:root;
+    const url=new URL(req.url,'http://localhost'), isBaseline=url.pathname.startsWith('/baseline/'), isRegression=url.pathname.startsWith('/regression/');
+    const base=isRegression?process.env.WK_REGRESSION:isBaseline?process.env.WK_BASELINE:root;
     if(!base){res.writeHead(404).end();return;}
-    const part=decodeURIComponent(url.pathname.replace(/^\/baseline/,''));
+    const part=decodeURIComponent(url.pathname.replace(/^\/(baseline|regression)/,''));
     const file=path.resolve(base,'.'+(part.endsWith('/')?part+'index.html':part));
     if(!file.startsWith(path.resolve(base)+path.sep)){res.writeHead(403).end();return;}
     const body=await readFile(file),ext=path.extname(file);
@@ -29,7 +30,7 @@ const base='http://127.0.0.1:'+server.address().port,cases=[];
 const iphone='Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1';
 const android='Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/126.0.0.0 Mobile Safari/537.36';
 function pass(engine,name){cases.push({engine,name});console.log('PASS',engine,name);}
-async function pageFor(browser,{oldDialog=false,mode='normal',apple=true,baseline=false,width=390}={}){
+async function pageFor(browser,{oldDialog=false,mode='normal',apple=true,baseline=false,regression=false,width=390}={}){
   const context=await browser.newContext({viewport:{width,height:844},userAgent:apple?iphone:android,isMobile:true,hasTouch:true,serviceWorkers:'block'});
   const requests=[],errors=[];
   await context.route('https://world-karaoke-connect.almondjoy11.chatgpt.site/**',async route=>{
@@ -44,7 +45,7 @@ async function pageFor(browser,{oldDialog=false,mode='normal',apple=true,baselin
     class Speech {
       constructor(){if(window.__speechMode==='constructor')throw Error('Speech service unavailable');window.__speech.push(this);}
       start(){this.inTap=window.__tap;if(window.__speechMode==='throw')throw new DOMException('Permission denied','NotAllowedError');this.started=true;}
-      stop(){this.stopped=true;this.onend?.();}
+      stop(){this.stopped=true;if(window.__speechMode!=='silent-stop')this.onend?.();}
       abort(){this.aborted=true;this.onend?.();}
     }
     Object.defineProperty(window,'SpeechRecognition',{configurable:true,value:undefined});
@@ -53,8 +54,7 @@ async function pageFor(browser,{oldDialog=false,mode='normal',apple=true,baselin
     window.__result=(text,final=true)=>{const r=[{transcript:text}];r.isFinal=final;window.__speech.at(-1).onresult?.({resultIndex:0,results:[r]});};
   },{oldDialog,mode});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.clock.install();
-  await page.goto(base+(baseline?'/baseline':'')+'/wk/?v=2.3#room=12345678&language=ko-KR');
+  await page.goto(base+(regression?'/regression':baseline?'/baseline':'')+'/wk/?v=2.5#room=12345678&language=ko-KR');
   await page.waitForFunction(()=>document.querySelector('#countries').children.length===11);
   return {context,page,requests,errors};
 }
@@ -63,6 +63,15 @@ try{
  for(const engine of (process.env.WK_ENGINES || 'webkit,chromium').split(',')){
   const browser=await (engine==='webkit'?webkit:chromium).launch(engine==='chromium'&&process.env.WK_CHROMIUM?{headless:true,executablePath:process.env.WK_CHROMIUM,args:['--no-sandbox']}:{headless:true});
   try{
+   if(process.env.WK_REGRESSION){
+    for(const apple of [false,true]){
+     const f=await pageFor(browser,{regression:true,apple});await f.page.click('#voice');
+     assert.equal(await f.page.evaluate(()=>Boolean(window.__speech[0]?.started)),false);
+     assert.equal(await f.page.locator('#voice-retry').isVisible(),true);
+     assert.match(await f.page.textContent('#voice-status'),/이 브라우저에서 음성인식을 사용할 수 없습니다/);
+     pass(engine,'WEB 2.4 reproduced: native timer receiver blocks startup in '+(apple?'iPhone-style':'Android-style')+' UI');await f.context.close();
+    }
+   }
    if(process.env.WK_BASELINE){const f=await pageFor(browser,{oldDialog:true,baseline:true});await f.page.click('#voice');assert.ok(f.errors.some(e=>/showModal/.test(e)));assert.equal(await f.page.evaluate(()=>Boolean(window.__speech[0]?.started)),false);pass(engine,'Baseline reproduced: missing showModal prevents recognition.start');await f.context.close();}
    {
     const f=await pageFor(browser,{oldDialog:true});const {page}=f;
@@ -77,12 +86,14 @@ try{
     assert.deepEqual(f.errors,[]);pass(engine,'Older dialog fallback starts during real tap, fills draft and sends only on Search; next search preserves connection');await f.context.close();
    }
    {
-    const f=await pageFor(browser);const {page}=f;await page.click('#voice');await page.clock.runFor(12001);
+    const f=await pageFor(browser);const {page}=f;await page.click('#voice');
+    assert.equal(await page.evaluate(()=>window.__speech[0].started),true);
+    await page.waitForFunction(()=>!document.querySelector('#voice-retry').hidden,null,{timeout:15000});
     assert.equal(await page.locator('#voice-retry').isVisible(),true);assert.match(await page.textContent('#voice-status'),/응답이 없습니다/);
     assert.equal(await page.locator('#voice').isEnabled(),true);assert.equal(await page.evaluate(()=>window.__speech[0].aborted),true);
     await page.screenshot({path:path.join(output,engine+'-timeout.png'),fullPage:true});
     await page.click('#voice-retry');assert.equal(await page.evaluate(()=>window.__speech.at(-1).inTap),true);await finish(page,'다시 부를 노래');
-    assert.equal(await page.inputValue('#query'),'다시 부를 노래');assert.deepEqual(f.errors,[]);pass(engine,'Silent API times out visibly; direct-tap retry succeeds with no stale handlers');await f.context.close();
+    assert.equal(await page.inputValue('#query'),'다시 부를 노래');assert.deepEqual(f.errors,[]);pass(engine,'Native 12-second timer recovers silent API; direct-tap retry succeeds with no stale handlers');await f.context.close();
    }
    for(const mode of ['missing','constructor','throw']){
     const f=await pageFor(browser,{mode});await f.page.fill('#query','직접 입력한 노래');await f.page.click('#voice');
@@ -112,6 +123,13 @@ try{
     assert.deepEqual(f.errors,[]);pass(engine,'All eleven recovery translations fit a 320px viewport; scrollable legacy overlay keeps keyboard action usable');await f.context.close();
    }
    {
+    const f=await pageFor(browser,{mode:'silent-stop'});const {page}=f;await page.click('#voice');
+    await page.evaluate(()=>window.__result('완료 버튼 확인',false));await page.click('#stop-voice');
+    await page.waitForFunction(()=>!document.querySelector('#listening').open,null,{timeout:5000});
+    assert.equal(await page.inputValue('#query'),'완료 버튼 확인');assert.deepEqual(f.errors,[]);
+    pass(engine,'Native stop timer completes an interim draft when stop never emits end');await f.context.close();
+   }
+   {
     const f=await pageFor(browser);await f.page.click('#voice');await finish(f.page,'확인할 임시 결과',false);
     assert.equal(await f.page.inputValue('#query'),'확인할 임시 결과');assert.equal(f.requests.length,0);
     await f.page.click('#voice');await f.page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));assert.equal(await f.page.locator('#listening').isVisible(),false);
@@ -119,5 +137,5 @@ try{
    }
   }finally{await browser.close();}
  }
- await writeFile(path.join(output,'results.json'),JSON.stringify({passed:cases.length,engines:[...new Set(cases.map(c=>c.engine))],cases,scope:'Selected Linux browsers with simulated speech service/relay, real DOM/clicks. Old dialog APIs deliberately removed. Not physical iPhone 11/iPhone 18 microphone validation.'},null,2));
+ await writeFile(path.join(output,'results.json'),JSON.stringify({passed:cases.length,engines:[...new Set(cases.map(c=>c.engine))],cases,scope:'Native unmodified browser timers and real DOM/clicks; simulated speech service/relay. Old dialog APIs deliberately removed in legacy cases. Not physical iPhone/Android microphone validation.'},null,2));
 }finally{await new Promise(resolve=>server.close(resolve));}

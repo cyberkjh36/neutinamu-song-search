@@ -4,7 +4,7 @@ import { KaraokeConnection } from './relay-client.mjs?v=2.1';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
-import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.4';
+import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.5';
 import { VOICE_TEXT } from './voice-text.mjs?v=2.4';
 
 const $ = id => document.getElementById(id);
