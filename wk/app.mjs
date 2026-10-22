@@ -6,6 +6,8 @@ import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.5';
 import { VOICE_TEXT } from './voice-text.mjs?v=2.4';
+import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
+import { SAFARI_TEXT } from './safari-text.mjs?v=2.6';
 
 const $ = id => document.getElementById(id);
 const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);
@@ -14,6 +16,7 @@ let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
 let voiceState = 'idle', voiceError = 'unavailable';
 const appleMobile = isAppleMobile(navigator);
+let safariCopyState = '', safariPending = false;
 function voiceWords() { return VOICE_TEXT[currentLanguage.code]; }
 function renderVoice() {
   const words = voiceWords(), failed = voiceState === 'error';
@@ -54,6 +57,29 @@ function renderChromeHandoff() {
   $('chrome-open').setAttribute('aria-disabled', String(blocked));
   $('chrome-open').tabIndex = blocked ? -1 : 0;
 }
+function handoffBlocked() {
+  return ['choosing','connecting','sending'].includes(connection.state) || Boolean(voice?.active);
+}
+function renderSafariHandoff() {
+  $('safari-handoff').hidden = !appleMobile;
+  if (!appleMobile) return;
+  const words = SAFARI_TEXT[currentLanguage.code];
+  const labels = { 'safari-title':'title', 'safari-description':'description', 'safari-open-label':'open',
+    'safari-continue':'continue', 'safari-help-title':'help', 'safari-copy':'copy', 'safari-manual':'manual' };
+  for (const [id,key] of Object.entries(labels)) $(id).textContent = words[key];
+  const links = safariLinks({room:$('code').value.trim(),language:currentLanguage.code,query:$('query').value});
+  $('safari-open').href = links.safari;
+  if ($('safari-url').value !== links.page) safariCopyState = '';
+  $('safari-url').value = links.page;
+  $('safari-url').setAttribute('aria-label', words.copy);
+  const blocked = handoffBlocked();
+  $('safari-open').setAttribute('aria-disabled', String(blocked));
+  $('safari-open').tabIndex = blocked ? -1 : 0;
+  $('safari-copy').disabled = blocked;
+  $('safari-continue').disabled = blocked;
+  $('safari-copy-feedback').hidden = !safariCopyState;
+  $('safari-copy-feedback').textContent = safariCopyState ? words[safariCopyState] : '';
+}
 function refreshControls() {
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
@@ -69,6 +95,7 @@ function refreshControls() {
   $('voice').disabled = busy || Boolean(voice?.active) || !secure;
   $('keyboard-voice').disabled = busy;
   renderChromeHandoff();
+  renderSafariHandoff();
 }
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
@@ -121,7 +148,7 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...words.steps.map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderVoice();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
@@ -131,6 +158,47 @@ $('code').value = handoff.room; $('query').value = handoff.query;
 selectLanguage(handoff.language || (validSaved ? savedLanguage : LANGUAGES.find(x => x.code.toLowerCase().split('-')[0] === browserLanguage.split('-')[0] || x.code === 'fil-PH' && browserLanguage.startsWith('tl'))?.code));
 if (handoff.language) { try { localStorage.setItem('wk-bt-language',handoff.language); } catch {} }
 $('country-picker').open = !validSaved && !handoff.language;
+$('safari-handoff').open = appleMobile && !safariArrival(location.search || '');
+$('safari-open').addEventListener('click', event => {
+  if (!appleMobile || handoffBlocked()) { event.preventDefault(); return; }
+  // A real link follows the user's tap synchronously. No automatic scheme launch,
+  // timer, permission bypass, or claim that the external browser actually opened.
+  renderSafariHandoff();
+  $('safari-help').open = true;
+  safariPending = true;
+});
+$('safari-continue').addEventListener('click', () => {
+  if (!appleMobile || handoffBlocked()) return;
+  safariPending = false;
+  $('safari-handoff').open = false;
+  (connection.state === 'ready' ? $('voice') : $('connect')).focus();
+});
+$('safari-copy').addEventListener('click', async () => {
+  if (!appleMobile || handoffBlocked()) return;
+  renderSafariHandoff();
+  const input = $('safari-url'), url = input.value;
+  let copied = false;
+  try {
+    if (typeof navigator.clipboard?.writeText !== 'function') throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(url);
+    copied = true;
+  } catch {
+    // Legacy iOS and QR webviews may deny Clipboard API. Keep a selectable URL
+    // even when the old copy command is absent, denied or returns false.
+    input.focus(); input.select(); input.setSelectionRange(0, input.value.length);
+    try { copied = Boolean(document.execCommand?.('copy')); } catch {}
+  }
+  if (input.value !== url) return;
+  safariCopyState = copied ? 'copied' : 'select';
+  renderSafariHandoff();
+});
+window.addEventListener('visibilitychange', () => {
+  // Release this page's relay slot only when the handoff actually backgrounds it.
+  // A blocked/cancelled browser launch keeps the current PC connection usable.
+  if (safariPending && document.hidden) {
+    safariPending = false; connectionAttempt++; closeVoice(); void connection.disconnect();
+  }
+});
 $('chrome-feedback').hidden = !new URLSearchParams(location.search || '').has('chromeFallback');
 $('chrome-open').addEventListener('click', event => {
   if (!showChromeHandoff || ['choosing','connecting','sending'].includes(connection.state) || voice?.active) { event.preventDefault(); return; }
@@ -139,7 +207,7 @@ $('chrome-open').addEventListener('click', event => {
   $('chrome-feedback').hidden = false;
   connectionAttempt++; void connection.disconnect();
 });
-$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); renderChromeHandoff(); });
+$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); renderChromeHandoff(); renderSafariHandoff(); });
 $('connect').addEventListener('click', () => {
   if ($('connect').disabled) return;
   const attempt = ++connectionAttempt;

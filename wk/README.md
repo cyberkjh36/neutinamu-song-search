@@ -45,3 +45,15 @@ Chrome과 iPhone Safari에서는 전환 안내를 숨깁니다. Chrome 실행을
 검증: 기존 연결/검색/11개 언어/캐시 검사와 Android 브라우저 구분, Chrome 전환 상태 전달, iPhone 유지 검사를 통과했습니다. 실제 Galaxy의 앱 전환과 마이크 사용은 별도 실기 확인이 필요합니다.
 
 참고: [Chrome Android Intents](https://developer.chrome.com/docs/android/intents), [Android Intent 구문](https://android.googlesource.com/platform/frameworks/base/+/android10-release/core/java/android/content/Intent.java), [Chrome 기본 브라우저 설정](https://support.google.com/chrome/answer/95417?co=GENIE.Platform%3DAndroid&hl=ko).
+
+## WEB 2.6 - iPhone에서 Safari로 열기
+
+기존 PC QR을 iPhone/iPad에서 열면 큰 **Safari로 열기** 버튼을 표시합니다. 버튼을 직접 누르면 `x-safari-https:` 링크로 같은 웹앱을 Safari에 열도록 요청합니다. 연결번호, 선택 언어, 입력한 곡명은 fragment로 전달하며 새 화면에서도 **PC 연결**과 검색 버튼은 사용자가 누릅니다. 연결주소 복사와 전체 선택 안내도 11개 언어로 제공합니다. PC 설치파일이나 QR 주소를 바꿀 필요는 없습니다.
+
+QR을 처음 여는 앱이나 기본 브라우저 설정은 웹사이트에서 바꿀 수 없습니다. 이 Safari URL scheme은 모든 iOS/스캐너에서 작동한다고 보장할 수 없으며 앱 열기 확인창이 표시될 수 있습니다. 자동 전환이나 재시도 루프는 만들지 않습니다. Safari와 내장 Safari 화면은 UA만으로 확실히 구별할 수 없어 Apple 모바일에서 공통 안내를 표시하고, 이미 Safari인 손님은 **이 화면에서 계속하기**를 누를 수 있습니다. 전환 URL로 다시 들어오면 안내만 접고, Safari 실행 성공이나 마이크 허용을 추정하지 않습니다.
+
+전환이 막혀도 기존 연결을 바로 끊지 않습니다. 전환 요청 후 실제로 페이지가 숨겨지거나 닫히면 기존 PC 연결을 해제합니다. 복사 실패 시 연결주소 전체를 선택해 수동으로 복사할 수 있습니다. 말하기/연결/전송 중에는 전환 버튼을 사용할 수 없습니다. Android Chrome 전환, 음성인식, 검색 동작은 기존대로 유지됩니다.
+
+검증: `node --test wk-tests/*.test.mjs` 61개 통과. 실제 Chromium에서 Safari 안내/주소 전달/복사 거부/11개 언어/320px 화면/연결 해제/다음 곡 검색 7개 시나리오 통과. `wk-tests/voice-browser.mjs`의 기존 마이크 UI 및 native timer 회귀 9개 시나리오도 통과했습니다. 브라우저 검사는 음성과 PC 통신을 대체한 환경이며 실제 iPhone의 Safari 앱 전환과 마이크는 실기 확인이 필요합니다. WebKit 실행은 이 환경의 시스템 라이브러리 부족으로 지원되지 않습니다.
+
+참고: [Safari URL scheme의 앱별 동작 차이](https://bugzilla.mozilla.org/show_bug.cgi?id=1986355), [Apple 기본 앱 설정](https://support.apple.com/ko-kr/121430).
