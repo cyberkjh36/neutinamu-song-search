@@ -8,9 +8,9 @@ const root=path.join(__dirname,'..');
 function app(){
  const elements=new Map();
  function element(){const classes=new Set();return {open:false,setAttribute(n,v){if(n==='open')this.open=true},removeAttribute(n){if(n==='open')this.open=false},showModal(){this.open=true},close(){this.open=false},value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
- const c={console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
+ const c={Element:function(){},console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
  c.window=c;vm.createContext(c);
- vm.runInContext(fs.readFileSync(path.join(root,'index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1],c);
+ vm.runInContext(Array.from(fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)).pop()[1],c);
  c.csv=fs.readFileSync(path.join(root,'catalog-20261018.csv'),'utf8');
  vm.runInContext(`cachedSongs=csvParse(csv.replace(/^\\uFEFF/,''),',').slice(1).map(([code,title,artist])=>({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)}));`,c);
  return {c,el:id=>c.document.getElementById(id),run:s=>vm.runInContext(s,c)};
@@ -66,3 +66,9 @@ for(const api of ['SpeechRecognition','webkitSpeechRecognition'])test(`${api}: d
 });
 
 test('older browser shows fallback microphone overlay',()=>{const {c,el}=app();el('voiceDialog').showModal=undefined;c.startVoice();assert.equal(el('voiceDialog').open,true);assert.ok(el('voiceDialog').classList.contains('fallback-open'));c.cancelVoice();assert.equal(el('voiceDialog').open,false)});
+
+test('older IndexedDB without getAll loads songs using a cursor',async()=>{
+ const {run}=app();
+ run(`cachedSongs=null;db={transaction(){return {objectStore(){return {openCursor(){const request={};let i=0;const values=[{code:'693',title:'꿈',artist:'조용필'},{code:'3',title:'가로수 그늘 아래 서면',artist:'이문세'}];function next(){setTimeout(()=>{request.result=i<values.length?{value:values[i++],continue:next}:null;request.onsuccess()},0)}next();return request}}}}}};`);
+ const songs=await run('allSongs()');assert.equal(songs.length,2);assert.equal(songs[0].code,'693');
+});

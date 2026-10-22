@@ -11,7 +11,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="description" content="태진 P2 곡 번호를 음성과 노래 데이터로 검색합니다.">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link id="appManifest" rel="manifest" href="manifest.webmanifest">
+  <script>
+  // Plain browser shortcuts work even when WebAPK installation is unavailable.
+  // Run in the head, before the browser evaluates installability.
+  window.shortcutMode=/(?:^|[?&])shortcut=1(?:&|$)/.test(location.search);
+  if(window.shortcutMode){
+    var manifestLink=document.getElementById('appManifest');
+    if(manifestLink)manifestLink.parentNode.removeChild(manifestLink);
+    var capableTags=document.querySelectorAll('meta[name="mobile-web-app-capable"],meta[name="apple-mobile-web-app-capable"]');
+    for(var tagIndex=0;tagIndex<capableTags.length;tagIndex++)capableTags[tagIndex].setAttribute('content','no');
+  }
+  </script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="icon" sizes="192x192" href="icon-192.png" type="image/png">
   <link rel="shortcut icon" href="icon-192.png" type="image/png">
@@ -19,9 +30,9 @@
   <style>
     :root{color-scheme:dark;--bg:#081522;--panel:#10243a;--panel2:#142d47;--line:#27435e;--text:#f4f7fb;--muted:#aac0d4;--cyan:#72e0e7;--yellow:#ffd166;--green:#a9f0c0;--red:#ff9b9b}
     *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#173451 0,#081522 56%);color:var(--text);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;min-height:100vh}
-    main{width:min(760px,100%);margin:0 auto;padding:24px 18px calc(36px + env(safe-area-inset-bottom))}
+    main{width:100%;max-width:760px;width:min(760px,100%);margin:0 auto;padding:24px 18px calc(36px + env(safe-area-inset-bottom))}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-size:13px;letter-spacing:.1em;color:var(--cyan);font-weight:800}.small{color:var(--muted);font-size:13px}
-    h1{font-size:clamp(27px,7vw,38px);line-height:1.15;margin:5px 0 8px}.lead{color:var(--muted);margin:0 0 20px;font-size:15px}
+    h1{font-size:30px;font-size:clamp(27px,7vw,38px);line-height:1.15;margin:5px 0 8px}.lead{color:var(--muted);margin:0 0 20px;font-size:15px}
     .panel{background:linear-gradient(145deg,#142d47,#0e2034);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 16px 42px #0004;margin-bottom:16px}
     .status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-bottom:16px}.dot{width:10px;height:10px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px currentColor}.dot.ready{background:var(--green)}
     .searchrow{display:flex;gap:9px}.searchrow input{flex:1;min-width:0;background:#081522;color:var(--text);border:1px solid #365571;border-radius:14px;padding:15px 14px;font-size:17px;outline:none}.searchrow input:focus{border-color:var(--cyan)}
@@ -32,7 +43,7 @@
     details{border-top:1px solid var(--line);padding-top:15px;margin-top:14px}summary{cursor:pointer;font-weight:800}.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.filebtn{text-align:center;display:block}.filebtn input{display:none}.secondary{background:#10243a}.danger{color:#ffc1c1}.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:13px 0 0}.dbcount{font-weight:900;color:var(--cyan)}.footer{color:#90a8be;font-size:12px;line-height:1.55;text-align:center;padding:8px}
     @media(max-width:440px){main{padding:19px 14px}.searchrow{display:grid;grid-template-columns:1fr auto}.searchrow input{grid-column:1/-1}.tools{grid-template-columns:1fr}.panel{padding:15px;border-radius:18px}}
   
-    h1{font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
+    h1{font-size:30px;font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
     .hero{padding:20px 0 14px}
     .hero .number{font-family:Arial,sans-serif;font-size:100px;font-weight:900;line-height:1.05;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;width:100%}
 
@@ -47,6 +58,8 @@
     .legacy-steps ol{padding-left:23px;color:#d9eaf2;font-size:14px;line-height:1.8}
     .legacy-steps li{margin:5px 0}
     .install-cta{flex-wrap:wrap}.install-cta p{font-size:16px}.browser-buttons{display:grid;grid-template-columns:1fr;gap:10px;width:100%}.browser-buttons a{font-size:20px;min-height:56px;text-decoration:none;background:#f5d36a;color:#081522}.browser-buttons a.secondary{background:#d3f5ef}.install-help{font-size:19px}.install-help li{margin-bottom:12px}
+    .shortcut-link{display:block;width:100%;padding:16px;border:2px solid #ffd166;border-radius:14px;background:#ffd166;color:#081522;text-align:center;text-decoration:none;font-size:20px;font-weight:800;line-height:1.4}
+    .shortcut-link:focus{outline:3px solid white;outline-offset:3px}
     .install-help strong{color:#c1f7ee}
     .install-help a{color:#c1f7ee;overflow-wrap:anywhere}
     .install-help button{margin-top:11px;background:#c1f7ee;color:#081522}
@@ -74,6 +87,7 @@
   <section id="installCTA" class="install-cta" aria-label="휴대폰 홈 화면에 노래 검색 앱 추가">
     <div><strong>📲 다음부터 QR 없이 바로 실행!</strong><p>처음 한 번만 휴대폰에 노래검색 아이콘을 추가하세요.</p><p id="installStatus" role="status" aria-live="polite">설치 기능을 준비하고 있어요…</p></div>
     <button id="installBtn" type="button" style="font-size:1.35rem;min-height:64px;padding:14px 20px">📲 내 휴대폰에 노래검색 추가</button>
+    <a id="shortcutLink" class="shortcut-link" href="./?shortcut=1">구형 갤럭시 · 아이콘 추가가 안 될 때</a>
     <div id="browserButtons" class="browser-buttons" hidden><a id="openChrome" class="filebtn">크롬으로 열기</a><a id="openSamsung" class="filebtn secondary">삼성 인터넷으로 열기</a></div>
   </section>
   <div id="installHelp" class="install-help" role="status" aria-live="polite" hidden></div>
@@ -105,7 +119,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer"><b>앱 버전 2026.10.20 · v8</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.10.22 · v10</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -118,7 +132,7 @@
 <script>
 /* Install UI is independent of song import and speech support. */
 (function(){
-  var pending=null, busy=false, site='https://cyberkjh36.github.io/neutinamu-song-search/';
+  var pending=null, busy=false, shortcut=!!window.shortcutMode, site='https://cyberkjh36.github.io/neutinamu-song-search/'+(window.shortcutMode?'?shortcut=1':'');
   var ua=navigator.userAgent||'', android=/Android/i.test(ua), ios=/iPhone|iPad|iPod/i.test(ua), samsung=/SamsungBrowser/i.test(ua);
   function byId(id){return document.getElementById(id)}
   function installed(){return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}
@@ -129,16 +143,18 @@
     byId('browserButtons').hidden=!android||!!pending||!!installed();
     byId('installBtn').disabled=busy;
     byId('installBtn').textContent=pending?'📲 홈 화면에 노래검색 설치':'📲 홈 화면에 추가하기';
+    byId('shortcutLink').hidden=!android||shortcut;
     byId('installStatus').textContent=pending?'설치 준비 완료! 아래 버튼을 눌러 주세요.':'아이콘 추가가 안 되면 아래 ‘크롬으로 열기’를 눌러 주세요.';
+    if(shortcut){byId('installBtn').textContent='📲 아이콘 추가 방법 보기';byId('installStatus').textContent='구형폰 바로가기 모드 · 브라우저 메뉴에서 홈 화면에 추가하세요.';}
     if(!android&&!pending)byId('installStatus').textContent='아래 버튼을 누르면 홈 화면 추가 방법을 안내합니다.';
   }
   function guide(){
     var el=byId('installHelp');
     while(el.firstChild)el.removeChild(el.firstChild);
     var h=document.createElement('strong');h.textContent='📱 '+(ios?'아이폰 홈 화면에 추가':samsung?'삼성 인터넷에서 추가':'설치 메뉴가 안 보이나요?');el.appendChild(h);
-    var steps=ios?['Safari에서 공유(□↑)를 누르세요.','홈 화면에 추가 → 추가를 누르세요.']:samsung?['삼성 인터넷의 ≡ 메뉴를 누르세요.','현재 페이지 추가(또는 페이지 추가) → 홈 화면 → 추가를 누르세요.','메뉴가 없으면 아래 크롬으로 열기를 눌러 주세요.']:android?['아래 크롬으로 열기를 눌러 전체 크롬 화면으로 이동하세요. QR로 열린 작은 창에서는 설치 메뉴가 없을 수 있습니다.','화면이 열리면 홈 화면에 노래검색 설치 버튼을 누르세요.','버튼이 안내만 보여주면 크롬 ⋮ → 홈 화면에 추가 또는 앱 설치를 확인하세요.','계속 메뉴가 없으면 삼성 인터넷으로 열기를 이용하세요. 시크릿 모드는 종료해 주세요.']:['브라우저 메뉴에서 앱 설치 또는 홈 화면에 추가를 확인하세요.'];
+    var steps=shortcut?(samsung?['화면 아래 ≡ 메뉴를 누르세요. 구형 버전은 ⋮ 또는 휴대폰 메뉴 버튼을 누르세요.','현재 페이지 추가(또는 페이지 추가) → 홈 화면 → 추가를 누르세요.']:['크롬 오른쪽 위 ⋮ 메뉴 → 홈 화면에 추가(또는 바로가기 만들기)를 누르세요.','이름을 확인한 뒤 추가를 누르세요. 설치 다운로드를 기다리지 않고 웹 바로가기를 만듭니다.','메뉴가 없으면 아래 삼성 인터넷으로 열기를 누르고 ≡ → 현재 페이지 추가 → 홈 화면을 선택하세요.']):ios?['Safari에서 공유(□↑)를 누르세요.','홈 화면에 추가 → 추가를 누르세요.']:samsung?['삼성 인터넷의 ≡ 메뉴를 누르세요.','현재 페이지 추가(또는 페이지 추가) → 홈 화면 → 추가를 누르세요.','메뉴가 없으면 아래 크롬으로 열기를 눌러 주세요.']:android?['아래 크롬으로 열기를 눌러 전체 크롬 화면으로 이동하세요. QR로 열린 작은 창에서는 설치 메뉴가 없을 수 있습니다.','화면이 열리면 홈 화면에 노래검색 설치 버튼을 누르세요.','버튼이 안내만 보여주면 크롬 ⋮ → 홈 화면에 추가 또는 앱 설치를 확인하세요.','계속 메뉴가 없으면 삼성 인터넷으로 열기를 이용하세요. 시크릿 모드는 종료해 주세요.']:['브라우저 메뉴에서 앱 설치 또는 홈 화면에 추가를 확인하세요.'];
     var ol=document.createElement('ol');steps.forEach(function(s){var li=document.createElement('li');li.textContent=s;ol.appendChild(li)});el.appendChild(ol);
-    var note=document.createElement('p');note.textContent='이미 설치했다면 앱 목록에서 ‘느티나무’를 찾아 길게 눌러 홈 화면에 추가하세요. 이 웹페이지가 휴대폰 아이콘을 자동으로 만들 수는 없습니다.';el.appendChild(note);
+    var note=document.createElement('p');note.textContent='추가 후 홈 화면의 마지막 페이지도 확인하세요. 안 보이면 홈 화면 설정의 ‘홈 화면 구성 잠금’을 해제하고 다시 추가하세요. QR 안의 작은 창이나 시크릿 모드에서는 먼저 일반 브라우저로 여세요. 마지막 ‘추가’는 휴대폰에서 눌러야 합니다.';el.appendChild(note);
     var copy=document.createElement('button');copy.type='button';copy.textContent='📋 주소 복사';copy.onclick=function(){
       function fallback(){var a=document.createElement('textarea');a.value=site;el.appendChild(a);a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}el.removeChild(a);copy.textContent=ok?'주소가 복사되었습니다':'아래 주소를 길게 눌러 복사하세요';}
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(site).then(function(){copy.textContent='주소가 복사되었습니다'},fallback);else fallback();
@@ -147,6 +163,7 @@
     el.hidden=false;
   }
   window.addEventListener('beforeinstallprompt',function(e){
+    if(shortcut)return;
     e.preventDefault();pending=e;busy=false;sync();
     if(byId('installHelp')&&!byId('installHelp').hidden)message('설치가 준비되었습니다. 위의 ‘홈 화면에 노래검색 설치’ 버튼을 눌러 주세요.');
   });
@@ -154,9 +171,10 @@
   function init(){
     ['Chrome','Samsung'].forEach(function(name){
       var a=byId('open'+name),pkg=name==='Chrome'?'com.android.chrome':'com.sec.android.app.sbrowser';
-      a.href='intent://cyberkjh36.github.io/neutinamu-song-search/#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';S.browser_fallback_url='+encodeURIComponent(site)+';end';
+      a.href='intent://cyberkjh36.github.io/neutinamu-song-search/'+(shortcut?'?shortcut=1':'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';S.browser_fallback_url='+encodeURIComponent(site)+';end';
     });
     sync();
+    if(shortcut)guide();
     byId('installBtn').onclick=function(){
       if(busy)return;
       if(!pending){guide();return}
@@ -165,6 +183,7 @@
       try{
         var result=event.prompt();
         if(result&&result.catch)result.catch(failed);
+        if(!event.userChoice||!event.userChoice.then){busy=false;sync();message('휴대폰에 표시된 추가 안내를 완료해 주세요.');return}
         event.userChoice.then(function(choice){
           busy=false;sync();
           if(choice.outcome==='accepted')message('설치 요청을 보냈습니다. 휴대폰의 설치 안내를 완료한 뒤 홈 화면이나 앱 목록을 확인하세요.');
@@ -175,7 +194,7 @@
     // Register before the 76,435-song IndexedDB import, even when storage fails.
     if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
       navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(reg){reg.update().catch(function(){});}).catch(function(){
-        byId('installStatus').textContent='설치 준비에 실패했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.';
+        byId('installStatus').textContent='앱 설치가 준비되지 않았습니다. 구형폰 바로가기 또는 브라우저 메뉴의 홈 화면에 추가를 이용하세요.';
       });
     }
   }
@@ -188,7 +207,7 @@ const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
 const $=id=>document.getElementById(id);
 let db, cachedSongs=null;
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'code'});};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
-function allSongs(){if(cachedSongs)return Promise.resolve(cachedSongs);return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>{cachedSongs=r.result;resolve(cachedSongs)};r.onerror=()=>reject(r.error)})}
+function allSongs(){if(cachedSongs)return Promise.resolve(cachedSongs);return new Promise((resolve,reject)=>{const store=db.transaction(STORE).objectStore(STORE);if(typeof store.getAll==='function'){const r=store.getAll();r.onsuccess=()=>{cachedSongs=r.result;resolve(cachedSongs)};r.onerror=()=>reject(r.error)}else{const songs=[],r=store.openCursor();r.onsuccess=()=>{const cursor=r.result;if(cursor){songs.push(cursor.value);cursor.continue()}else{cachedSongs=songs;resolve(songs)}};r.onerror=()=>reject(r.error)}})}
 function countSongs(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).count();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 function normalize(s){const raw=String(s==null?'':s),normalized=typeof raw.normalize==='function'?raw.normalize('NFKC'):raw;return normalized.toLocaleLowerCase('ko-KR').replace(/[\s\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u2000-\u206F\u20A0-\u20CF\u2100-\u214F\u2190-\u21FF\u2600-\u27BF\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65]/g,'')}
 function setMessage(s,err=false){$('message').textContent=s;$('message').className='message'+(err?' error':'')}
