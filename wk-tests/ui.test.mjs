@@ -15,6 +15,7 @@ class Element {
   replaceChildren(...values){this.children=values;}
   setAttribute(k,v){this.attributes[k]=v;}
   focus(){this.focused=true;}
+  removeAttribute(k){delete this.attributes[k];}
   showModal(){this.open=true;}
   close(){this.open=false;}
 }
@@ -84,7 +85,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       await $('send').fire('click');assert.equal(sent.length,3);assert.equal(sent[1].op,'search');assert.equal(sent[1].language,'th-TH');assert.equal(sent[1].text,'เพลงไทย');assert.match($('feedback').textContent,/PC/);
     });
     await t.test('microphone denial leaves typed search available',()=>{
-      $('voice').fire('click');speech.onerror({error:'not-allowed'});assert.equal($('feedback').textContent,MESSAGES['th-TH'].errors.microphone);assert.equal($('listening').open,false);assert.equal($('query').disabled,false);assert.equal($('send').disabled,false);
+      $('voice').fire('click');speech.onerror({error:'not-allowed'});assert.equal($('feedback').textContent,MESSAGES['th-TH'].errors.microphone);assert.equal($('listening').open,true);assert.equal($('voice-keyboard').hidden,false);$('voice-close').fire('click');assert.equal($('query').disabled,false);assert.equal($('send').disabled,false);
     });
     await t.test('an existing error follows language changes without losing the title',()=>{
       for(const language of LANGUAGES){choose(language.code);assert.equal($('feedback').textContent,MESSAGES[language.code].errors.microphone);}
@@ -95,7 +96,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       $('voice').fire('click');assert.equal(speech.started,true);assert.equal(speech.lang,'ja-JP');speech.onend();
     });
     await t.test('missing recognition API leaves keyboard dictation and manual sending available',()=>{
-      window.webkitSpeechRecognition=undefined;$('voice').fire('click');assert.equal($('query').focused,true);assert.equal($('send').disabled,false);
+      window.webkitSpeechRecognition=undefined;$('voice').fire('click');assert.equal($('listening').open,true);assert.equal($('voice-retry').hidden,false);$('voice-close').fire('click');assert.equal($('query').disabled,false);assert.equal($('send').disabled,false);
     });
     await t.test('successful search offers translated Next Song; one tap clears only the draft',async()=>{
       for(const language of LANGUAGES){choose(language.code);assert.equal($('send').textContent,NEXT_SEARCH[language.code]);}
