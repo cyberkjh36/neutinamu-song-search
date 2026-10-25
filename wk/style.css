@@ -8,3 +8,33 @@
 .keyboard-voice{background:#29454b;color:#e9f5f1;border:1px solid #779994;font-size:18px;margin:0 0 16px;min-height:54px;overflow-wrap:anywhere}.voice-help{white-space:pre-line;line-height:1.65;color:#d6e5e0}dialog:not([open]){display:none}dialog[open]{display:block;max-height:85vh;max-height:85dvh;overflow-y:auto}dialog.fallback-modal[open]{position:fixed;z-index:10000;top:50%;left:50%;right:auto;bottom:auto;margin:0;transform:translate(-50%,-50%);box-shadow:0 0 0 100vmax #071414e8}#voice-status{font-size:17px;min-height:0;white-space:pre-line;line-height:1.6}#interim:empty{display:none}dialog .keyboard-voice{margin:12px 0}dialog.voice-error .pulse{animation:none;background:#f1c7a1}dialog.voice-error #voice-status{color:#ffd3b0}
 
 .safari-card{border:2px solid #8dccf4;overflow-wrap:anywhere}.safari-card>summary{font-size:21px;color:#d5eeff;line-height:1.4}.safari-open{display:flex;align-items:center;justify-content:center;gap:12px;background:#b5e1ff;color:#102f46;border-radius:12px;padding:16px 12px;min-height:68px;font-size:23px;line-height:1.4;font-weight:800;text-decoration:none;touch-action:manipulation}.safari-open svg{width:38px;height:38px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5}.safari-open path{fill:#ffffff80}.safari-open[aria-disabled="true"]{opacity:.5;cursor:default}.safari-open:focus-visible{outline:3px solid #fff;outline-offset:4px}.safari-continue{background:transparent;color:#d5eeff;min-height:48px;margin-top:8px;font-size:16px;border:1px solid #658b9b}#safari-help{margin-top:10px;font-size:15px}#safari-help summary{min-height:44px}#safari-copy-feedback{color:#dcf2c5;white-space:pre-line}#safari-url{font-size:16px;margin-top:12px;min-width:0;direction:ltr}#safari-copy{font-size:18px}
+
+/* WEB 2.7: visible, event-driven microphone states; no simulated level meter. */
+.voice{background:linear-gradient(145deg,#d4f1a8,#a9d67b);border:1px solid #d8f4b0;border-radius:20px;padding:24px 16px 20px;gap:12px;margin-bottom:0;box-shadow:0 8px 24px #07161530}
+.voice-hint{font-size:14px;line-height:1.5;font-weight:500;color:#29472e;max-width:100%;overflow-wrap:anywhere}
+.mic-orb{width:88px;height:88px;display:grid;place-items:center;border-radius:50%;background:#153c2c;color:#e7ffd5;flex:none;box-shadow:inset 0 1px 0 #ffffff26,0 4px 12px #12382026}
+.mic-orb svg{width:50px;height:50px;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.mic-orb svg rect{fill:currentColor;stroke:none}.mic-orb .mic-grille{stroke:#153c2c;stroke-width:2}.mic-slash{display:none}
+.mic-state-line{margin:10px 0 20px;text-align:center;color:#c4d4cc;font-size:14px;font-weight:650;min-height:24px}
+#listening{padding:22px 22px 18px;background:linear-gradient(160deg,#203c36,#112b29);border-color:#4c7066;overflow-wrap:anywhere}
+#listening .mic-badge{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:34px;max-width:100%;padding:6px 12px;margin:0 0 20px;border-radius:12px;background:#213f37;color:#c7d8d0;font-size:14px;line-height:1.5;font-weight:750}
+.mic-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.mic-stage{padding:10px 0 0}.mic-stage .mic-orb{width:112px;height:112px;margin:auto;background:#365347;color:#c6d7cb;box-shadow:0 0 0 8px #7ea8950d}
+.mic-stage .mic-orb svg{width:64px;height:64px}.mic-stage .mic-grille{stroke:#365347}
+.sound-bars{display:flex;align-items:center;justify-content:center;gap:5px;height:24px;margin:20px auto 0}.sound-bars i{display:block;width:4px;height:4px;background:#6d8e80;border-radius:3px;transition:height .18s ease,background .18s ease}
+#listening h2{font-size:25px;line-height:1.4;margin:16px 0 8px}#listening #voice-status{font-size:15px;color:#c6d9d0;margin:0 0 18px}
+#listening .voice-empty{font-size:14px;min-height:0;color:#a1bcb0;margin:0 0 20px}#interim{padding:14px;background:#0d211e;border:1px solid #466557;border-radius:12px;font-size:23px;line-height:1.5;color:#f0ffe5;max-height:25vh;overflow-y:auto}
+.voice-done{display:flex;align-items:center;justify-content:center;gap:10px;background:#c5ef9d;font-size:20px;min-height:60px}.stop-square{display:inline-block;width:13px;height:13px;border-radius:3px;background:currentColor;flex:none}
+#listening #voice-close{background:transparent;color:#cfddd6;font-size:16px;min-height:44px;padding:8px;border:1px solid #526e64}#listening .keyboard-voice{font-size:16px;min-height:48px;margin:10px 0}
+#listening[data-mic-state="starting"] .mic-badge{color:#ffe0a2;background:#4a3b23}#listening[data-mic-state="starting"] .mic-orb{color:#ffe3aa;background:#4a3b23}#listening[data-mic-state="starting"] .mic-grille{stroke:#4a3b23}
+#listening[data-mic-state="listening"] .mic-badge,#listening[data-mic-state="hearing"] .mic-badge{color:#c5f7a2;background:#23472e}
+#listening[data-mic-state="listening"] .mic-orb,#listening[data-mic-state="hearing"] .mic-orb{color:#153c2c;background:#c5ef9d;animation:mic-ready 2.4s ease-in-out infinite}
+#listening[data-mic-state="listening"] .mic-grille,#listening[data-mic-state="hearing"] .mic-grille{stroke:#c5ef9d}
+#listening[data-mic-state="hearing"] .sound-bars i{background:#c5ef9d;height:16px}#listening[data-mic-state="hearing"] .sound-bars i:nth-child(2n){height:24px}#listening[data-mic-state="hearing"] .sound-bars i:nth-child(3n){height:10px}
+#listening[data-mic-state="processing"] .mic-badge{background:#263b50;color:#bfdff8}
+#listening[data-mic-state="error"] .mic-badge{background:#4f3029;color:#ffd4b5}#listening[data-mic-state="error"] .mic-orb{background:#4f3029;color:#ffd4b5}#listening[data-mic-state="error"] .mic-grille{stroke:#4f3029}#listening[data-mic-state="error"] .mic-slash{display:block;stroke:#ffd4b5;stroke-width:5}
+#listening[data-mic-state="error"] #voice-status{color:#ffd4b5}#listening[data-mic-state="error"] .sound-bars{display:none}
+@keyframes mic-ready{50%{box-shadow:0 0 0 10px #c5ef9d14,0 0 0 21px #c5ef9d06}}
+@media(prefers-reduced-motion:reduce){#listening .mic-orb{animation:none!important}.sound-bars i{transition:none}}
+@media(max-width:360px){#listening{padding:18px 16px}#listening h2{font-size:22px}.voice-hint{font-size:13px}}
+

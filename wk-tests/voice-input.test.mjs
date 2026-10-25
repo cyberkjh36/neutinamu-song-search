@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { VoiceInput, openVoiceDialog, closeVoiceDialog, isAppleMobile } from '../wk/voice-input.mjs';
 import { VOICE_TEXT } from '../wk/voice-text.mjs';
 import { LANGUAGES } from '../wk/labels.mjs';
+import { MIC_TEXT } from '../wk/mic-text.mjs';
 
 function fixture({ missing = false, constructError, startError, endOnStop = false } = {}) {
   let now = 0, next = 0;
@@ -108,6 +109,42 @@ test('repeated microphone taps do not create overlapping recognizers', () => {
   const f=fixture(); f.voice.start('ko-KR'); assert.equal(f.voice.start('th-TH'),false);
   assert.equal(f.instances.length,1); assert.equal(f.instances[0].lang,'ko-KR'); f.voice.cancel();
 });
+
+test('the live indicator waits for browser confirmation and reacts only to actual recognition events', () => {
+  const f=fixture(); f.voice.start('ko-KR'); const r=f.instances[0];
+  assert.deepEqual(f.states,['starting']);
+  r.onstart(); r.onaudiostart(); assert.deepEqual(f.states,['starting','listening']);
+  r.onsoundstart(); r.onspeechstart(); assert.equal(f.states.at(-1),'hearing');
+  assert.equal(f.states.filter(x=>x==='hearing').length,1);
+  r.onsoundend(); assert.equal(f.states.at(-1),'listening');
+  r.onaudioend(); assert.equal(f.states.at(-1),'processing');
+  const count=f.states.length;
+  r.onspeechstart(); r.onspeechend(); r.onstart(); r.onaudiostart();
+  r.onresult(event('늦게 도착한 결과'));
+  assert.equal(f.states.length,count,'late service events must never switch the mic back on');
+  r.onend(); assert.equal(f.results.at(-1).text,'늦게 도착한 결과');
+  assert.equal(f.voice.active,false); assert.equal(r.onsoundstart,null); assert.equal(r.onaudioend,null);
+});
+test('sound events without start are accepted; stale sound callbacks cannot affect a new session', () => {
+  const f=fixture(); f.voice.start('th-TH'); const r=f.instances[0],old=r.onsoundstart;
+  r.onsoundstart(); assert.equal(f.states.at(-1),'hearing'); f.advance(12000); assert.equal(f.voice.active,true);
+  f.voice.cancel(); f.voice.start('ja-JP'); old(); assert.equal(f.states.at(-1),'starting'); f.voice.cancel();
+});
+test('stop remains processing after delayed results and repeated stop does not extend its deadline', () => {
+  const f=fixture(); f.voice.start('ko-KR'); const r=f.instances[0]; r.onstart(); f.voice.stop();
+  assert.equal(f.states.at(-1),'processing'); f.advance(2000); f.voice.stop();
+  r.onresult(event('완료',false)); r.onsoundstart(); assert.equal(f.states.at(-1),'processing');
+  f.advance(500); assert.equal(f.voice.active,false); assert.equal(f.results.at(-1).text,'완료');
+});
+test('all eleven languages have nonempty microphone status, action and help labels', () => {
+  const keys=Object.keys(MIC_TEXT['ko-KR']);
+  assert.equal(Object.keys(MIC_TEXT).length,LANGUAGES.length);
+  for(const {code} of LANGUAGES) {
+    assert.deepEqual(Object.keys(MIC_TEXT[code]),keys);
+    for(const key of keys) assert.ok(MIC_TEXT[code][key]?.trim(),`${code}:${key}`);
+    assert.notEqual(MIC_TEXT[code].listening,MIC_TEXT[code].off);
+  }
+});
 test('Done waits briefly for final results and then recovers if stop never finishes', () => {
   const f=fixture(); f.voice.start('ko-KR'); f.instances[0].onresult(event('새 노래',false)); f.voice.stop();
   assert.equal(f.instances[0].stopped,true); f.advance(2499); assert.equal(f.voice.active,true);
@@ -152,3 +189,4 @@ test('all eleven languages contain complete nonempty voice recovery instructions
     assert.match(words.iphoneHelp,/Safari/);
   }
 });
+

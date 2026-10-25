@@ -6,6 +6,7 @@ import { MESSAGES } from '../wk/network-text.mjs?v=2.1';
 import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
 import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.3';
 import { NEXT_SEARCH } from '../wk/search-text.mjs?v=2.3';
+import { MIC_TEXT } from '../wk/mic-text.mjs';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -49,7 +50,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
         assert.equal(document.documentElement.lang,language.code);assert.equal($('title').textContent,words.title);
         assert.equal($('pair-help').textContent,words.pairHelp);assert.equal($('help-list').children[4].textContent,words.steps[4]);
         assert.equal($('privacy-help').textContent,words.privacyHelp);assert.equal($('disconnect').textContent,words.disconnect);
-        assert.equal($('stop-voice').textContent,words.done);assert.equal($('send').textContent,language.text[1]);
+        assert.equal($('stop-label').textContent,MIC_TEXT[language.code].stop);assert.equal($('send').textContent,language.text[1]);
         assert.equal($('listening-title').textContent,language.text[5]);assert.equal($('connection-state').textContent,language.text[7]);
         assert.equal($('chrome-handoff').hidden,false);assert.equal($('chrome-open').textContent,CHROME_TEXT[language.code][2]);assert.equal($('chrome-default').textContent,CHROME_TEXT[language.code][4]);
         assert.equal($('query').value,'보존할 노래');assert.equal($('code').value,'12345678');assert.equal(storage.get('wk-bt-language'),language.code);
@@ -77,9 +78,21 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     await t.test('voice starts only after tapping; selected locale is passed',()=>{
       assert.equal(speech,undefined);$('voice').fire('click');assert.equal(speech.started,true);assert.equal(speech.lang,'th-TH');choose('ja-JP');assert.equal(document.documentElement.lang,'th-TH');assert.equal($('listening').open,true);assert.equal($('send').disabled,true);
     });
+    await t.test('mic status distinguishes permission wait, listening, detected sound and ending',()=>{
+      const state=()=> $('listening').attributes['data-mic-state'];
+      assert.equal(state(),'starting'); assert.equal($('dialog-mic-state').textContent,MIC_TEXT['th-TH'].starting);
+      assert.equal($('stop-voice').hidden,true); assert.equal($('voice-close').hidden,false);
+      speech.onstart(); assert.equal(state(),'listening');
+      assert.equal($('dialog-mic-state').textContent,MIC_TEXT['th-TH'].listening);
+      assert.equal($('stop-voice').hidden,false);
+      speech.onsoundstart(); assert.equal(state(),'hearing');
+      speech.onaudioend(); assert.equal(state(),'processing'); assert.equal($('stop-voice').disabled,true);
+      speech.onspeechstart(); assert.equal(state(),'processing'); assert.equal(sent.length,1);
+    });
     await t.test('recognized title fills text and never auto searches',()=>{
       const result=[{transcript:'เพลงไทย'}];result.isFinal=true;speech.onresult({resultIndex:0,results:[result]});speech.onend();
       assert.equal($('query').value,'เพลงไทย');assert.equal(sent.length,1);assert.equal($('listening').open,false);assert.equal($('send').disabled,false);
+      assert.equal($('mic-state').textContent,MIC_TEXT['th-TH'].result);
     });
     await t.test('explicit button sends one selected-language request and confirms PC acknowledgement',async()=>{
       await $('send').fire('click');assert.equal(sent.length,3);assert.equal(sent[1].op,'search');assert.equal(sent[1].language,'th-TH');assert.equal(sent[1].text,'เพลงไทย');assert.match($('feedback').textContent,/PC/);
@@ -195,3 +208,4 @@ test('eleven country packs include every instruction, every error and a flag ass
     assert.equal(words.steps.length,5);assert.ok((await readFile(new URL('../wk/flags/'+words.flag+'.png',import.meta.url))).length>0);
   }
 });
+

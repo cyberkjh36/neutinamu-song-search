@@ -4,7 +4,8 @@ import { KaraokeConnection } from './relay-client.mjs?v=2.1';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
-import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.5';
+import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
+import { MIC_TEXT } from './mic-text.mjs?v=2.7';
 import { VOICE_TEXT } from './voice-text.mjs?v=2.4';
 import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
 import { SAFARI_TEXT } from './safari-text.mjs?v=2.6';
@@ -19,15 +20,26 @@ const appleMobile = isAppleMobile(navigator);
 let safariCopyState = '', safariPending = false;
 function voiceWords() { return VOICE_TEXT[currentLanguage.code]; }
 function renderVoice() {
-  const words = voiceWords(), failed = voiceState === 'error';
+  const words = voiceWords(), mic = MIC_TEXT[currentLanguage.code], failed = voiceState === 'error';
+  const listening = ['listening','hearing'].includes(voiceState);
+  const stateLabel = mic[voiceState] || mic.off;
+  for (const id of ['voice','listening']) $(id).setAttribute('data-mic-state', voiceState);
+  $('voice-hint').textContent = mic.tap;
+  $('mic-state').textContent = stateLabel;
+  $('dialog-mic-state').textContent = stateLabel;
+  $('voice-empty').textContent = mic.empty;
+  $('voice-empty').hidden = Boolean($('interim').textContent) || failed || voiceState === 'starting';
   $('keyboard-voice').textContent = $('voice-keyboard').textContent = words.keyboard;
-  $('voice-retry').textContent = words.retry; $('voice-close').textContent = words.close;
+  $('voice-retry').textContent = words.retry; $('voice-close').textContent = failed ? words.close : mic.cancel;
+  $('stop-label').textContent = mic.stop;
+  $('stop-voice').disabled = voiceState === 'processing';
   $('voice-help').hidden = !appleMobile && !failed;
   $('voice-help').textContent = (appleMobile ? words.iphoneHelp + '\n' : '') + words.keyboardHelp;
-  $('voice-status').textContent = failed ? words[voiceError] + (appleMobile ? '\n' + words.iphoneHelp : '') : voiceState === 'starting' ? words.starting : currentLanguage.text[5];
-  $('listening-title').textContent = failed ? words.failed : currentLanguage.text[5];
+  $('voice-status').textContent = failed ? words[voiceError] + (appleMobile ? '\n' + words.iphoneHelp : '') : voiceState === 'starting' ? words.starting : voiceState === 'processing' ? mic.processingHelp : currentLanguage.text[5];
+  $('voice-status').hidden = listening;
+  $('listening-title').textContent = failed ? words.failed : voiceState === 'starting' ? mic.starting : voiceState === 'processing' ? mic.processing : currentLanguage.text[5];
   $('listening').classList.toggle('voice-error', failed);
-  $('voice-retry').hidden = !failed; $('voice-close').hidden = !failed; $('stop-voice').hidden = failed;
+  $('voice-retry').hidden = !failed; $('voice-close').hidden = false; $('stop-voice').hidden = failed || voiceState === 'starting';
 }
 const countryButtons = new Map();
 const actionKeys = {queryHint:3, connected:6, disconnected:7, sent:8, sending:9};
@@ -135,7 +147,7 @@ function selectLanguage(code) {
   const labels = {
     subtitle:'subtitle', 'language-label':'languageLabel', 'language-help':'languageHelp',
     'pair-help':'pairHelp', 'confirm-help':'confirmHelp', disconnect:'disconnect',
-    'stop-voice':'done', 'help-title':'helpTitle', 'shared-help':'sharedHelp',
+    'help-title':'helpTitle', 'shared-help':'sharedHelp',
     'browser-help':'browserHelp', 'network-help':'networkHelp', 'privacy-help':'privacyHelp', 'shortcut-help':'shortcutHelp'
   };
   for (const [id,key] of Object.entries(labels)) $(id).textContent = words[key];
@@ -247,14 +259,16 @@ voice = new VoiceInput({
   },
   onResult({text, preview}) {
     $('interim').textContent = preview;
+    renderVoice();
     // Dictation is a draft only: the user still presses Search to send it to the PC.
     if (text) { $('query').value = text; searchComplete = false; }
   },
   onFinish(reason) {
     if (reason !== 'error') {
-      voiceState = 'idle'; closeVoiceDialog($('listening'));
+      voiceState = reason === 'result' ? 'result' : 'idle'; closeVoiceDialog($('listening'));
       if (reason === 'result') feedback('confirmHelp');
     }
+    renderVoice();
     refreshControls();
   },
   onError(reason) {
@@ -277,7 +291,7 @@ function useKeyboardVoice() {
   // iPhone only opens the software keyboard when focus remains in this direct tap.
   $('query').focus();
 }
-function closeVoice() { voice.cancel(); voiceState = 'idle'; closeVoiceDialog($('listening')); refreshControls(); }
+function closeVoice() { voice.cancel(); voiceState = 'idle'; closeVoiceDialog($('listening')); renderVoice(); refreshControls(); }
 $('voice').addEventListener('click', startVoice);
 $('voice-retry').addEventListener('click', startVoice);
 $('keyboard-voice').addEventListener('click', useKeyboardVoice);
@@ -300,3 +314,4 @@ refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.
 if (secure && navigator.serviceWorker?.register) navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(()=>{});
+

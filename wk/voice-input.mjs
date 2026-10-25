@@ -10,7 +10,7 @@ export class VoiceInput {
   get active() { return Boolean(this.session); }
   start(language) {
     if (this.active) return false;
-    const session = { instance:null, timers:new Set(), final:'', preview:'' };
+    const session = { instance:null, timers:new Set(), final:'', preview:'', state:'starting', audioEnded:false, stopping:false };
     this.session = session;
     this.onState('starting');
     const current = () => this.session === session;
@@ -31,10 +31,25 @@ export class VoiceInput {
       const started = () => {
         if (!current()) return;
         this.clearTimer(startup); session.timers.delete(startup);
-        this.onState('listening');
+        if (!session.audioEnded && !session.stopping && session.state === 'starting') {
+          session.state = 'listening'; this.onState('listening');
+        }
       };
       instance.onstart = started;
       instance.onaudiostart = started;
+      const sound = state => {
+        if (!current() || session.audioEnded || session.stopping) return;
+        this.clearTimer(startup); session.timers.delete(startup);
+        if (session.state !== state) { session.state = state; this.onState(state); }
+      };
+      // Activity is driven by recognition events, not simulated microphone levels.
+      instance.onsoundstart = instance.onspeechstart = () => sound('hearing');
+      instance.onsoundend = instance.onspeechend = () => sound('listening');
+      instance.onaudioend = () => {
+        if (!current()) return;
+        session.audioEnded = true;
+        session.state = 'processing'; this.onState('processing');
+      };
       instance.onresult = event => {
         if (!current()) return;
         started();
@@ -64,7 +79,9 @@ export class VoiceInput {
     session.timers.clear();
     const instance = session.instance;
     if (instance) {
-      instance.onstart = instance.onaudiostart = instance.onresult = instance.onerror = instance.onend = null;
+      instance.onstart = instance.onaudiostart = instance.onsoundstart = instance.onspeechstart =
+        instance.onsoundend = instance.onspeechend = instance.onaudioend =
+        instance.onresult = instance.onerror = instance.onend = null;
       try { instance.abort(); } catch {}
     }
     return true;
@@ -84,7 +101,9 @@ export class VoiceInput {
   }
   stop() {
     const session = this.session;
-    if (!session) return;
+    if (!session || session.stopping) return;
+    session.stopping = true;
+    session.state = 'processing'; this.onState('processing');
     try { session.instance?.stop(); } catch { this.complete(session); }
     if (this.session !== session) return;
     for (const timer of session.timers) this.clearTimer(timer);
@@ -119,3 +138,4 @@ export function closeVoiceDialog(dialog) {
   dialog.open = false;
   dialog.classList.toggle('fallback-modal', false);
 }
+
