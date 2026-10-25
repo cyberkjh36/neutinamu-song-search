@@ -38,3 +38,11 @@
 @media(prefers-reduced-motion:reduce){#listening .mic-orb{animation:none!important}.sound-bars i{transition:none}}
 @media(max-width:360px){#listening{padding:18px 16px}#listening h2{font-size:22px}.voice-hint{font-size:13px}}
 
+/* iPhone consent is always Safari's own prompt. These are help instructions. */
+.permission-prompt{padding:14px;margin:14px 0;border:1px solid #a8cd79;border-radius:14px;background:#2b452d;text-align:left}.permission-prompt strong{display:block;font-size:21px;line-height:1.5;color:#ddffb8}
+#listening .permission-prompt p{font-size:15px;min-height:0;line-height:1.6;color:#e0edd9;margin:8px 0 0}
+.permission-guide{margin:14px 0 18px;padding:12px;border:1px solid #759789;border-radius:14px;background:#16322c;text-align:left}
+.permission-guide summary{font-size:17px;color:#e1efd9;min-height:44px;line-height:1.5}.permission-guide ol{padding-left:24px;margin:12px 0;color:#edf5e8;font-size:16px;line-height:1.6}.permission-guide li{padding-left:3px;margin-bottom:12px}
+#listening .permission-guide p{font-size:14px;min-height:0;line-height:1.6;color:#c8dacf;margin:10px 0}#listening #permission-note{font-size:12px;color:#acc3b6}#listening #permission-safari{margin:4px 0 0}
+#listening.permission-start .mic-stage,#listening.permission-blocked .mic-stage{display:none}
+

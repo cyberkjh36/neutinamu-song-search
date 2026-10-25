@@ -1,6 +1,19 @@
-# WORLD KARAOKE · 휴대폰 음성검색 (WEB 2.7)
+# WORLD KARAOKE · 휴대폰 음성검색 (WEB 2.8)
 
 공유 주소: https://cyberkjh36.github.io/neutinamu-song-search/wk/
+
+## WEB 2.8 · iPhone 마이크 허용 안내
+
+- iPhone의 첫 말하기 버튼을 **마이크 허용하고 말하기**로 표시하고, 시작 대기 중 **아이폰 안내창에서 “허용”**을 크게 안내합니다. 앱이 브라우저의 실제 시작 이벤트를 받은 뒤에만 마이크 켜짐을 표시합니다.
+- 권한 오류가 나면 **허용 요청 다시 시도** 버튼과 이 웹사이트의 Safari 마이크 설정을 바꾸는 세 단계를 바로 보여 줍니다. 구형 `aA` 메뉴와 신형 페이지 메뉴/더 보기 안내를 포함합니다. Safari로 여는 방법 및 기존 키보드 마이크 입력도 사용할 수 있습니다.
+- 웹앱은 마이크 권한을 자동 승인하거나 거부된 권한을 바꿀 수 없습니다. iPhone의 허용 안내가 뜨면 손님이 직접 허용해야 합니다. 이미 거부한 경우 재시도만으로 안내창이 다시 나타나지 않을 수 있어 설정 변경 순서를 함께 제공합니다. 웹페이지가 Safari를 강제 실행하거나 모든 기기의 음성인식 지원을 보장하지는 않습니다.
+- 권한 안내는 기존 11개 언어에 적용했습니다. 버튼을 누르는 동작 안에서 기존 `SpeechRecognition.start()`를 즉시 호출하며 별도의 권한 조회나 녹음을 먼저 시작하지 않습니다. Android 음성검색, 연결번호, 명시적 검색 전송, 다음 곡 검색, PC 프로그램은 유지합니다.
+
+기존 QR 또는 위 주소로 열고 새로고침한 뒤 상단 **WEB 2.8**을 확인하세요. PC 프로그램 재설치는 필요 없습니다.
+
+검증: `node --test wk-tests/*.test.mjs` **70개 통과**. 실제 Chromium에서 Android·신형 iPhone·구형 iPhone 형태를 가정한 테스트 화면 각각 11개 언어 × 3개 너비(320/390/430px) × 5개 상태, 총 **495개** 상태/안내/가로 넘침 검사를 통과했습니다. 구형 화면은 네이티브 dialog API가 없는 경로도 확인했습니다. 브라우저 타이머는 실제 구현을 사용했으며 음성인식과 PC 응답은 테스트 대역입니다. iPhone/Safari 엔진 또는 실물 기기의 권한창·마이크 인식까지 직접 검증한 것은 아닙니다.
+
+참고: [Apple Safari 웹사이트별 마이크 설정](https://support.apple.com/ko-kr/guide/iphone/iphb01fc3c85/ios), [WebKit 사용자 권한](https://webkit.org/blog/7763/a-closer-look-into-webrtc/), [Safari 14.1 음성인식 지원](https://webkit.org/blog/11648/new-webkit-features-in-safari-14-1/).
 
 ## WEB 2.7 · 마이크 상태가 잘 보이는 화면
 

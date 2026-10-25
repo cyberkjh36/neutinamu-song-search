@@ -7,6 +7,7 @@ import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
 import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.3';
 import { NEXT_SEARCH } from '../wk/search-text.mjs?v=2.3';
 import { MIC_TEXT } from '../wk/mic-text.mjs';
+import { PERMISSION_TEXT } from '../wk/permission-text.mjs';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -189,6 +190,52 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       elements.forEach(element=>{element.children=[];element.value='';element.events.clear();element.href=undefined;});
       navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Version/18.0 Mobile Safari/604.1';location.hash='#12345678';
       await import('../wk/app.mjs?iphone');assert.equal($('chrome-handoff').hidden,true);assert.equal($('chrome-open').href,undefined);assert.equal($('code').value,'12345678');
+    });
+    await t.test('iPhone permission guidance requests only on a tap, never bypasses consent or submits a search',()=>{
+      choose('ko-KR'); window.SpeechRecognition=Speech;
+      const previous=speech,count=sent.length;
+      assert.equal($('voice-text').textContent,PERMISSION_TEXT['ko-KR'].action);
+      assert.equal($('voice-help').hidden,true);
+      assert.equal(speech,previous,'opening the page must not open the microphone');
+      $('voice').fire('click'); assert.notEqual(speech,previous); assert.equal(speech.started,true);
+      assert.equal($('permission-prompt').hidden,false);
+      assert.equal($('permission-prompt-title').textContent,PERMISSION_TEXT['ko-KR'].prompt);
+      assert.equal($('listening').attributes['data-mic-state'],'starting');
+      speech.onerror({error:'not-allowed'});
+      assert.equal($('permission-prompt').hidden,true); assert.equal($('permission-guide').open,true);
+      assert.equal($('listening-title').textContent,PERMISSION_TEXT['ko-KR'].blocked);
+      assert.equal($('voice-retry').textContent,PERMISSION_TEXT['ko-KR'].retry);
+      assert.equal($('permission-step-3').textContent,PERMISSION_TEXT['ko-KR'].step3);
+      assert.equal(sent.length,count);
+      const denied=speech; $('voice-retry').fire('click');assert.notEqual(speech,denied);assert.equal(speech.started,true);
+      assert.equal($('permission-guide').open,false);
+      speech.onstart(); assert.equal($('permission-prompt').hidden,true); assert.equal($('permission-guide').hidden,true);
+      assert.equal($('voice-text').textContent,LANGUAGES[0].text[0].replace('🎙 ',''));
+      speech.onerror({error:'service-not-allowed'});assert.equal($('voice-text').textContent,PERMISSION_TEXT['ko-KR'].action);
+      $('permission-safari').fire('click');assert.equal($('listening').open,false);assert.equal($('safari-handoff').open,true);assert.equal($('safari-open').focused,true);
+      assert.equal(sent.length,count,'help does not disconnect or send searches');
+    });
+    await t.test('permission instructions follow all eleven selected languages without changing drafts or PC code',()=>{
+      const draft=$('query').value,code=$('code').value;
+      for(const language of LANGUAGES){
+        choose(language.code);const p=PERMISSION_TEXT[language.code];
+        assert.equal($('voice-text').textContent,p.action);
+        assert.equal($('permission-prompt-title').textContent,p.prompt);
+        assert.equal($('permission-guide-title').textContent,p.guide);
+        for(let i=1;i<=3;i++)assert.equal($('permission-step-'+i).textContent,p['step'+i]);
+        assert.equal($('query').value,draft);assert.equal($('code').value,code);
+      }
+    });
+    await t.test('old iPhone without native dialog still shows permission instructions and keyboard fallback',async()=>{
+      events.get('pagehide')?.();
+      elements.forEach(element=>{element.children=[];element.value='';element.events.clear();element.href=undefined;});
+      $('listening').showModal=undefined;$('listening').close=undefined;
+      navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) Version/14.1 Mobile Safari/604.1';
+      location.hash='#room=12345678&language=ko-KR';window.SpeechRecognition=undefined;window.webkitSpeechRecognition=Speech;
+      await import('../wk/app.mjs?old-iphone-permission');
+      $('voice').fire('click');assert.equal(speech.started,true);assert.equal($('listening').open,true);assert.equal($('permission-prompt').hidden,false);
+      speech.onerror({error:'not-allowed'});assert.equal($('permission-guide').open,true);assert.equal($('listening').open,true);
+      $('voice-keyboard').fire('click');assert.equal($('listening').open,false);assert.equal($('query').focused,true);
     });
     await t.test('served assets exist and text stays within a responsive phone layout',async()=>{
       assert.match(html,/viewport-fit=cover/);assert.match(html,/maxlength="300"/);assert.match(html,/type="button" disabled/);

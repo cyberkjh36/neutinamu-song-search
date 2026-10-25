@@ -9,11 +9,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://world-karaoke-connect.almondjoy11.chatgpt.site; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>세계가라오케 · Android · iPhone 음성검색</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=2.7">
+  <link rel="stylesheet" href="style.css?v=2.8">
 </head>
 <body>
 <main>
-  <header><span class="brand">WORLD KARAOKE</span><span class="version">WEB 2.7</span><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
+  <header><span class="brand">WORLD KARAOKE</span><span class="version">WEB 2.8</span><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
   <noscript>브라우저에서 JavaScript를 허용해 주세요. Enable JavaScript in your browser.</noscript>
   <div id="compatibility" class="notice" role="alert" hidden></div>
   <section id="chrome-handoff" class="card chrome-card" aria-labelledby="chrome-title" hidden>
@@ -72,13 +72,21 @@
   <p class="mic-badge"><span class="mic-dot" aria-hidden="true"></span><span id="dialog-mic-state" role="status" aria-live="polite" aria-atomic="true">마이크 꺼짐</span></p>
   <div class="mic-stage" aria-hidden="true"><div class="mic-orb"><svg viewBox="0 0 64 64"><rect x="23" y="7" width="18" height="32" rx="9"/><path d="M15 29v4a17 17 0 0 0 34 0v-4M32 50v8M22 58h20"/><path class="mic-grille" d="M28 15h8M28 21h8M28 27h8"/><path class="mic-slash" d="m10 10 44 44"/></svg></div><div class="sound-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
   <h2 id="listening-title">노래 제목을 말씀해 주세요</h2>
-  <p id="voice-status"></p><p id="voice-empty" class="voice-empty">말씀하신 내용이 여기에 나타납니다</p><p id="interim" aria-live="polite"></p>
-  <button id="stop-voice" class="secondary voice-done" type="button"><span class="stop-square" aria-hidden="true"></span><span id="stop-label">말하기 완료</span></button>
+  <aside id="permission-prompt" class="permission-prompt" hidden><strong id="permission-prompt-title">아이폰 안내창에서 “허용”</strong><p id="permission-prompt-help"></p></aside>
+  <p id="voice-status"></p>
   <button id="voice-retry" class="secondary" type="button" hidden>다시 말하기</button>
+  <details id="permission-guide" class="permission-guide" hidden>
+    <summary id="permission-guide-title">안내창이 안 뜨나요?</summary>
+    <ol><li id="permission-step-1"></li><li id="permission-step-2"></li><li id="permission-step-3"></li></ol>
+    <p id="permission-missing"></p><p id="permission-note"></p>
+  </details>
+  <p id="voice-empty" class="voice-empty">말씀하신 내용이 여기에 나타납니다</p><p id="interim" aria-live="polite"></p>
+  <button id="stop-voice" class="secondary voice-done" type="button"><span class="stop-square" aria-hidden="true"></span><span id="stop-label">말하기 완료</span></button>
   <button id="voice-keyboard" class="keyboard-voice" type="button">키보드 마이크로 입력</button>
+  <button id="permission-safari" type="button" class="keyboard-voice" hidden>Safari로 여는 방법</button>
   <button id="voice-close" class="secondary" type="button" hidden>닫기</button>
 </dialog>
-<script type="module" src="app.mjs?v=2.7"></script>
+<script type="module" src="app.mjs?v=2.8"></script>
 </body>
 </html>
 

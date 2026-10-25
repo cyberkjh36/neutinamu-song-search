@@ -6,6 +6,7 @@ import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
 import { MIC_TEXT } from './mic-text.mjs?v=2.7';
+import { PERMISSION_TEXT } from './permission-text.mjs?v=2.8';
 import { VOICE_TEXT } from './voice-text.mjs?v=2.4';
 import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
 import { SAFARI_TEXT } from './safari-text.mjs?v=2.6';
@@ -16,28 +17,45 @@ let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false,
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
 let voiceState = 'idle', voiceError = 'unavailable';
+// A successful start in this page is UI history, never a stored permission grant.
+let permissionConfirmed = false;
 const appleMobile = isAppleMobile(navigator);
 let safariCopyState = '', safariPending = false;
 function voiceWords() { return VOICE_TEXT[currentLanguage.code]; }
 function renderVoice() {
-  const words = voiceWords(), mic = MIC_TEXT[currentLanguage.code], failed = voiceState === 'error';
+  const words = voiceWords(), mic = MIC_TEXT[currentLanguage.code], permission = PERMISSION_TEXT[currentLanguage.code], failed = voiceState === 'error';
+  const permissionFailure = appleMobile && failed && voiceError === 'permission';
   const listening = ['listening','hearing'].includes(voiceState);
   const stateLabel = mic[voiceState] || mic.off;
   for (const id of ['voice','listening']) $(id).setAttribute('data-mic-state', voiceState);
-  $('voice-hint').textContent = mic.tap;
+  $('voice-text').textContent = appleMobile && !permissionConfirmed ? permission.action : currentLanguage.text[0].replace('🎙 ', '');
+  $('voice-hint').textContent = appleMobile && !permissionConfirmed ? permission.hint : mic.tap;
   $('mic-state').textContent = stateLabel;
   $('dialog-mic-state').textContent = stateLabel;
   $('voice-empty').textContent = mic.empty;
   $('voice-empty').hidden = Boolean($('interim').textContent) || failed || voiceState === 'starting';
   $('keyboard-voice').textContent = $('voice-keyboard').textContent = words.keyboard;
-  $('voice-retry').textContent = words.retry; $('voice-close').textContent = failed ? words.close : mic.cancel;
+  $('voice-retry').textContent = permissionFailure ? permission.retry : words.retry; $('voice-close').textContent = failed ? words.close : mic.cancel;
   $('stop-label').textContent = mic.stop;
   $('stop-voice').disabled = voiceState === 'processing';
-  $('voice-help').hidden = !appleMobile && !failed;
+  $('voice-help').hidden = !failed;
   $('voice-help').textContent = (appleMobile ? words.iphoneHelp + '\n' : '') + words.keyboardHelp;
   $('voice-status').textContent = failed ? words[voiceError] + (appleMobile ? '\n' + words.iphoneHelp : '') : voiceState === 'starting' ? words.starting : voiceState === 'processing' ? mic.processingHelp : currentLanguage.text[5];
   $('voice-status').hidden = listening;
   $('listening-title').textContent = failed ? words.failed : voiceState === 'starting' ? mic.starting : voiceState === 'processing' ? mic.processing : currentLanguage.text[5];
+  if (permissionFailure) { $('listening-title').textContent = permission.blocked; $('voice-status').textContent = permission.blockedHelp; }
+  $('permission-prompt').hidden = !appleMobile || voiceState !== 'starting';
+  $('listening').classList.toggle('permission-start', appleMobile && voiceState === 'starting');
+  $('listening').classList.toggle('permission-blocked', permissionFailure);
+  $('permission-prompt-title').textContent = permission.prompt;
+  $('permission-prompt-help').textContent = permission.promptHelp;
+  $('permission-guide').hidden = !appleMobile || !['starting','error'].includes(voiceState);
+  $('permission-guide-title').textContent = permission.guide;
+  for (let i=1;i<=3;i++) $('permission-step-'+i).textContent = permission['step'+i];
+  $('permission-missing').textContent = permission.missing;
+  $('permission-note').textContent = permission.note;
+  $('permission-safari').textContent = permission.safari;
+  $('permission-safari').hidden = !appleMobile || !failed;
   $('listening').classList.toggle('voice-error', failed);
   $('voice-retry').hidden = !failed; $('voice-close').hidden = false; $('stop-voice').hidden = failed || voiceState === 'starting';
 }
@@ -255,6 +273,8 @@ voice = new VoiceInput({
   getRecognition: () => window.SpeechRecognition || window.webkitSpeechRecognition,
   onState(state) {
     voiceState = state;
+    if (['listening','hearing'].includes(state)) permissionConfirmed = true;
+    if (state === 'starting') $('permission-guide').open = false;
     renderVoice(); openVoiceDialog($('listening')); refreshControls();
   },
   onResult({text, preview}) {
@@ -273,8 +293,10 @@ voice = new VoiceInput({
   },
   onError(reason) {
     voiceState = 'error'; voiceError = voiceErrorKey(reason);
+    if (voiceError === 'permission') permissionConfirmed = false;
     showError(voiceError === 'permission' ? 'microphone' : voiceError === 'language' ? 'language' : 'speech');
     renderVoice(); openVoiceDialog($('listening')); refreshControls();
+    if (appleMobile && ['permission','timeout'].includes(voiceError)) $('permission-guide').open = true;
   }
 });
 function startVoice() {
@@ -297,6 +319,10 @@ $('voice-retry').addEventListener('click', startVoice);
 $('keyboard-voice').addEventListener('click', useKeyboardVoice);
 $('voice-keyboard').addEventListener('click', useKeyboardVoice);
 $('voice-close').addEventListener('click', closeVoice);
+$('permission-safari').addEventListener('click', () => {
+  if (!appleMobile) return;
+  closeVoice(); $('safari-handoff').open = true; $('safari-open').focus();
+});
 $('stop-voice').addEventListener('click', () => voice.stop());
 $('listening').addEventListener('cancel', event => { event.preventDefault(); closeVoice(); });
 $('listening').addEventListener('keydown', event => {
