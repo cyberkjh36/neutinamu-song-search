@@ -46,3 +46,9 @@
 #listening .permission-guide p{font-size:14px;min-height:0;line-height:1.6;color:#c8dacf;margin:10px 0}#listening #permission-note{font-size:12px;color:#acc3b6}#listening #permission-safari{margin:4px 0 0}
 #listening.permission-start .mic-stage,#listening.permission-blocked .mic-stage{display:none}
 
+
+
+/* WEB 2.9: append-only phone video reservation. */
+.queue-card{border-color:#779994;overflow-wrap:anywhere}.queue-card h2{align-items:flex-start}
+#queue-youtube{display:block;color:#d6f5ae;min-height:48px;padding:10px 0;margin-bottom:10px;font-size:17px;font-weight:650}
+#queue-url{direction:ltr;min-width:0;font-size:17px;margin-bottom:14px}#queue-add{font-size:21px;overflow-wrap:anywhere}#queue-note{font-size:13px;line-height:1.6;color:#a9c1b9;margin-bottom:0}#queue-youtube:focus-visible{outline:3px solid #fff;outline-offset:4px}

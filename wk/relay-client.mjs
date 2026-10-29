@@ -1,4 +1,5 @@
 import { LANGUAGES } from './labels.mjs?v=2.1';
+import { CAPABILITY, queueCommand } from './queue-protocol.mjs?v=2.9';
 export const ENDPOINT='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
 const failure=code=>Object.assign(new Error(code),{code});
 const random=length=>Array.from(crypto.getRandomValues(new Uint8Array(length)),b=>b.toString(16).padStart(2,'0')).join('');
@@ -16,7 +17,7 @@ export class KaraokeConnection {
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
-    try{const reply=await this.call('join',{name},generation);this.set('ready',reply.server);this.heartbeat(generation);}
+    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.set('ready',this.queueSupported?reply.server.slice(CAPABILITY.length):reply.server);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
   }
   heartbeat(generation){
@@ -25,6 +26,10 @@ export class KaraokeConnection {
       try{await this.call('ping',{},generation);if(generation===this.generation)this.heartbeat(generation);}
       catch(e){if(generation===this.generation){await this.disconnect();this.set('error',e.code);}}
     },this.pingMs);
+  }
+  async addVideo(id,request,language){
+    if(!this.queueSupported)throw failure('upgrade');
+    return this.search(queueCommand(id,request),language);
   }
   async search(text,language){
     if(this.state!=='ready')throw failure('disconnected');
@@ -45,7 +50,8 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.set('idle');
+    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }
+

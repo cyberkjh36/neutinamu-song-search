@@ -1,6 +1,7 @@
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
-import { KaraokeConnection } from './relay-client.mjs?v=2.1';
+import { KaraokeConnection } from './relay-client.mjs?v=2.9';
+import { createQueueUi } from './queue-ui.mjs?v=2.9';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
 import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
@@ -16,6 +17,7 @@ const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navi
 let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
+let queueUi;
 let voiceState = 'idle', voiceError = 'unavailable';
 // A successful start in this page is UI history, never a stored permission grant.
 let permissionConfirmed = false;
@@ -111,6 +113,7 @@ function renderSafariHandoff() {
   $('safari-copy-feedback').textContent = safariCopyState ? words[safariCopyState] : '';
 }
 function refreshControls() {
+  queueUi?.render();
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
   busy = state === 'sending';
@@ -138,6 +141,7 @@ const connection = new KaraokeConnection(undefined, (state, detail) => {
 });
 const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
+queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 for (const language of LANGUAGES) {
   const words = MESSAGES[language.code], button = document.createElement('button');
   button.type = 'button'; button.className = 'country'; button.lang = language.code;
@@ -178,7 +182,7 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...words.steps.map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
@@ -340,4 +344,5 @@ refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.
 if (secure && navigator.serviceWorker?.register) navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(()=>{});
+
 
