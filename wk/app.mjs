@@ -1,6 +1,8 @@
+import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
+import { createBrowseUi } from './browse-ui.mjs?v=3.0';
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
-import { KaraokeConnection } from './relay-client.mjs?v=2.9';
+import { KaraokeConnection } from './relay-client.mjs?v=3.0';
 import { createQueueUi } from './queue-ui.mjs?v=2.9';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
@@ -17,7 +19,7 @@ const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navi
 let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
-let queueUi;
+let queueUi, browseUi;
 let voiceState = 'idle', voiceError = 'unavailable';
 // A successful start in this page is UI history, never a stored permission grant.
 let permissionConfirmed = false;
@@ -64,7 +66,11 @@ function renderVoice() {
 const countryButtons = new Map();
 const actionKeys = {queryHint:3, connected:6, disconnected:7, sent:8, sending:9};
 function message(key, error = false) {
+  if (error && key === 'upgrade') return BROWSE_TEXT[currentLanguage.code].upgrade;
   if (error) return MESSAGES[currentLanguage.code].errors[key] || MESSAGES[currentLanguage.code].errors.connect;
+  if (!error && key === 'queryHint') return BROWSE_TEXT[currentLanguage.code].hint;
+  if (!error && key === 'sent') return BROWSE_TEXT[currentLanguage.code].hint;
+  if (!error && key === 'sending') return BROWSE_TEXT[currentLanguage.code].searching;
   if (key === 'connected') return currentLanguage.text[6] + ' · ' + serverName;
   return key in actionKeys ? currentLanguage.text[actionKeys[key]] : MESSAGES[currentLanguage.code][key];
 }
@@ -113,7 +119,7 @@ function renderSafariHandoff() {
   $('safari-copy-feedback').textContent = safariCopyState ? words[safariCopyState] : '';
 }
 function refreshControls() {
-  queueUi?.render();
+  queueUi?.render(); browseUi?.render();
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
   busy = state === 'sending';
@@ -122,8 +128,9 @@ function refreshControls() {
   $('code').disabled = active;
   $('disconnect').hidden = !active;
   $('send').disabled = state !== 'ready' || !supported || Boolean(voice?.active) || !$('query').value.trim();
-  $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : currentLanguage.text[1];
+  $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : BROWSE_TEXT[currentLanguage.code].search;
   $('query').disabled = busy;
+  $('legacy-search').disabled = state !== 'ready' || Boolean(voice?.active) || !$('query').value.trim();
   for (const button of countryButtons.values()) button.disabled = busy || Boolean(voice?.active);
   $('voice').disabled = busy || Boolean(voice?.active) || !secure;
   $('keyboard-voice').disabled = busy;
@@ -142,6 +149,7 @@ const connection = new KaraokeConnection(undefined, (state, detail) => {
 const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
+browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
 for (const language of LANGUAGES) {
   const words = MESSAGES[language.code], button = document.createElement('button');
   button.type = 'button'; button.className = 'country'; button.lang = language.code;
@@ -165,7 +173,7 @@ function selectLanguage(code) {
   document.documentElement.lang = currentLanguage.code;
   const t = currentLanguage.text, words = MESSAGES[currentLanguage.code];
   document.title = 'WORLD KARAOKE · ' + words.title;
-  $('title').textContent = words.title;
+  $('title').textContent = BROWSE_TEXT[currentLanguage.code].title;
   const labels = {
     subtitle:'subtitle', 'language-label':'languageLabel', 'language-help':'languageHelp',
     'pair-help':'pairHelp', 'confirm-help':'confirmHelp', disconnect:'disconnect',
@@ -178,11 +186,12 @@ function selectLanguage(code) {
   for (const [locale,button] of countryButtons) button.setAttribute('aria-pressed', String(locale === currentLanguage.code));
   $('connection-title').textContent = t[2]; $('connect').textContent = t[2]; $('code-label').textContent = t[4];
   $('search-title').textContent = t[0].replace('🎙 ', ''); $('voice-text').textContent = t[0].replace('🎙 ', '');
-  $('query-label').textContent = t[3]; $('query').placeholder = t[3]; $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : t[1]; $('listening-title').textContent = t[5];
-  $('help-list').replaceChildren(...words.steps.map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
+  $('query-label').textContent = t[3]; $('query').placeholder = t[3]; $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : BROWSE_TEXT[currentLanguage.code].search; $('listening-title').textContent = t[5];
+  const browseWords=BROWSE_TEXT[currentLanguage.code];$('advanced-title').textContent=browseWords.advanced;$('legacy-search').textContent=browseWords.legacy;$('shared-help').textContent=browseWords.shared;
+  $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
@@ -257,14 +266,16 @@ $('send').addEventListener('click', async () => {
   if ($('send').disabled) return;
   if (searchComplete) {
     searchComplete = false; $('query').value = ''; $('interim').textContent = '';
-    feedback('queryHint'); refreshControls(); $('query').focus();
+    browseUi.clear(); feedback('queryHint'); refreshControls(); $('query').focus();
     return;
   }
-  feedback('sending');
-  try { const result = await connection.search($('query').value, currentLanguage.code); if (result.ok) { searchComplete = true; feedback('sent'); } else showError(result.code); }
+  if($('query').value.trim().length>200){$('feedback').textContent=BROWSE_TEXT[currentLanguage.code].long;return;}
+  browseUi.clear();feedback('sending');
+  try { const catalog = await connection.browse($('query').value, currentLanguage.code); browseUi.show(catalog); searchComplete = !catalog.error; feedback(catalog.error?'confirmHelp':'sent'); if(catalog.items.length)$('results').scrollIntoView({behavior:'smooth',block:'start'}); }
   catch (error) { showError(error); }
   finally { refreshControls(); }
 });
+$('legacy-search').addEventListener('click',async()=>{if($('legacy-search').disabled)return;try{const r=await connection.search($('query').value,currentLanguage.code);if(!r.ok)showError(r.code);else feedback('connected');}catch(e){showError(e);}finally{refreshControls();}});
 function voiceErrorKey(reason) {
   if (['not-allowed','service-not-allowed','audio-capture'].includes(reason)) return 'permission';
   if (reason === 'language-not-supported') return 'language';

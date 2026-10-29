@@ -1,4 +1,5 @@
 import { LANGUAGES } from './labels.mjs?v=2.1';
+import {browseCommand, readCatalog} from './browse-protocol.mjs?v=3.0';
 import { CAPABILITY, queueCommand } from './queue-protocol.mjs?v=2.9';
 export const ENDPOINT='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
 const failure=code=>Object.assign(new Error(code),{code});
@@ -17,7 +18,7 @@ export class KaraokeConnection {
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
-    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.set('ready',this.queueSupported?reply.server.slice(CAPABILITY.length):reply.server);this.heartbeat(generation);}
+    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.set('ready',this.browseSupported?reply.server.slice(10):this.queueSupported?reply.server.slice(CAPABILITY.length):reply.server);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
   }
   heartbeat(generation){
@@ -27,6 +28,12 @@ export class KaraokeConnection {
       catch(e){if(generation===this.generation){await this.disconnect();this.set('error',e.code);}}
     },this.pingMs);
   }
+  async browse(query,language){
+    if(!this.browseSupported)throw failure('upgrade');
+    if(!this.browseDraft||this.browseDraft.query!==query||this.browseDraft.language!==language)this.browseDraft={query,language,request:random(16)};
+    const result=await this.search(browseCommand(query,this.browseDraft.request,language),language);
+    if(!result.ok)throw failure(result.code);const catalog=readCatalog(result.catalog);this.browseDraft=null;return catalog;
+  }
   async addVideo(id,request,language){
     if(!this.queueSupported)throw failure('upgrade');
     return this.search(queueCommand(id,request),language);
@@ -35,12 +42,14 @@ export class KaraokeConnection {
     if(this.state!=='ready')throw failure('disconnected');
     if(typeof text!=='string'||!text.trim()||text.length>300||/[\u0000-\u001f\u007f-\u009f]/.test(text)||!LANGUAGES.some(l=>l.code===language))throw failure('invalid');
     text=text.trim();if(!this.last||this.last.text!==text||this.last.language!==language)this.last={id:random(16),text,language};
-    const job=this.last,generation=this.generation,deadline=Date.now()+this.searchMs;this.set('sending');
+    const job=this.last,generation=this.generation;this.set('sending');
     try{
-      await this.call('search',job,generation);
+      const delay=Math.max(0,(this.nextSend||0)-Date.now());if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+      if(generation!==this.generation)throw failure('disconnected');
+      await this.call('search',job,generation);this.nextSend=Date.now()+1550;const deadline=Date.now()+this.searchMs;
       while(Date.now()<deadline){
         const r=await this.call('result',{id:job.id},generation);
-        if(!r.pending){this.last=null;return {ok:r.result,code:r.result?undefined:'failed'};}
+        if(!r.pending){this.last=null;return {ok:r.result,code:r.result?undefined:'failed',...(r.catalog?{catalog:r.catalog}:{})};}
         await new Promise(resolve=>setTimeout(resolve,this.waitMs));
         if(generation!==this.generation)throw failure('disconnected');
       }
@@ -50,7 +59,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.set('idle');
+    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.browseSupported=false;this.browseDraft=null;this.nextSend=0;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

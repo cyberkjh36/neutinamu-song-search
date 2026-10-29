@@ -1,3 +1,4 @@
+import {BROWSE_TEXT} from '../wk/browse-text.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -16,6 +17,7 @@ class Element {
   append(...values){this.children.push(...values);}
   replaceChildren(...values){this.children=values;}
   setAttribute(k,v){this.attributes[k]=v;}
+  scrollIntoView(){}
   focus(){this.focused=true;}
   removeAttribute(k){delete this.attributes[k];}
   showModal(){this.open=true;}
@@ -36,7 +38,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     abort(){this.onend?.();}
   }
   globalThis.window={isSecureContext:true,SpeechRecognition:Speech,addEventListener:(k,v)=>events.set(k,v)};
-  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'TEST-PC',pending:false,result:nextResult});};
+  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'WKQ1 WKS1 TEST-PC',pending:false,result:nextResult,catalog:{v:1,items:[{id:'abcdefghijk',title:'노래 ไทย',channel:'Channel',duration:'3:00'}],error:null}});};
   window.fetch=globalThis.fetch;window.crypto=globalThis.crypto;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR',userAgent:'Mozilla/5.0 (Linux; Android 10) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36'}});
   const $=id=>elements.get(id);
@@ -48,10 +50,10 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal($('country-picker').open,true);assert.equal($('code').value,'12345678');assert.equal(sent.length,0);$('code').value='12345678';$('query').value='보존할 노래';
       for(const language of LANGUAGES){
         choose(language.code);const words=MESSAGES[language.code];
-        assert.equal(document.documentElement.lang,language.code);assert.equal($('title').textContent,words.title);
-        assert.equal($('pair-help').textContent,words.pairHelp);assert.equal($('help-list').children[4].textContent,words.steps[4]);
+        assert.equal(document.documentElement.lang,language.code);assert.equal($('title').textContent,BROWSE_TEXT[language.code].title);
+        assert.equal($('pair-help').textContent,words.pairHelp);assert.equal($('help-list').children[4].textContent,BROWSE_TEXT[language.code].hint);
         assert.equal($('privacy-help').textContent,words.privacyHelp);assert.equal($('disconnect').textContent,words.disconnect);
-        assert.equal($('stop-label').textContent,MIC_TEXT[language.code].stop);assert.equal($('send').textContent,language.text[1]);
+        assert.equal($('stop-label').textContent,MIC_TEXT[language.code].stop);assert.equal($('send').textContent,BROWSE_TEXT[language.code].search);
         assert.equal($('listening-title').textContent,language.text[5]);assert.equal($('connection-state').textContent,language.text[7]);
         assert.equal($('chrome-handoff').hidden,false);assert.equal($('chrome-open').textContent,CHROME_TEXT[language.code][2]);assert.equal($('chrome-default').textContent,CHROME_TEXT[language.code][4]);
         assert.equal($('query').value,'보존할 노래');assert.equal($('code').value,'12345678');assert.equal(storage.get('wk-bt-language'),language.code);
@@ -96,7 +98,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal($('mic-state').textContent,MIC_TEXT['th-TH'].result);
     });
     await t.test('explicit button sends one selected-language request and confirms PC acknowledgement',async()=>{
-      await $('send').fire('click');assert.equal(sent.length,3);assert.equal(sent[1].op,'search');assert.equal(sent[1].language,'th-TH');assert.equal(sent[1].text,'เพลงไทย');assert.match($('feedback').textContent,/PC/);
+      await $('send').fire('click');assert.equal(sent.length,3);assert.equal(sent[1].op,'search');assert.equal(sent[1].language,'th-TH');assert.ok(sent[1].text.endsWith(":"+'เพลงไทย'));assert.match($('feedback').textContent,/PC/);
     });
     await t.test('microphone denial leaves typed search available',()=>{
       $('voice').fire('click');speech.onerror({error:'not-allowed'});assert.equal($('feedback').textContent,MESSAGES['th-TH'].errors.microphone);assert.equal($('listening').open,true);assert.equal($('voice-keyboard').hidden,false);$('voice-close').fire('click');assert.equal($('query').disabled,false);assert.equal($('send').disabled,false);
@@ -118,30 +120,30 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       await $('send').fire('click');
       assert.equal($('query').value,'');assert.equal($('interim').textContent,'');assert.equal($('query').focused,true);
       assert.equal($('code').value,room);assert.equal($('connection-state').textContent,status);assert.equal(document.documentElement.lang,'ko-KR');
-      assert.equal(sent.length,count);assert.equal($('connect').disabled,true);assert.equal($('send').disabled,true);assert.equal($('send').textContent,LANGUAGES[0].text[1]);
+      assert.equal(sent.length,count);assert.equal($('connect').disabled,true);assert.equal($('send').disabled,true);assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);
       const intent=$('chrome-open').href;const target=new URL(intent.slice(0,intent.lastIndexOf('#Intent;')).replace(/^intent:/,'https:'));
       assert.equal(readHandoff(target.hash).query,'');
       await $('send').fire('click');assert.equal(sent.length,count);
     });
     await t.test('next typed song is sent once only after explicit search without reconnecting',async()=>{
       const count=sent.length;$('query').value='두 번째 노래';$('query').fire('input');assert.equal(sent.length,count);
-      await $('send').fire('click');assert.equal(sent.length,count+2);assert.equal(sent[count].op,'search');assert.equal(sent[count].text,'두 번째 노래');assert.equal(sent[count].language,'ko-KR');
+      await $('send').fire('click');assert.equal(sent.length,count+2);assert.equal(sent[count].op,'search');assert.ok(sent[count].text.endsWith(":"+'두 번째 노래'));assert.equal(sent[count].language,'ko-KR');
       assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
       await $('send').fire('click');await $('send').fire('click');assert.equal(sent.length,count+2);assert.equal($('query').value,'');
     });
     await t.test('failed search keeps the title and retry action; editing a successful title starts a new search',async()=>{
       $('query').value='재시도할 노래';$('query').fire('input');nextResult=false;
-      await $('send').fire('click');assert.equal($('query').value,'재시도할 노래');assert.equal($('send').textContent,LANGUAGES[0].text[1]);assert.equal($('send').disabled,false);
+      await $('send').fire('click');assert.equal($('query').value,'재시도할 노래');assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);assert.equal($('send').disabled,false);
       nextResult=true;await $('send').fire('click');assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
-      $('query').value='직접 고친 노래';$('query').fire('input');assert.equal($('send').textContent,LANGUAGES[0].text[1]);
-      const count=sent.length;await $('send').fire('click');assert.equal(sent[count].text,'직접 고친 노래');assert.equal($('query').value,'직접 고친 노래');
+      $('query').value='직접 고친 노래';$('query').fire('input');assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);
+      const count=sent.length;await $('send').fire('click');assert.ok(sent[count].text.endsWith(":"+'직접 고친 노래'));assert.equal($('query').value,'직접 고친 노래');
     });
     await t.test('new voice result after a successful search replaces the title and still waits for Search',async()=>{
       window.webkitSpeechRecognition=Speech;choose('th-TH');const count=sent.length;
       $('voice').fire('click');const result=[{transcript:'เพลงใหม่'}];result.isFinal=true;
       speech.onresult({resultIndex:0,results:[result]});speech.onend();
-      assert.equal($('query').value,'เพลงใหม่');assert.equal(sent.length,count);assert.equal($('send').textContent,LANGUAGES.find(x=>x.code==='th-TH').text[1]);
-      await $('send').fire('click');assert.equal(sent[count].text,'เพลงใหม่');assert.equal(sent[count].language,'th-TH');
+      assert.equal($('query').value,'เพลงใหม่');assert.equal(sent.length,count);assert.equal($('send').textContent,BROWSE_TEXT['th-TH'].search);
+      await $('send').fire('click');assert.ok(sent[count].text.endsWith(":"+'เพลงใหม่'));assert.equal(sent[count].language,'th-TH');
       await $('send').fire('click');assert.equal($('query').value,'');assert.equal(sent.length,count+2);
     });
     await t.test('Chrome button preserves current fields, releases session and never claims app-launch success',async()=>{
@@ -161,7 +163,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       window.fetch=undefined;navigator.language='ko-KR';
       await import('../wk/app.mjs?reload');
       assert.equal(document.documentElement.lang,'ja-JP');assert.equal($('country-picker').open,false);
-      assert.equal($('title').textContent,MESSAGES['ja-JP'].title);
+      assert.equal($('title').textContent,BROWSE_TEXT['ja-JP'].title);
       for(const language of LANGUAGES){choose(language.code);assert.equal($('compatibility').textContent,MESSAGES[language.code].errors.unsupported);assert.equal($('connect').disabled,true);}
     });
     await t.test('invalid saved language and unavailable storage still permit language selection',async()=>{
@@ -238,7 +240,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       $('voice-keyboard').fire('click');assert.equal($('listening').open,false);assert.equal($('query').focused,true);
     });
     await t.test('served assets exist and text stays within a responsive phone layout',async()=>{
-      assert.match(html,/viewport-fit=cover/);assert.match(html,/maxlength="300"/);assert.match(html,/type="button" disabled/);
+      assert.match(html,/viewport-fit=cover/);assert.match(html,/maxlength="200"/);assert.match(html,/type="button" disabled/);
       for(const m of html.matchAll(/(?:src|href)="([^"#]+)"/g))if(!/^https?:/.test(m[1]))assert.ok((await readFile(new URL('../wk/'+m[1],import.meta.url))).length>0);
     });
   }finally{events.get('pagehide')?.();}
@@ -255,4 +257,5 @@ test('eleven country packs include every instruction, every error and a flag ass
     assert.equal(words.steps.length,5);assert.ok((await readFile(new URL('../wk/flags/'+words.flag+'.png',import.meta.url))).length>0);
   }
 });
+
 
