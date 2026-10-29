@@ -25,7 +25,7 @@ export function createBrowseUi({connection,getLanguage,blocked,$=id=>document.ge
    button.addEventListener('click',async()=>{
     if(button.disabled||pending)return;
     const currentGeneration=connection.generation;pending=true;row.state='adding';status='';failed=false;render();
-    try{const result=await connection.addVideo(row.id,row.request,getLanguage());if(!result.ok)throw Error('failed');if(currentGeneration===connection.generation){row.state='added';status='added';}}
+    try{const result=await connection.addVideo(row.id,row.request,getLanguage(),row.title);if(!result.ok)throw Error('failed');if(currentGeneration===connection.generation){row.state='added';status='added';}}
     catch{if(currentGeneration===connection.generation){row.state='add';status='failed';failed=true;}}
     finally{if(currentGeneration===connection.generation)pending=false;render();}
    });return row;

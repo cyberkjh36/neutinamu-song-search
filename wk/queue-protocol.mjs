@@ -12,8 +12,12 @@ export function videoIdFromUrl(value) {
   }
   return /^[A-Za-z0-9_-]{11}$/.test(id || '') ? id : null;
 }
-export function queueCommand(id,request) {
+export function queueCommand(id,request,title) {
   if (!/^[A-Za-z0-9_-]{11}$/.test(id || '') || !/^[a-f0-9]{32}$/.test(request || '')) throw new Error('invalid');
+  if(title!==undefined&&title!==null){
+    if(typeof title!=='string'||!title.trim()||title.length>200||/[\u0000-\u001f\u007f-\u009f]/.test(title))throw new Error('invalid');
+    return `WKQ2:${request}:${id}:${title.trim()}`;
+  }
   return `WKQ1:${request}:${id}`;
 }
 export const requestId=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');

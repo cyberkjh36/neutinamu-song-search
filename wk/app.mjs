@@ -1,8 +1,8 @@
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
-import { createBrowseUi } from './browse-ui.mjs?v=3.0';
+import { createBrowseUi } from './browse-ui.mjs?v=3.1';
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
-import { KaraokeConnection } from './relay-client.mjs?v=3.0';
+import { KaraokeConnection } from './relay-client.mjs?v=3.1';
 import { createQueueUi } from './queue-ui.mjs?v=2.9';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
