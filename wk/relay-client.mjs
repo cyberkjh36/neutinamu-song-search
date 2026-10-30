@@ -37,7 +37,21 @@ export class KaraokeConnection {
   }
   async control(action,request,language){
     if(!this.controlSupported)throw failure('upgrade');
-    return this.search(controlCommand(action,request),language);
+    const text=controlCommand(action,request),generation=this.generation;
+    for(let attempt=0;attempt<3;attempt++){
+      try{return await this.search(text,language);}
+      catch(e){
+        if(generation!==this.generation)throw failure('disconnected');
+        if(attempt===2||!['connect','networkTimeout','busy','slow'].includes(e.code)||this.state!=='ready')throw e;
+        // Keep the exact command nonce and retained relay job on a lost reply.
+        // A retry must never become a second Next command. Keep all actions
+        // blocked while recovering, and never retry into a different PC room.
+        this.set('sending');
+        await new Promise(resolve=>setTimeout(resolve,1600*(attempt+1)));
+        if(generation!==this.generation||this.state!=='sending')throw failure('disconnected');
+        this.set('ready');
+      }
+    }
   }
   async favorites(query,page,language){
     if(!this.favoritesSupported)throw failure('upgrade');
