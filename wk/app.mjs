@@ -1,4 +1,4 @@
-import {createCountryKeyboard} from './keyboard/ui.mjs?v=3.4.1';
+import {createCountryKeyboard} from './keyboard/ui.mjs?v=3.4.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.4';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';

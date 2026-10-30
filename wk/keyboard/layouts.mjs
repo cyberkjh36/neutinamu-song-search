@@ -1,6 +1,6 @@
 // Touch layouts: at most ten keys per row. Script marks use logical Unicode order.
 const rows = s => s.split('|').map(row => row.trim().split(/\s+/));
-const chunk = s => {const keys=s.trim().split(/\s+/);return Array.from({length:Math.ceil(keys.length/10)},(_,i)=>keys.slice(i*10,i*10+10));};
+const chunk = (s,width=10) => {const keys=s.trim().split(/\s+/);return Array.from({length:Math.ceil(keys.length/width)},(_,i)=>keys.slice(i*width,i*width+width));};
 const latin=rows('q w e r t y u i o p|a s d f g h j k l|z x c v b n m');
 const upper=layout=>layout.map(row=>row.map(key=>key.toUpperCase()));
 const thai=chunk('ๆ ไ ำ พ ะ ั ี ร น ย บ ล ฃ ฟ ห ก ด เ ้ ่ า ส ว ง ผ ป แ อ ิ ื ท ม ใ ฝ ภ ถ ุ ึ ค ต จ ข ช ฅ');
@@ -10,7 +10,7 @@ const nepaliMore=chunk('अ आ इ ई उ ऊ ऋ ए ऐ ओ औ ळ ॐ । 
 const lao=chunk('ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ ຝ ພ ຟ ມ ຢ ຣ ລ ວ ຫ ອ ຮ ໜ ໝ ະ ັ າ ຳ ິ ີ ຶ ື ຸ ູ ົ ເ ແ ໂ ໃ ໄ ່ ້ ໊ ໋ ໍ');
 const laoMore=chunk('ຯ ໆ ໌ ໐ ໑ ໒ ໓ ໔ ໕ ໖ ໗ ໘ ໙ ຫຼ ຽ');
 // Unicode Myanmar, never Zawgyi. Choose consonants before dependent vowels.
-const myanmar=chunk('က ခ ဂ ဃ င စ ဆ ဇ ဈ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ ဉ ဿ ် ာ ါ ိ ီ ု ူ ေ ဲ ံ ့ း ျ ြ ွ ှ ္');
+const myanmar=chunk('က ခ ဂ ဃ င စ ဆ ဇ ဈ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ ဉ ဿ ် ာ ါ ိ ီ ု ူ ေ ဲ ံ ့ း ျ ြ ွ ှ ္',9);
 const myanmarMore=rows('ဣ ဤ ဥ ဦ ဧ ဩ ဪ|၌ ၍ ၏ ၎ င်္|၀ ၁ ၂ ၃ ၄ ၅ ၆ ၇ ၈ ၉|၊ ။');
 const mongolian=rows('ф ц у ж э н г ш ү з|к ъ й ы б ө а х р о|л д п я ч ё с м и т|ь в ю е щ');
 const hiragana=rows('あ い う え お か き く け こ|さ し す せ そ た ち つ て と|な に ぬ ね の は ひ ふ へ ほ|ま み む め も や ゆ よ わ を|ら り る れ ろ ん ー {dakuten} {handakuten} {small}');

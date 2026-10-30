@@ -1,4 +1,4 @@
-import {LAYOUTS,LATIN,SYMBOLS,KEY_LABELS} from './layouts.mjs?v=3.4.1';
+import {LAYOUTS,LATIN,SYMBOLS,KEY_LABELS} from './layouts.mjs?v=3.4.2';
 import {KEYBOARD_TEXT} from './text.mjs?v=3.4';
 import {KeyboardEditor} from './editor.mjs?v=3.4';
 

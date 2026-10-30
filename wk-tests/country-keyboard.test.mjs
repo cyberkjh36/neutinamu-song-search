@@ -14,6 +14,7 @@ test('all eleven countries have readable labels, full local layouts and <= 10 ke
  for(const {code} of LANGUAGES){assert.equal(LAYOUTS[code].pages.length,2);for(const page of LAYOUTS[code].pages)for(const row of page){assert.ok(row.length>0&&row.length<=10);for(const key of row)assert.ok(key&&key!=='undefined');}
   for(const value of Object.values(KEYBOARD_TEXT[code]))assert.ok(value.trim());
  }
+ assert.ok(LAYOUTS['my-MM'].pages[0].every(row=>row.length<=9));
  assert.ok(LAYOUTS['mn-MN'].pages.flat(2).includes('ү'));assert.ok(LAYOUTS['mn-MN'].pages.flat(2).includes('ө'));
 });
 for(const [title,keys] of [['사랑은 늘 도망가','ㅅㅏㄹㅏㅇㅇㅡㄴ ㄴㅡㄹ ㄷㅗㅁㅏㅇㄱㅏ'],['값이','ㄱㅏㅂㅅㅇㅣ'],['가까이','ㄱㅏㄲㅏㅇㅣ'],['괜찮아','ㄱㅗㅐㄴㅊㅏㄴㅎㅇㅏ'],['닭을','ㄷㅏㄹㄱㅇㅡㄹ'],['과자','ㄱㅗㅏㅈㅏ'],['읽어','ㅇㅣㄹㄱㅇㅓ'],['있다','ㅇㅣㅆㄷㅏ'],['갃사','ㄱㅏㄱㅅㅅㅏ']]){
@@ -126,4 +127,9 @@ test('external voice/reset values cannot be overwritten by stale editor state',a
 test('all Chinese candidates are reachable and selecting one updates the real search field',async()=>{
  const h=await harness(),{$,key}=h;h.choose('zh-CN');$('query-keyboard').click();for(const c of 'zhou')key(c);assert.equal($('query').value,'zhou');
  const button=$('country-keyboard-candidates').children.find(b=>b.textContent==='周');assert.ok(button);button.click();assert.equal($('query').value,'周');assert.equal(h.searches,0);
+});
+
+test('browser translation cannot rewrite the selected language or key labels',async()=>{
+ const html=await readFile(new URL('../wk/index.html',import.meta.url),'utf8');
+ assert.match(html,/<html[^>]*translate="no"/);assert.match(html,/<meta name="google" content="notranslate">/);
 });
