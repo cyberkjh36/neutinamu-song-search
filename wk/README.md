@@ -244,3 +244,21 @@ QR을 처음 여는 앱이나 기본 브라우저 설정은 웹사이트에서 �
 참고: [Safari URL scheme의 앱별 동작 차이](https://bugzilla.mozilla.org/show_bug.cgi?id=1986355), [Apple 기본 앱 설정](https://support.apple.com/ko-kr/121430).
 
 
+
+
+## WEB 3.5 — PC queue order on the phone
+
+Adds a read-only 예약곡 목록 panel after playback controls. It shows title, order,
+current/paused status, and 20 rows per page. The expanded visible panel refreshes
+every 5 seconds after its previous response. Closed/background/voice-active panels
+do not poll. Unchanged snapshots preserve DOM/scroll. Failed reads retain the old
+list with a clear stale message; room changes clear the old list.
+
+Requires PC 1.3.57.79 advertising WKL1. The existing authenticated relay carries
+WKL1:<nonce>:<page> and a strictly validated queue catalog. No playback/favorites
+mutation or idle-activity reset occurs. Queue reads remain separate from search
+drafts; an in-flight read finishes before a deliberate command sends, preserving
+the relay's per-phone limit and command nonce. No relay database change.
+
+The root TJ P2 app is unchanged. 11 locale labels; Android Chrome/iPhone Safari
+web UI. wk-tests/playlist-preview.html is a synthetic display fixture only.

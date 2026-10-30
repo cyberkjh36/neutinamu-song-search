@@ -29,7 +29,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
   const elements=new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(x=>[x[1],new Element()]));
   const head=new Element(),events=new Map(),sent=[],storage=new Map();let speech, nextResult=true;
   globalThis.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
-  globalThis.document={getElementById:id=>{assert.ok(elements.has(id),id);return elements.get(id);},querySelector:()=>head,documentElement:{},createElement:()=>new Element()};
+  globalThis.document={addEventListener(){},removeEventListener(){},getElementById:id=>{assert.ok(elements.has(id),id);return elements.get(id);},querySelector:()=>head,documentElement:{},createElement:()=>new Element()};
   globalThis.location={protocol:'https:',hostname:'example.test',hash:'#12345678'};
   class Speech {
     constructor(){speech=this;}

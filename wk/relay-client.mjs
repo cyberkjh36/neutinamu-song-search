@@ -1,3 +1,4 @@
+import {playlistCommand,readPlaylist} from './playlist-protocol.mjs?v=3.5';
 import {controlCommand,favoritesCommand} from './remote-protocol.mjs?v=3.2';
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import {browseCommand, readCatalog} from './browse-protocol.mjs?v=3.0';
@@ -19,7 +20,7 @@ export class KaraokeConnection {
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
-    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?/,''):reply.server);this.heartbeat(generation);}
+    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
   }
   heartbeat(generation){
@@ -58,32 +59,43 @@ export class KaraokeConnection {
     const result=await this.search(favoritesCommand(query,page,random(16),language),language);
     if(!result.ok)throw failure(result.code);return readCatalog(result.catalog);
   }
+  async playlist(page,language){
+    if(!this.playlistSupported)throw failure('upgrade');
+    if(this.playlistPending)throw failure('busy');
+    const task=this.search(playlistCommand(page,random(16)),language,true);
+    this.playlistPending=task;
+    try{const result=await task;if(!result.ok)throw failure(result.code);return readPlaylist(result.catalog);}
+    finally{if(this.playlistPending===task)this.playlistPending=null;}
+  }
   async addVideo(id,request,language,title){
     if(!this.queueSupported)throw failure('upgrade');
     return this.search(queueCommand(id,request,this.titleSupported?title:undefined),language);
   }
-  async search(text,language){
+  async search(text,language,background=false){
     if(this.state!=='ready')throw failure('disconnected');
     if(typeof text!=='string'||!text.trim()||text.length>300||/[\u0000-\u001f\u007f-\u009f]/.test(text)||!LANGUAGES.some(l=>l.code===language))throw failure('invalid');
-    text=text.trim();if(!this.last||this.last.text!==text||this.last.language!==language)this.last={id:random(16),text,language};
-    const job=this.last,generation=this.generation;this.set('sending');
+    text=text.trim();if(!background&&(!this.last||this.last.text!==text||this.last.language!==language))this.last={id:random(16),text,language};
+    const job=background?{id:random(16),text,language}:this.last,generation=this.generation;if(!background)this.set('sending');
     try{
+      // Queue polling is read-only and never flashes the search UI or changes its draft.
+      // A deliberate command waits for an in-flight read, then has priority.
+      if(!background&&this.playlistPending)await this.playlistPending.catch(()=>{});
       const delay=Math.max(0,(this.nextSend||0)-Date.now());if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
       if(generation!==this.generation)throw failure('disconnected');
       await this.call('search',job,generation);this.nextSend=Date.now()+1550;const deadline=Date.now()+this.searchMs;
       while(Date.now()<deadline){
         const r=await this.call('result',{id:job.id},generation);
-        if(!r.pending){this.last=null;return {ok:r.result,code:r.result?undefined:'failed',...(r.catalog?{catalog:r.catalog}:{})};}
+        if(!r.pending){if(!background)this.last=null;return {ok:r.result,code:r.result?undefined:'failed',...(r.catalog?{catalog:r.catalog}:{})};}
         await new Promise(resolve=>setTimeout(resolve,this.waitMs));
         if(generation!==this.generation)throw failure('disconnected');
       }
       throw failure('timeout');
-    }catch(e){if(['invalid','slow','busy','timeout'].includes(e.code))this.last=null;throw e;}
-    finally{if(generation===this.generation&&this.state==='sending')this.set('ready');}
+    }catch(e){if(!background&&['invalid','slow','busy','timeout'].includes(e.code))this.last=null;throw e;}
+    finally{if(!background&&generation===this.generation&&this.state==='sending')this.set('ready');}
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.browseDraft=null;this.nextSend=0;this.set('idle');
+    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }
