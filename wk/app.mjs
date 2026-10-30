@@ -1,4 +1,5 @@
-import {createRemoteUi} from './remote-ui.mjs?v=3.2';
+import {createCountryKeyboard} from './keyboard/ui.mjs?v=3.4';
+import {createRemoteUi} from './remote-ui.mjs?v=3.4';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';
 import { LANGUAGES } from './labels.mjs?v=2.1';
@@ -20,7 +21,7 @@ const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navi
 let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
-let queueUi, browseUi, remoteUi;
+let queueUi, browseUi, remoteUi, countryKeyboard;
 let voiceState = 'idle', voiceError = 'unavailable';
 // A successful start in this page is UI history, never a stored permission grant.
 let permissionConfirmed = false;
@@ -137,6 +138,7 @@ function refreshControls() {
   $('keyboard-voice').disabled = busy;
   renderChromeHandoff();
   renderSafariHandoff();
+  countryKeyboard?.refresh();
 }
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
@@ -151,7 +153,8 @@ const secure = location.protocol === 'https:' || location.hostname === 'localhos
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
-remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
+remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>countryKeyboard?.refresh()});
+countryKeyboard=createCountryKeyboard({getLanguage:()=>currentLanguage.code,getName:()=>currentLanguage.name,blocked:()=>Boolean(voice?.active)||busy});
 for (const language of LANGUAGES) {
   const words = MESSAGES[language.code], button = document.createElement('button');
   button.type = 'button'; button.className = 'country'; button.lang = language.code;
@@ -194,7 +197,7 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render(); countryKeyboard?.refresh();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
@@ -321,6 +324,7 @@ function startVoice() {
   if (busy || voice.active || !secure) return;
   $('interim').textContent = '';
   // Keep this synchronous inside the trusted button click, including Safari retries.
+  countryKeyboard.close();
   voice.start(currentLanguage.code);
 }
 function useKeyboardVoice() {
@@ -329,7 +333,7 @@ function useKeyboardVoice() {
   if (searchComplete) { searchComplete = false; $('query').value = ''; }
   feedback('queryHint'); renderVoice(); refreshControls();
   // iPhone only opens the software keyboard when focus remains in this direct tap.
-  $('query').focus();
+  countryKeyboard.native($('query'));
 }
 function closeVoice() { voice.cancel(); voiceState = 'idle'; closeVoiceDialog($('listening')); renderVoice(); refreshControls(); }
 $('voice').addEventListener('click', startVoice);

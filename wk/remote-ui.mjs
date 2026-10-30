@@ -1,7 +1,7 @@
 import {REMOTE_TEXT} from './remote-text.mjs?v=3.2';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
-export function createRemoteUi({connection,getLanguage,blocked,$=id=>document.getElementById(id),doc=document}){
+export function createRemoteUi({connection,getLanguage,blocked,onRender=()=>{},$=id=>document.getElementById(id),doc=document}){
  let generation=connection.generation,language=getLanguage(),pending=false,controlStatus='',favoriteStatus='',failed=false,rows=[],page=0,applied='',loaded=false;
  const retries=new Map(),words=()=>REMOTE_TEXT[getLanguage()],connected=()=>['ready','sending'].includes(connection.state);
  function reset(){generation=connection.generation;pending=false;controlStatus='';favoriteStatus='';failed=false;rows=[];page=0;applied='';loaded=false;retries.clear();$('favorites-list').replaceChildren();$('favorites-query').value='';$('favorites-panel').hidden=true;}
@@ -22,6 +22,7 @@ export function createRemoteUi({connection,getLanguage,blocked,$=id=>document.ge
   $('favorites-page').textContent=loaded?w.page+' '+(page+1):'';
   $('favorites-feedback').textContent=favoriteStatus?w[favoriteStatus]:'';$('favorites-feedback').classList.toggle('error',failed);
   for(const row of rows){row.button.disabled=off||row.state==='added';row.badge.textContent=w[row.state];row.button.setAttribute('aria-label',row.title+' · '+w[row.state]);row.meta.textContent=row.count+' '+w.plays;row.button.classList.toggle('reserved',row.state==='added');}
+  onRender();
  }
  for(const action of ['play','pause','next'])$('remote-'+action).addEventListener('click',async()=>{
   if($('remote-'+action).disabled||pending)return;

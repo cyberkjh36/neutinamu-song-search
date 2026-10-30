@@ -1,0 +1,31 @@
+/* Scoped to /wk/: no OS keyboard settings or root song-number app changes. */
+.country-input-line{display:flex;gap:8px;align-items:stretch;min-width:0;width:100%}
+.country-input-line input,.country-input-line textarea{flex:1;min-width:0;width:0}
+.country-input-line .country-keyboard-toggle{width:48px;max-width:none;flex:0 0 48px;padding:9px;min-height:48px;background:#284c4c;color:#eaffd7;border:1px solid #7a9e91}
+.country-keyboard-toggle svg{display:block;width:28px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.country-keyboard-toggle[aria-expanded=true]{background:#b9df79;color:#183022;border-color:#d9f4b3}
+.favorites-search-line{flex-wrap:wrap}.favorites-search-line>.country-input-line{flex:1 1 100%}.favorites-search-line>#favorites-search{max-width:none;width:100%}
+.country-keyboard{position:fixed;z-index:9000;bottom:0;left:0;right:0;margin:auto;width:100%;max-width:640px;max-height:78vh;max-height:78dvh;display:flex;flex-direction:column;padding:10px 8px max(10px,env(safe-area-inset-bottom));border:1px solid #69877c;border-bottom:0;border-radius:20px 20px 0 0;background:#142c2c;color:#f6fff3;box-shadow:0 -8px 36px #0007}
+.country-keyboard button{border-radius:9px;font-weight:650;min-width:0;min-height:44px;padding:5px 3px;background:#2b494a;color:#f5fff1;border:1px solid #56716b;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.country-keyboard button:active{background:#99c26e;color:#122a21}.country-keyboard button[aria-pressed=true]{background:#b9df79;color:#183022;border-color:#e0f7bc}
+.country-keyboard-header{display:flex;align-items:center;gap:8px;flex:none;margin-bottom:8px}
+.country-keyboard-header strong{font-size:15px;line-height:1.4;flex:1;min-width:0;overflow-wrap:anywhere}
+.country-keyboard-header button{width:auto;max-width:38%;padding:5px 12px;font-size:14px;overflow-wrap:anywhere}
+#country-keyboard-preview{flex:none;font-size:22px;line-height:1.35;min-height:54px;height:64px;max-height:64px;resize:none;padding:7px 10px;color:#fff;background:#091d1d;border:1px solid #88ac8a;caret-color:#d6fba8;margin:0}
+.country-keyboard-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:2px 0 0;-webkit-overflow-scrolling:touch}
+#country-keyboard-help{font-size:12px;line-height:1.5;color:#bcd0c4;margin:5px 2px 7px}
+#country-keyboard-composition{display:block;color:#d7f6aa;font-size:16px;overflow-wrap:anywhere;padding:0 4px}#country-keyboard-composition:empty{display:none}
+.country-keyboard-candidates{display:flex;gap:6px;overflow-x:auto;overscroll-behavior:contain;margin:4px 0 8px;padding-bottom:5px;-webkit-overflow-scrolling:touch}
+.country-keyboard .country-keyboard-candidate{flex:0 0 44px;width:44px;font-size:25px;background:#e3f1d3;color:#19392b;border-color:#accf8a}
+.country-keyboard-row{display:flex;justify-content:center;gap:4px;margin-bottom:5px}
+.country-keyboard-row button{flex:1;min-width:0;width:0;font-size:23px;line-height:1.6}
+.country-keyboard-key{user-select:none;-webkit-user-select:none}
+.country-keyboard-tools{margin-top:9px}.country-keyboard-tools button{font-size:16px;background:#204039}
+.country-keyboard-space-row button{font-size:14px;line-height:1.5;overflow-wrap:anywhere}.country-keyboard-space-row #country-keyboard-space{flex:2}
+.country-keyboard-footer{flex:none;display:flex;gap:8px;padding-top:6px;border-top:1px solid #4a685d}
+.country-keyboard-footer button{width:50%;font-size:15px;line-height:1.5;padding:8px 5px;overflow-wrap:anywhere}
+.country-keyboard-footer #country-keyboard-search{background:#b9df79;color:#153121;font-weight:800}
+#country-keyboard-status{font-size:13px;color:#ffd3b0;margin:4px;text-align:center}#country-keyboard-status:empty{display:none}
+body.country-keyboard-open main{padding-bottom:82vh;padding-bottom:82dvh}
+@media(max-width:360px){.country-keyboard-row{gap:3px}.country-keyboard-row button{font-size:20px}.country-keyboard-tools button{font-size:14px}.country-keyboard-space-row button{font-size:13px}.country-keyboard{padding-left:5px;padding-right:5px}.country-keyboard-footer button{font-size:14px}}
+@media(max-height:480px){.country-keyboard{max-height:90vh;max-height:90dvh}.country-keyboard-header{margin-bottom:3px}#country-keyboard-preview{height:48px;min-height:48px;max-height:48px}.country-keyboard-header button{min-height:36px}}
