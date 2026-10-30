@@ -1,8 +1,9 @@
+import {createRemoteUi} from './remote-ui.mjs?v=3.2';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';
 import { LANGUAGES } from './labels.mjs?v=2.1';
 import { MESSAGES } from './network-text.mjs?v=2.1';
-import { KaraokeConnection } from './relay-client.mjs?v=3.1';
+import { KaraokeConnection } from './relay-client.mjs?v=3.2';
 import { createQueueUi } from './queue-ui.mjs?v=2.9';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
 import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
@@ -19,7 +20,7 @@ const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navi
 let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
-let queueUi, browseUi;
+let queueUi, browseUi, remoteUi;
 let voiceState = 'idle', voiceError = 'unavailable';
 // A successful start in this page is UI history, never a stored permission grant.
 let permissionConfirmed = false;
@@ -119,7 +120,7 @@ function renderSafariHandoff() {
   $('safari-copy-feedback').textContent = safariCopyState ? words[safariCopyState] : '';
 }
 function refreshControls() {
-  queueUi?.render(); browseUi?.render();
+  queueUi?.render(); browseUi?.render(); remoteUi?.render();
   const state = connection.state;
   const active = ['choosing','connecting','ready','sending'].includes(state);
   busy = state === 'sending';
@@ -150,6 +151,7 @@ const secure = location.protocol === 'https:' || location.hostname === 'localhos
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
+remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
 for (const language of LANGUAGES) {
   const words = MESSAGES[language.code], button = document.createElement('button');
   button.type = 'button'; button.className = 'country'; button.lang = language.code;
@@ -171,6 +173,7 @@ for (const language of LANGUAGES) {
 function selectLanguage(code) {
   currentLanguage = LANGUAGES.find(x => x.code === code) || LANGUAGES[0];
   document.documentElement.lang = currentLanguage.code;
+  remoteUi?.changeLanguage();
   const t = currentLanguage.text, words = MESSAGES[currentLanguage.code];
   document.title = 'WORLD KARAOKE · ' + words.title;
   $('title').textContent = BROWSE_TEXT[currentLanguage.code].title;
@@ -191,7 +194,7 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}

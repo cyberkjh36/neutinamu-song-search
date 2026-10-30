@@ -57,3 +57,16 @@
 .results-list{display:grid;gap:12px}.video-result{display:flex;align-items:center;gap:12px;width:100%;padding:10px;text-align:left;border:1px solid #d1dfdc;border-radius:16px;background:#fff;color:#112126;min-height:105px;touch-action:manipulation}.video-result img{width:38%;max-width:160px;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:9px;background:#dce5e2;flex-shrink:0}.video-info{min-width:0;display:flex;flex-direction:column;gap:5px}.video-info strong{font-size:15px;line-height:1.4;overflow-wrap:anywhere}.video-info small{font-size:12px;color:#526762;overflow-wrap:anywhere}.video-action{color:#076746;font-size:14px;font-weight:800}.video-result:disabled{opacity:.7}.video-result.reserved{background:#e6f6ec;border-color:#74b98c;opacity:1}.results-card{scroll-margin-top:12px}.queue-card>summary{font-weight:700;cursor:pointer;line-height:1.5}.queue-card[open]>summary{margin-bottom:16px}.results-card .feedback:empty{display:none}.results-card h2{margin-bottom:8px}#results-feedback{position:sticky;top:0;z-index:1;background:#fff;padding:10px;border-radius:8px}button:focus-visible{outline:3px solid #197c71;outline-offset:3px}
 
 #results-feedback{color:#075c40;font-weight:700}#results-feedback.error{color:#922d2d}
+
+/* Phone remote and country favorites */
+.remote-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.remote-actions button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-width:0;min-height:86px;padding:12px 5px;border:1px solid #4d777c;border-radius:14px;background:#18383d;color:#fff;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.remote-actions button:first-child{background:#126357;border-color:#399888}
+.remote-icon{font-size:24px;line-height:1.2;white-space:nowrap}
+.remote-actions button:disabled{opacity:.45}
+.favorites-search-line{display:flex;align-items:stretch;gap:8px}
+.favorites-search-line input{min-width:0;flex:1}.favorites-search-line button{width:auto;flex:0 1 auto;max-width:40%;margin:0;padding:10px 14px}
+.favorites-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px}
+.favorites-pages button{width:auto;max-width:36%;min-height:44px;overflow-wrap:anywhere}
+.favorites-pages span{font-size:13px;text-align:center}
+#remote-help,#favorites-hint{font-size:14px;line-height:1.6}
