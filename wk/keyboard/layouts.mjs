@@ -11,7 +11,7 @@ const lao=chunk('ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ
 const laoMore=chunk('ຯ ໆ ໌ ໐ ໑ ໒ ໓ ໔ ໕ ໖ ໗ ໘ ໙ ຫຼ ຽ');
 // Unicode Myanmar, never Zawgyi. Choose consonants before dependent vowels.
 const myanmar=chunk('က ခ ဂ ဃ င စ ဆ ဇ ဈ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ ဉ ဿ ် ာ ါ ိ ီ ု ူ ေ ဲ ံ ့ း ျ ြ ွ ှ ္');
-const myanmarMore=chunk('ဣ ဤ ဥ ဦ ဧ ဩ ဪ ၌ ၍ ၏ ၎ င်္ ၀ ၁ ၂ ၃ ၄ ၅ ၆ ၇ ၈ ၉ ၊ ။');
+const myanmarMore=rows('ဣ ဤ ဥ ဦ ဧ ဩ ဪ|၌ ၍ ၏ ၎ င်္|၀ ၁ ၂ ၃ ၄ ၅ ၆ ၇ ၈ ၉|၊ ။');
 const mongolian=rows('ф ц у ж э н г ш ү з|к ъ й ы б ө а х р о|л д п я ч ё с м и т|ь в ю е щ');
 const hiragana=rows('あ い う え お か き く け こ|さ し す せ そ た ち つ て と|な に ぬ ね の は ひ ふ へ ほ|ま み む め も や ゆ よ わ を|ら り る れ ろ ん ー {dakuten} {handakuten} {small}');
 const katakana=hiragana.map(row=>row.map(k=>/^[ぁ-ゖ]$/.test(k)?String.fromCharCode(k.charCodeAt(0)+0x60):k));

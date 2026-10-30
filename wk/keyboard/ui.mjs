@@ -1,4 +1,4 @@
-import {LAYOUTS,LATIN,SYMBOLS,KEY_LABELS} from './layouts.mjs?v=3.4';
+import {LAYOUTS,LATIN,SYMBOLS,KEY_LABELS} from './layouts.mjs?v=3.4.1';
 import {KEYBOARD_TEXT} from './text.mjs?v=3.4';
 import {KeyboardEditor} from './editor.mjs?v=3.4';
 
@@ -46,7 +46,7 @@ export function createCountryKeyboard({getLanguage,getName,blocked=()=>false,$=i
   for(const row of layout){
    const line=doc.createElement('div');line.className='country-keyboard-row';
    for(const key of row){
-    const button=doc.createElement('button');button.type='button';button.className='country-keyboard-key';button.setAttribute('data-key',key);
+    const button=doc.createElement('button');button.type='button';button.className='country-keyboard-key'+(key==='ဪ'?' country-keyboard-extra-wide':['ໜ','ໝ','ဏ','ဿ','ေ','င်္','ဤ','ဩ'].includes(key)?' country-keyboard-wide':'');button.setAttribute('data-key',key);
     button.textContent=KEY_LABELS[key]||(/^\p{M}/u.test(key)?'◌'+key:key);
     button.addEventListener('click',()=>press(key));line.append(button);
    }keys.append(line);

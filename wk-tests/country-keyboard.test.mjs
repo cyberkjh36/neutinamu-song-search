@@ -32,7 +32,7 @@ test('cursor changes and native edits commit the previous syllable',()=>{
  e.setValue('노래',0,2);type(e,'ㅅㅏ');assert.equal(e.value,'사');
 });
 test('Vietnamese vowel shape and all five tones use composed Unicode',()=>{
- const e=new KeyboardEditor('vi-VN');type(e,['T','i','ê','{dot}','n','g',' ','V','i','ê','{dot}','t']);assert.equal(e.value,'Tiệng Việt');
+ const e=new KeyboardEditor('vi-VN');type(e,['T','i','ê','{acute}','n','g',' ','V','i','ê','{dot}','t']);assert.equal(e.value,'Tiếng Việt');
  e.setValue('ă');for(const [key,want] of [['{acute}','ắ'],['{grave}','ằ'],['{hook}','ẳ'],['{tilde}','ẵ'],['{dot}','ặ'],['{noTone}','ă']]){e.input(key);assert.equal(e.value,want);}
  e.setValue('Ơ');e.input('{grave}');assert.equal(e.value,'Ờ');assert.equal(e.value,e.value.normalize('NFC'));
  e.setValue('b');assert.equal(e.input('{acute}'),false);assert.equal(e.value,'b');
