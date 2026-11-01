@@ -1,5 +1,5 @@
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.6';
-import {createCountryKeyboard} from './keyboard/ui.mjs?v=3.4.2';
+import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.7';
 import {createRemoteUi} from './remote-ui.mjs?v=3.4';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';
@@ -23,7 +23,7 @@ let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false,
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
 let playlistUi;
-let queueUi, browseUi, remoteUi, countryKeyboard;
+let queueUi, browseUi, remoteUi, phoneKeyboard;
 let voiceState = 'idle', voiceError = 'unavailable';
 // A successful start in this page is UI history, never a stored permission grant.
 let permissionConfirmed = false;
@@ -140,7 +140,7 @@ function refreshControls() {
   $('keyboard-voice').disabled = busy;
   renderChromeHandoff();
   renderSafariHandoff();
-  countryKeyboard?.refresh();
+  phoneKeyboard?.refresh();
 }
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
@@ -155,9 +155,9 @@ const secure = location.protocol === 'https:' || location.hostname === 'localhos
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
-remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>countryKeyboard?.refresh()});
+remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>phoneKeyboard?.refresh()});
 playlistUi=createPlaylistUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
-countryKeyboard=createCountryKeyboard({getLanguage:()=>currentLanguage.code,getName:()=>currentLanguage.name,blocked:()=>Boolean(voice?.active)||busy});
+phoneKeyboard=createNativeKeyboard({getLanguage:()=>currentLanguage.code,blocked:()=>Boolean(voice?.active)||busy});
 for (const language of LANGUAGES) {
   const words = MESSAGES[language.code], button = document.createElement('button');
   button.type = 'button'; button.className = 'country'; button.lang = language.code;
@@ -200,7 +200,7 @@ function selectLanguage(code) {
   $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
-  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render(); playlistUi?.render(); countryKeyboard?.refresh();
+  renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render(); playlistUi?.render(); phoneKeyboard?.refresh();
 }
 let savedLanguage;
 try { savedLanguage = localStorage.getItem('wk-bt-language'); } catch {}
@@ -327,7 +327,7 @@ function startVoice() {
   if (busy || voice.active || !secure) return;
   $('interim').textContent = '';
   // Keep this synchronous inside the trusted button click, including Safari retries.
-  countryKeyboard.close();
+  phoneKeyboard.close();
   voice.start(currentLanguage.code);
 }
 function useKeyboardVoice() {
@@ -336,7 +336,7 @@ function useKeyboardVoice() {
   if (searchComplete) { searchComplete = false; $('query').value = ''; }
   feedback('queryHint'); renderVoice(); refreshControls();
   // iPhone only opens the software keyboard when focus remains in this direct tap.
-  countryKeyboard.native($('query'));
+  phoneKeyboard.native($('query'));
 }
 function closeVoice() { voice.cancel(); voiceState = 'idle'; closeVoiceDialog($('listening')); renderVoice(); refreshControls(); }
 $('voice').addEventListener('click', startVoice);

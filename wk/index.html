@@ -15,7 +15,7 @@
 </head>
 <body>
 <main>
-  <header><div class="brand-row"><div class="brand-names"><span class="brand">WORLD KARAOKE</span><span class="brand-separator" aria-hidden="true">·</span><span class="venue-name" lang="ko">느티나무 노래방</span></div><span class="version">WEB 3.6</span></div><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
+  <header><div class="brand-row"><div class="brand-names"><span class="brand">WORLD KARAOKE</span><span class="brand-separator" aria-hidden="true">·</span><span class="venue-name" lang="ko">느티나무 노래방</span></div><span class="version">WEB 3.7</span></div><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
   <noscript>브라우저에서 JavaScript를 허용해 주세요. Enable JavaScript in your browser.</noscript>
   <div id="compatibility" class="notice" role="alert" hidden></div>
   <section id="chrome-handoff" class="card chrome-card" aria-labelledby="chrome-title" hidden>
@@ -77,7 +77,8 @@
     <p id="favorites-hint">영상을 누르면 PC에 예약됩니다.</p>
     <div id="favorites-panel" hidden>
       <label id="favorites-query-label" for="favorites-query">애창곡 제목 검색</label>
-      <div class="favorites-search-line"><div class="country-input-line"><input id="favorites-query" type="search" maxlength="160" autocomplete="off" spellcheck="false"><button id="favorites-keyboard" type="button" class="country-keyboard-toggle" aria-label="전용 키보드" aria-expanded="false"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="4"/><path d="M6 7h2m4 0h2m4 0h2m4 0h2M6 12h2m4 0h2m4 0h2m4 0h2M9 17h14"/></svg></button></div><button id="favorites-search" type="button" class="secondary">검색</button></div>
+      <div class="favorites-search-line"><div class="country-input-line"><input id="favorites-query" inputmode="text" lang="ko-KR" aria-describedby="favorites-keyboard-help" type="search" maxlength="160" autocomplete="off" spellcheck="false"><button id="favorites-keyboard" type="button" class="country-keyboard-toggle" aria-label="휴대폰 키보드" aria-controls="favorites-query"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="4"/><path d="M6 7h2m4 0h2m4 0h2m4 0h2M6 12h2m4 0h2m4 0h2m4 0h2M9 17h14"/></svg></button></div><button id="favorites-search" type="button" class="secondary">검색</button></div>
+      <p id="favorites-keyboard-help" hidden></p>
       <p id="favorites-feedback" class="feedback" role="status" aria-live="polite"></p>
       <div id="favorites-list" class="results-list"></div>
       <div class="favorites-pages"><button id="favorites-previous" type="button" class="quiet" disabled>이전</button><span id="favorites-page"></span><button id="favorites-more" type="button" class="quiet" disabled>다음 목록</button></div>
@@ -93,7 +94,8 @@
     <button id="keyboard-voice" class="keyboard-voice" type="button">키보드 마이크로 입력</button>
     <p id="voice-help" class="voice-help" hidden></p>
     <label id="query-label" for="query">노래 제목 또는 가수</label>
-    <div class="country-input-line"><textarea id="query" rows="2" maxlength="200" placeholder="노래 제목 또는 가수" autocomplete="off" spellcheck="false"></textarea><button id="query-keyboard" type="button" class="country-keyboard-toggle" aria-label="전용 키보드" aria-expanded="false"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="4"/><path d="M6 7h2m4 0h2m4 0h2m4 0h2M6 12h2m4 0h2m4 0h2m4 0h2M9 17h14"/></svg></button></div>
+    <div class="country-input-line"><textarea id="query" inputmode="text" lang="ko-KR" aria-describedby="query-keyboard-help" rows="2" maxlength="200" placeholder="노래 제목 또는 가수" autocomplete="off" spellcheck="false"></textarea><button id="query-keyboard" type="button" class="country-keyboard-toggle" aria-label="휴대폰 키보드" aria-controls="query"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="4"/><path d="M6 7h2m4 0h2m4 0h2m4 0h2M6 12h2m4 0h2m4 0h2m4 0h2M9 17h14"/></svg></button></div>
+    <p id="query-keyboard-help" hidden></p>
     <p id="confirm-help">글자를 확인하고 아래 검색 버튼을 눌러 주세요.</p>
     <button id="send" class="primary" type="button" disabled>영상 검색</button>
     <p id="feedback" class="feedback" role="status" aria-live="polite">영상 사진을 한 번 누르면 PC에 예약됩니다.</p>
@@ -157,7 +159,7 @@
   </div>
   <div class="country-keyboard-footer"><button id="country-keyboard-native" type="button">휴대폰 키보드</button><button id="country-keyboard-search" type="button" disabled>검색</button></div>
 </section>
-<script type="module" src="app.mjs?v=3.6"></script>
+<script type="module" src="app.mjs?v=3.7"></script>
 </body>
 </html>
 
