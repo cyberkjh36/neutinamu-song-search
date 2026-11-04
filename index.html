@@ -60,6 +60,10 @@
     .install-cta{flex-wrap:wrap}.install-cta p{font-size:16px}.browser-buttons{display:grid;grid-template-columns:1fr;gap:10px;width:100%}.browser-buttons a{font-size:20px;min-height:56px;text-decoration:none;background:#f5d36a;color:#081522}.browser-buttons a.secondary{background:#d3f5ef}.install-help{font-size:19px}.install-help li{margin-bottom:12px}
     .shortcut-link{display:block;width:100%;padding:16px;border:2px solid #ffd166;border-radius:14px;background:#ffd166;color:#081522;text-align:center;text-decoration:none;font-size:20px;font-weight:800;line-height:1.4}
     .shortcut-link:focus{outline:3px solid white;outline-offset:3px}
+    .update-area{margin:0 0 20px}
+    .update-link{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:64px;padding:16px 14px;border:2px solid #ffe29a;border-radius:16px;background:#ffd166;color:#081522;text-align:center;text-decoration:none;font-size:22px;font-weight:900;line-height:1.4}
+    .update-link:focus{outline:3px solid white;outline-offset:3px}
+    .update-area p{margin:8px 0 0;color:#d9eaf2;font-size:16px;text-align:center;line-height:1.5}
     .install-help strong{color:#c1f7ee}
     .install-help a{color:#c1f7ee;overflow-wrap:anywhere}
     .install-help button{margin-top:11px;background:#c1f7ee;color:#081522}
@@ -84,6 +88,10 @@
   <header><div class="brand">TJ P2 · SONG FINDER</div><div id="dbCount" class="small">노래 데이터 확인 중</div></header>
   <h1>느티나무 노래방 음성으로 노래 번호찾기</h1>
   <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
+  <div class="update-area">
+    <a id="refreshBtn" class="update-link" href="./refresh.html"><span aria-hidden="true">🔄</span>최신 버전 불러오기</a>
+    <p>새 곡과 최신 화면을 불러오려면 눌러 주세요.</p>
+  </div>
   <section id="installCTA" class="install-cta" aria-label="휴대폰 홈 화면에 노래 검색 앱 추가">
     <div><strong>📲 다음부터 QR 없이 바로 실행!</strong><p>처음 한 번만 휴대폰에 노래검색 아이콘을 추가하세요.</p><p id="installStatus" role="status" aria-live="polite">설치 기능을 준비하고 있어요…</p></div>
     <button id="installBtn" type="button" style="font-size:1.35rem;min-height:64px;padding:14px 20px">📲 내 휴대폰에 노래검색 추가</button>
@@ -119,7 +127,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>기존 76,435곡에 TJ미디어 공식 목록에서 확인한 182곡을 추가했습니다(2026.11.04 확인). 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer"><b>앱 버전 2026.11.04 · v11</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.11.04 · v12</b> · <a id="refreshFooterLink" href="./refresh.html" style="color:var(--cyan)">최신 버전 불러오기</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -169,6 +177,7 @@
   });
   window.addEventListener('appinstalled',function(){pending=null;busy=false;byId('installCTA').hidden=true;message('설치되었습니다. 홈 화면이나 앱 목록에서 ‘느티나무’를 찾아 주세요.');});
   function init(){
+    if(shortcut){byId('refreshBtn').href='./refresh.html?shortcut=1';byId('refreshFooterLink').href='./refresh.html?shortcut=1';}
     ['Chrome','Samsung'].forEach(function(name){
       var a=byId('open'+name),pkg=name==='Chrome'?'com.android.chrome':'com.sec.android.app.sbrowser';
       a.href='intent://cyberkjh36.github.io/neutinamu-song-search/'+(shortcut?'?shortcut=1':'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';S.browser_fallback_url='+encodeURIComponent(site)+';end';

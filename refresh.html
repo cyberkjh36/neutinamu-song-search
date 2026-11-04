@@ -11,7 +11,7 @@
    });
    await navigator.serviceWorker.ready;
   }
-  location.replace('./');
+  location.replace('./'+(/(?:^|[?&])shortcut=1(?:&|$)/.test(location.search)?'?shortcut=1':''));
  }catch(e){document.getElementById('status').textContent='인터넷 연결을 확인한 뒤 다시 시도해 주세요. '+e.message;document.getElementById('retry').hidden=false}
 })();
 </script></html>

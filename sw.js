@@ -1,5 +1,5 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v11-20261104-catalog';
+var CACHE='neutinamu-p2-v12-20261104-update-button';
 var ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
