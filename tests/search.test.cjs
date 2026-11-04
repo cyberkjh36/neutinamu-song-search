@@ -11,12 +11,12 @@ function app(){
  const c={Element:function(){},console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
  c.window=c;vm.createContext(c);
  vm.runInContext(Array.from(fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)).pop()[1],c);
- c.csv=fs.readFileSync(path.join(root,'catalog-20261018.csv'),'utf8');
+ c.csv=vm.runInContext('BUNDLED_CATALOGS.map(c=>c.url)',c).map((url,index)=>{const text=fs.readFileSync(path.join(root,url),'utf8').replace(/^\uFEFF/,'');return index?text.slice(text.indexOf('\n')+1):text}).join('\n');
  vm.runInContext(`cachedSongs=csvParse(csv.replace(/^\\uFEFF/,''),',').slice(1).map(([code,title,artist])=>({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)}));`,c);
  return {c,el:id=>c.document.getElementById(id),run:s=>vm.runInContext(s,c)};
 }
 test('catalog and short-title matching, including subtitle versions',()=>{
- const {run}=app();assert.equal(run('cachedSongs.length'),76435);
+ const {run}=app();assert.equal(run('cachedSongs.length'),76617);assert.equal(run('new Set(cachedSongs.map(s=>s.code)).size'),76617);
  for(const q of ['꿈','정','꽃','늪','님','길']){
   const songs=run(`findSongs(cachedSongs,${JSON.stringify(q)})`);
   assert.ok(songs.length>0,q);assert.ok(songs.every(x=>x.n>=980),q);
@@ -28,6 +28,12 @@ test('catalog and short-title matching, including subtitle versions',()=>{
  assert.ok(run(`findSongs(cachedSongs,'조용필').length`)>20);
  assert.ok(run(`findSongs(cachedSongs,'가로수 그늘 아래 서면').some(x=>x.s.code==='3')`));
  assert.equal(run(`findSongs(cachedSongs,'!!!').length`),0);
+});
+test('November 4 catalog additions are searchable by title, singer and song number',()=>{
+ const {run}=app();
+ for(const [query,code] of [['풀카운트','71403'],['손빈아 나 그대를','71404'],['허각 나를 사랑하지 말아요','71423'],['71401','71401']]){
+  assert.equal(run(`findSongs(cachedSongs,${JSON.stringify(query)})[0].s.code`),code);
+ }
 });
 test('one-character matches are not truncated at 20',async()=>{
  const {c,el}=app();el('query').value='꿈';await c.search();assert.ok(el('results').children.length>20);

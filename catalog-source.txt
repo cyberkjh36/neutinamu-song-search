@@ -1,4 +1,13 @@
-TJ 공개 곡 목록 76,435곡
+TJ 공개 곡 목록 76,617곡 (2026-11-04 확인)
+기존 목록: catalog-20261018.csv / 76,435곡
 기본: https://alfex4936.github.io/tj-media-karaoke-api/ (2026-10-13, 76432곡)
 추가: https://www.tjmedia.co.kr/chart/hot100 (2026-10-18 확인, 3곡)
+
+신규 반영: catalog-update-20261104.csv / 182곡
+공식 출처: https://www.tjmedia.com/song/recent_song
+목록 API: POST https://www.tjmedia.com/legacy/api/newSongOfMonth (searchYm=202610, 202611)
+조회 결과: 2026-10-01~2026-11-04 284곡, 2026-11-01~2026-11-04 30곡.
+284곡의 중복 없는 곡번호를 기존 목록과 대조하여 미수록 182곡을 추가.
+추가곡 등록일: 2026-10-14~2026-11-04. 기존 곡은 유지.
+
 곡번호·제목·가수 메타데이터만 포함. 음원·가사 없음. P2 기기별 수록 여부는 검증되지 않음.

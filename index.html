@@ -110,16 +110,16 @@
   </section>
   <section class="panel">
     <strong>곡 데이터</strong>
-    <p class="hint">곡번호·제목·가수 76,435곡이 앱에 들어 있습니다. 처음 실행할 때 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
+    <p class="hint">곡번호·제목·가수 76,617곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
     <div class="tools">
       <label class="filebtn">📥 데이터 파일 불러오기<input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
       <button id="templateBtn" class="secondary">📄 입력 양식 받기</button>
       <button id="exportBtn" class="secondary">💾 저장 데이터 내보내기</button>
       <button id="clearBtn" class="secondary danger">저장 데이터 지우기</button>
     </div>
-    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>공개 TJ 곡 목록 76,432곡(2026.10.13 기준)에 공식 HOT 100에서 확인한 3곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
+    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>기존 76,435곡에 TJ미디어 공식 목록에서 확인한 182곡을 추가했습니다(2026.11.04 확인). 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer"><b>앱 버전 2026.10.22 · v10</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,435곡 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>앱 버전 2026.11.04 · v11</b> · <a href="./refresh.html" style="color:var(--cyan)">최신 버전 확인</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -204,6 +204,10 @@
 <script>
 if(!Element.prototype.replaceChildren){Element.prototype.replaceChildren=function(){while(this.firstChild)this.removeChild(this.firstChild);for(var i=0;i<arguments.length;i++)this.appendChild(arguments[i]);};}
 const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
+const BUNDLED_CATALOGS=[
+ {url:'./catalog-20261018.csv',count:76435,key:'tj-p2-catalog-76435'},
+ {url:'./catalog-update-20261104.csv',count:182,key:'tj-p2-catalog-update-20261104'}
+];
 const $=id=>document.getElementById(id);
 let db, cachedSongs=null;
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'code'});};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
@@ -215,11 +219,25 @@ function renderCount(n){$('dbCount').innerHTML=`저장 곡 <span class="dbcount"
 function csvParse(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(cell);cell=''}else if(c==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell=''}else cell+=c}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
 function headerKey(s){return normalize(s).replace(/^(tj|금영)/,'')}
 function fieldIndex(headers,options,fallback){const h=headers.map(headerKey);for(const opt of options){const i=h.indexOf(headerKey(opt));if(i>=0)return i}return fallback}
-async function importCSVText(raw){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
+async function importCSVText(raw,expectedCount){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
  const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]==null?'':r[ci]).trim().replace(/\.0$/,'');const title=String(r[ti]==null?'':r[ti]).trim();const artist=String(r[ai]==null?'':r[ai]).trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
  if(!out.length)throw Error('곡번호와 곡제목을 읽지 못했습니다. 입력 양식과 열 이름을 확인해 주세요.');
+ if(expectedCount!==undefined&&(out.length!==expectedCount||new Set(out.map(s=>s.code)).size!==expectedCount))throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');
  for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000))store.put(song);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
 async function importFile(file){return importCSVText(await file.text())}
+async function updateBundledCatalog(){
+ const empty=await countSongs()===0;
+ // An empty database must be restored even if its version markers survived.
+ if(empty)for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);
+ for(const catalog of BUNDLED_CATALOGS){
+  if(localStorage.getItem(catalog.key))continue;
+  setMessage(`곡 목록 ${catalog.count.toLocaleString()}곡을 준비합니다. 잠시 기다려 주세요…`);
+  const response=await fetch(catalog.url,{cache:'no-store'});
+  if(!response.ok)throw Error('곡 데이터를 읽지 못했습니다.');
+  await importCSVText(await response.text(),catalog.count);
+  localStorage.setItem(catalog.key,'done');
+ }
+}
 function fitHeroNumber(){
  const el=$('heroNumber');if(!$('hero').classList.contains('show')||!el.textContent)return;
  el.style.fontSize='100px';const range=document.createRange();range.selectNodeContents(el);const measured=range.getBoundingClientRect().width;const available=el.clientWidth-4;
@@ -331,11 +349,17 @@ const template='\uFEFF곡번호,곡제목,가수\r\n';
 
 document.addEventListener('DOMContentLoaded',async()=>{
  $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
- try{await openDB();let currentCount=await countSongs();if(!localStorage.getItem('tj-p2-catalog-76435')||currentCount===0){setMessage('내장 곡 76,435곡을 준비합니다. 잠시 기다려 주세요…');const response=await fetch('./catalog-20261018.csv',{cache:'no-store'});if(!response.ok)throw Error('내장 곡 데이터를 읽지 못했습니다.');const n=await importCSVText(await response.text());if(n!==76435)throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');localStorage.setItem('tj-p2-catalog-76435','done');currentCount=await countSongs()}await allSongs();renderCount(currentCount);setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.');$('searchBtn').disabled=false;$('voiceBtn').disabled=false}
+ try{
+  await openDB();let updatePending=false;
+  try{await updateBundledCatalog()}catch(error){if(!await countSongs())throw error;updatePending=true}
+  const currentCount=await countSongs();await allSongs();renderCount(currentCount);
+  setMessage(updatePending?'새 곡 목록을 받지 못했습니다. 저장된 곡은 검색할 수 있으며, 인터넷 연결 후 앱을 다시 열면 업데이트합니다.':'곡 제목이나 가수를 말하거나 입력해 주세요.');
+  $('searchBtn').disabled=false;$('voiceBtn').disabled=false;
+ }
  catch(e){setMessage('곡 데이터를 준비하지 못했습니다. 저장 공간을 확인하고 앱을 다시 실행해 주세요. '+e.message,true)}
  $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
- $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;localStorage.removeItem('tj-p2-catalog-76435');renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
+ $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);renderCount(0);$('hero').classList.remove('show');$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
 });
 </script>
 </body>

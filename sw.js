@@ -1,5 +1,5 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v10-20261022-shortcuts';
+var CACHE='neutinamu-p2-v11-20261104-catalog';
 var ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
@@ -28,7 +28,7 @@ self.addEventListener('fetch',function(event){
   return cache.match(req).then(function(hit){
    if(hit)return hit;
    return fetch(req).then(function(response){
-    if(response.ok&&url.pathname===new URL('./catalog-20261018.csv',self.location).pathname){
+    if(response.ok&&(url.pathname===new URL('./catalog-20261018.csv',self.location).pathname||url.pathname===new URL('./catalog-update-20261104.csv',self.location).pathname)){
      return cache.put(req,response.clone()).then(function(){return response},function(){return response});
     }
     return response;
