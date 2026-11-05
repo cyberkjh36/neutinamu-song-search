@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {playlistCommand,readPlaylist} from '../wk/playlist-protocol.mjs';import {PLAYLIST_TEXT} from '../wk/playlist-text.mjs';import {LANGUAGES} from '../wk/labels.mjs';import {KaraokeConnection} from '../wk/relay-client.mjs';import {createPlaylistUi} from '../wk/playlist-ui.mjs';
+import {playlistCommand,readPlaylist} from '../wk/playlist-protocol.mjs';import {PLAYLIST_TEXT} from '../wk/ui-text.mjs';import {LANGUAGES} from '../wk/ui-text.mjs';import {KaraokeConnection} from '../wk/relay-client.mjs';import {createPlaylistUi} from '../wk/playlist-ui.mjs';
 const nonce='a'.repeat(32),server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 MY-PC';
 const catalog=(total=3,page=0)=>({v:1,kind:'queue',page,total,items:Array.from({length:Math.min(20,total-page*20)},(_,i)=>({id:String(page*20+i).padStart(11,'0'),title:'ไทย 한국어 <img onerror=x> '+i,position:page*20+i+1,state:i===0&&page===0?'current':'queued'}))});
 test('queue protocol validates request and exact ordered pages',()=>{assert.equal(playlistCommand(0,nonce),`WKL1:${nonce}:0`);for(const p of [-1,1.5,100000,'0'])assert.throws(()=>playlistCommand(p,nonce));assert.throws(()=>playlistCommand(0,'bad'));for(const p of [catalog(0),catalog(43),catalog(43,1),catalog(43,2)])assert.deepEqual(readPlaylist(p),p);});

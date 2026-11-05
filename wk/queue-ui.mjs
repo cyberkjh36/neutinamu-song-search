@@ -1,5 +1,5 @@
+import {QUEUE_TEXT} from './ui-text.mjs?v=3.8';
 import { videoIdFromUrl, requestId } from './queue-protocol.mjs?v=2.9';
-import { QUEUE_TEXT } from './queue-text.mjs?v=2.9';
 export function createQueueUi({connection,getLanguage,blocked,$=id=>document.getElementById(id)}) {
   let status='hint', failed=false, pending=false, job=null;
   const input=$('queue-url'), button=$('queue-add');

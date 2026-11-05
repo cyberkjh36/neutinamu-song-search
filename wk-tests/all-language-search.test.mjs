@@ -50,6 +50,11 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
   for(const language of LANGUAGES)await t.test(language.code+' preserves text and explicitly routes every search',async()=>{
    choose(language.code);const title=titles[language.code],nfd=title.normalize('NFD');
    assert.equal(document.documentElement.lang,language.code);assert.equal($('query').lang,language.code);assert.equal($('favorites-query').lang,language.code);
+   for(const [id,meaning] of Object.entries({'search-title':'노래 제목 말하기','remote-play-label':'재생','remote-pause-label':'일시정지','remote-next-label':'다음곡','favorites-open':'애창곡','playlist-open':'예약곡 목록'})){
+    const label=$(id).textContent;
+    if(language.code==='ko-KR')assert.ok(!label.includes('\n('),'Korean has no duplicate gloss: '+id);
+    else {assert.ok(label.endsWith('\n('+meaning+')'),'Korean gloss for '+language.code+' '+id);assert.ok(label.split('\n(')[0].trim());}
+   }
    assert.equal(calls.filter(c=>c.op==='join').length,1,'no reconnect on language change');
    let count=requests().length;
    await $('query').fire('compositionstart');await type($('query'),nfd);

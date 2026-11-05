@@ -76,3 +76,10 @@
 
 /* Keep the venue beside the app name; the version may wrap on narrow screens. */
 .brand-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px}.brand-names{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:100%}.brand-names .brand{white-space:nowrap}.brand-separator{color:#91a8aa}.venue-name{font-size:15px;font-weight:750;letter-spacing:0;color:#f6f9f5;white-space:nowrap}.brand-row .version{float:none;margin-left:auto;white-space:nowrap}
+
+/* The guest language stays first; Korean meanings are on the following line.
+   Preserve wrapping and intrinsic height even on small phones. */
+button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-state,.playlist-toolbar strong,.favorites-pages span{white-space:pre-line;overflow-wrap:anywhere}
+#language-label{display:inline-block;vertical-align:middle}
+.remote-actions button span:not(.remote-icon){min-width:0;max-width:100%}
+#remote-title{display:block}

@@ -1,4 +1,4 @@
-import {KEYBOARD_TEXT, NATIVE_KEYBOARD_HELP} from './text.mjs?v=3.7';
+import {KEYBOARD_TEXT, NATIVE_KEYBOARD_HELP} from '../ui-text.mjs?v=3.8';
 
 // The phone owns its IME and language switching. lang is a language hint,
 // never a promise that the browser can select or install an OS keyboard.

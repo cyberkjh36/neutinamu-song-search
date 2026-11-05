@@ -1,4 +1,4 @@
-import {REMOTE_TEXT} from './remote-text.mjs?v=3.2';
+import {REMOTE_TEXT} from './ui-text.mjs?v=3.8';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';

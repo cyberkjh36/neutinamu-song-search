@@ -1,22 +1,14 @@
-import {createPlaylistUi} from './playlist-ui.mjs?v=3.6';
-import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.7';
+import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PERMISSION_TEXT, VOICE_TEXT, SAFARI_TEXT} from './ui-text.mjs?v=3.8';
+import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
+import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.7.2';
-import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
-import { createBrowseUi } from './browse-ui.mjs?v=3.1';
-import { LANGUAGES } from './labels.mjs?v=2.1';
-import { MESSAGES } from './network-text.mjs?v=2.1';
+import {createRemoteUi} from './remote-ui.mjs?v=3.8';
+import { createBrowseUi } from './browse-ui.mjs?v=3.8';
 import { KaraokeConnection } from './relay-client.mjs?v=3.6';
-import { createQueueUi } from './queue-ui.mjs?v=2.9';
+import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
-import { CHROME_TEXT } from './chrome-text.mjs?v=2.2';
-import { NEXT_SEARCH } from './search-text.mjs?v=2.3';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
-import { MIC_TEXT } from './mic-text.mjs?v=2.7';
-import { PERMISSION_TEXT } from './permission-text.mjs?v=2.8';
-import { VOICE_TEXT } from './voice-text.mjs?v=2.4';
 import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
-import { SAFARI_TEXT } from './safari-text.mjs?v=2.6';
 
 const $ = id => document.getElementById(id);
 const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);

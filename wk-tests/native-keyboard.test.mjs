@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createNativeKeyboard} from '../wk/keyboard/native-ui.mjs';
-import {KEYBOARD_TEXT, NATIVE_KEYBOARD_HELP} from '../wk/keyboard/text.mjs';
-import {LANGUAGES} from '../wk/labels.mjs';
+import {KEYBOARD_TEXT, NATIVE_KEYBOARD_HELP} from '../wk/ui-text.mjs';
+import {LANGUAGES} from '../wk/ui-text.mjs';
 
 function harness() {
   const doc = {activeElement: null}, elements = new Map();

@@ -1,4 +1,4 @@
-import {PLAYLIST_TEXT} from './playlist-text.mjs?v=3.5';
+import {PLAYLIST_TEXT} from './ui-text.mjs?v=3.8';
 import {readPlaylist} from './playlist-protocol.mjs?v=3.5';
 export function createPlaylistUi({connection,getLanguage,blocked=()=>false,$=id=>document.getElementById(id),doc=document,setTimer=setTimeout,clearTimer=clearTimeout,interval=5000}){
  let generation=connection.generation,pending=false,snapshot=null,signature='',rows=[],status='',timer=null,destroyed=false;
@@ -16,7 +16,7 @@ export function createPlaylistUi({connection,getLanguage,blocked=()=>false,$=id=
   $('playlist-previous').disabled=off||pending||!snapshot||snapshot.page===0;
   $('playlist-next').disabled=off||pending||!snapshot||(snapshot.page+1)*20>=snapshot.total;
   $('playlist-page').textContent=snapshot&&snapshot.total?`${snapshot.page+1} / ${Math.ceil(snapshot.total/20)}`:'';
-  $('playlist-count').textContent=snapshot?w.count.replace('{n}',String(snapshot.total)):'';
+  $('playlist-count').textContent=snapshot?w.count.replace(/\{n\}/g,String(snapshot.total)):'';
   $('playlist-feedback').textContent=status?w[status]:snapshot?.total===0?w.empty:'';
   $('playlist-feedback').classList.toggle('error',status==='failed');
   $('playlist-list').classList.toggle('stale',status==='failed');$('playlist-list').setAttribute('aria-busy',String(pending));

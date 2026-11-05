@@ -1,4 +1,4 @@
-import {BROWSE_TEXT} from './browse-text.mjs?v=3.0';
+import {BROWSE_TEXT} from './ui-text.mjs?v=3.8';
 import {requestId} from './queue-protocol.mjs?v=2.9';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 export function createBrowseUi({connection,getLanguage,blocked,$=id=>document.getElementById(id),doc=document}){

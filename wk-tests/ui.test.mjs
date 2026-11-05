@@ -1,14 +1,14 @@
-import {BROWSE_TEXT} from '../wk/browse-text.mjs';
+import {BROWSE_TEXT} from '../wk/ui-text.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { LANGUAGES } from '../wk/labels.mjs?v=2.1';
-import { MESSAGES } from '../wk/network-text.mjs?v=2.1';
-import { CHROME_TEXT } from '../wk/chrome-text.mjs?v=2.2';
+import { LANGUAGES } from '../wk/ui-text.mjs';
+import { MESSAGES } from '../wk/ui-text.mjs';
+import { CHROME_TEXT } from '../wk/ui-text.mjs';
 import { readHandoff } from '../wk/chrome-handoff.mjs?v=2.3';
-import { NEXT_SEARCH } from '../wk/search-text.mjs?v=2.3';
-import { MIC_TEXT } from '../wk/mic-text.mjs';
-import { PERMISSION_TEXT } from '../wk/permission-text.mjs';
+import { NEXT_SEARCH } from '../wk/ui-text.mjs';
+import { MIC_TEXT } from '../wk/ui-text.mjs';
+import { PERMISSION_TEXT } from '../wk/ui-text.mjs';
 
 class Element {
   constructor(){this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.events=new Map();this.children=[];this.attributes={};this.classList={toggle(){}};}
@@ -75,7 +75,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       $('connect').fire('click');await tick();assert.equal(sent.length,1);assert.equal(sent[0].op,'join');assert.equal($('connect').disabled,true);assert.equal($('send').disabled,false);
     });
     await t.test('changing language while connected preserves session and entered title',()=>{
-      choose('ja-JP');assert.equal($('connection-state').textContent,'接続済み · TEST-PC');assert.equal($('query').value,'노래 입력중');
+      choose('ja-JP');assert.equal($('connection-state').textContent,'接続済み\n(연결됨) · TEST-PC');assert.equal($('query').value,'노래 입력중');
       assert.equal($('connect').disabled,true);assert.equal(sent.length,1);choose('th-TH');
     });
     await t.test('voice starts only after tapping; selected locale is passed',()=>{
