@@ -1,6 +1,6 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v12-20261104-update-button';
-var ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
+var CACHE='neutinamu-p2-v13-20261106-p2-remote';
+var ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./p2-client.mjs','./p2-ui.mjs','./p2.css'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
 });
@@ -36,3 +36,4 @@ self.addEventListener('fetch',function(event){
   });
  }));
 });
+
