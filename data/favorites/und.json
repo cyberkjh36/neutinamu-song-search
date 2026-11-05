@@ -1,9 +1,58 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": null,
+  "updatedAt": "2026-11-05T15:29:31.203Z",
   "countries": [
     "und"
   ],
-  "rows": []
+  "rows": [
+    {
+      "country": "und",
+      "id": "GY9kUsb-IfY",
+      "title": "김장훈 - Honey [가사/Lyrics]",
+      "url": "https://www.youtube.com/watch?v=GY9kUsb-IfY",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:31:46.6520500Z"
+    },
+    {
+      "country": "und",
+      "id": "K9cXbpIQrFE",
+      "title": "7080세대 형님들의 세월을 위로하는 노래...바람같은 인생아(Oh Life, Like the Wind)ㅣ감동 트로트",
+      "url": "https://www.youtube.com/watch?v=K9cXbpIQrFE",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:27:20.0054813Z"
+    },
+    {
+      "country": "und",
+      "id": "PPU46ve7ciI",
+      "title": "호나우지뉴 2009 👑 마법의 수준: 드리블 기술, 목표, 비전",
+      "url": "https://www.youtube.com/watch?v=PPU46ve7ciI",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:18:05.6826177Z"
+    },
+    {
+      "country": "und",
+      "id": "WKRo4ZL8u6E",
+      "title": "이강인 제대로 터졌다! 골 넣고 MVP까지🔥 #이강인 #LeeKangIn #라리가",
+      "url": "https://www.youtube.com/watch?v=WKRo4ZL8u6E",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:16:36.8541375Z"
+    },
+    {
+      "country": "und",
+      "id": "tJEUsGrhtW4",
+      "title": "\"이 노래는 블루스로 나왔어야 했습니다...\" 진시몬의〈애원〉(블루스Ver.)",
+      "url": "https://www.youtube.com/watch?v=tJEUsGrhtW4",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:12:06.7101656Z"
+    },
+    {
+      "country": "und",
+      "id": "xKjiKAopY1c",
+      "title": "진시몬...애원 (가사첨부)",
+      "url": "https://www.youtube.com/watch?v=xKjiKAopY1c",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:05:48.1145437Z"
+    }
+  ]
 }

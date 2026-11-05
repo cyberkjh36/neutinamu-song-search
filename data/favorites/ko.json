@@ -1,9 +1,378 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": null,
+  "updatedAt": "2026-11-05T15:29:31.203Z",
   "countries": [
     "ko"
   ],
-  "rows": []
+  "rows": [
+    {
+      "country": "ko",
+      "id": "mYtLhe3yGHY",
+      "title": "미련이 춤을 춰 / Dancing in Regret / 未練が踊る Emotional Korean Ballad · Sad Love Story",
+      "url": "https://www.youtube.com/watch?v=mYtLhe3yGHY",
+      "count": 19,
+      "lastPlayed": "2026-11-04T06:19:59.6515509Z"
+    },
+    {
+      "country": "ko",
+      "id": "KbrnsipC2Aw",
+      "title": "미련이 춤을 춰",
+      "url": "https://www.youtube.com/watch?v=KbrnsipC2Aw",
+      "count": 15,
+      "lastPlayed": "2026-11-04T06:23:23.6023321Z"
+    },
+    {
+      "country": "ko",
+      "id": "rZ4ztl-HcMM",
+      "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
+      "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
+      "count": 10,
+      "lastPlayed": "2026-11-04T06:25:53.8048951Z"
+    },
+    {
+      "country": "ko",
+      "id": "zxVNnheiJ9M",
+      "title": "코요태(Koyote) - 비몽 [뮤직플러스] | KBS 20020406 방송",
+      "url": "https://www.youtube.com/watch?v=zxVNnheiJ9M",
+      "count": 9,
+      "lastPlayed": "2026-11-04T06:34:17.3540359Z"
+    },
+    {
+      "country": "ko",
+      "id": "fwucDkRlb3M",
+      "title": "조덕배 - 나의 옛날 이야기",
+      "url": "https://www.youtube.com/watch?v=fwucDkRlb3M",
+      "count": 9,
+      "lastPlayed": "2026-11-04T06:30:04.9358960Z"
+    },
+    {
+      "country": "ko",
+      "id": "biXhgq7zrSg",
+      "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
+      "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
+      "count": 7,
+      "lastPlayed": "2026-11-04T06:37:57.2449099Z"
+    },
+    {
+      "country": "ko",
+      "id": "uqfF_qv477k",
+      "title": "BTS (방탄소년단) 'Body to Body' (Color Coded Lyrics)",
+      "url": "https://www.youtube.com/watch?v=uqfF_qv477k",
+      "count": 7,
+      "lastPlayed": "2026-11-01T06:24:10.4082392Z"
+    },
+    {
+      "country": "ko",
+      "id": "tkgXCFQRyO8",
+      "title": "전유진(チョンユジン) - 모란동백(牡丹椿)｜한일톱텐쇼 45회",
+      "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
+      "count": 6,
+      "lastPlayed": "2026-11-04T06:42:42.2209054Z"
+    },
+    {
+      "country": "ko",
+      "id": "fIZ4Yy1QBw0",
+      "title": "세월이 지나도 절대 잊지 못할 인연... 남진 - 상사화(락발라드.ver)",
+      "url": "https://www.youtube.com/watch?v=fIZ4Yy1QBw0",
+      "count": 6,
+      "lastPlayed": "2026-11-01T08:25:31.8686862Z"
+    },
+    {
+      "country": "ko",
+      "id": "5oFnMWvEPsY",
+      "title": "김범수 지나간다",
+      "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
+      "count": 5,
+      "lastPlayed": "2026-11-04T06:46:19.6948191Z"
+    },
+    {
+      "country": "ko",
+      "id": "CKrybgx_l3E",
+      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
+      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
+      "count": 5,
+      "lastPlayed": "2026-11-01T08:30:03.4788119Z"
+    },
+    {
+      "country": "ko",
+      "id": "92nsZ2TDwIk",
+      "title": "조덕배 - 꿈에 (1986年)",
+      "url": "https://www.youtube.com/watch?v=92nsZ2TDwIk",
+      "count": 5,
+      "lastPlayed": "2026-11-01T06:27:21.0659039Z"
+    },
+    {
+      "country": "ko",
+      "id": "EAWHtXQpYX4",
+      "title": "사랑 안해 (사랑 안해)",
+      "url": "https://www.youtube.com/watch?v=EAWHtXQpYX4",
+      "count": 4,
+      "lastPlayed": "2026-11-04T06:54:46.2496645Z"
+    },
+    {
+      "country": "ko",
+      "id": "33tAMu0OARE",
+      "title": "모란동백 - 조영남",
+      "url": "https://www.youtube.com/watch?v=33tAMu0OARE",
+      "count": 4,
+      "lastPlayed": "2026-11-04T06:50:59.8395053Z"
+    },
+    {
+      "country": "ko",
+      "id": "Jj5hmtvNVRI",
+      "title": "[ArtTrack] 패티김 - 이별",
+      "url": "https://www.youtube.com/watch?v=Jj5hmtvNVRI",
+      "count": 4,
+      "lastPlayed": "2026-11-01T06:32:15.6879205Z"
+    },
+    {
+      "country": "ko",
+      "id": "qDD8yRQg39Y",
+      "title": "알리 - 365일 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 221001 방송",
+      "url": "https://www.youtube.com/watch?v=qDD8yRQg39Y",
+      "count": 4,
+      "lastPlayed": "2026-10-31T08:14:16.4642710Z"
+    },
+    {
+      "country": "ko",
+      "id": "N1q3XKfmI5w",
+      "title": "[VIBE/바이브]  3RD ALBUM 'Re-Feel' - 그남자 그여자 (Feat. 장혜진) OFFICIAL MV",
+      "url": "https://www.youtube.com/watch?v=N1q3XKfmI5w",
+      "count": 4,
+      "lastPlayed": "2026-10-31T08:05:19.4087444Z"
+    },
+    {
+      "country": "ko",
+      "id": "rGouJKSg6ao",
+      "title": "이선희  라일락이 질때",
+      "url": "https://www.youtube.com/watch?v=rGouJKSg6ao",
+      "count": 4,
+      "lastPlayed": "2026-10-30T12:52:59.7695296Z"
+    },
+    {
+      "country": "ko",
+      "id": "1cKc1rkZwf8",
+      "title": "PSY - 예술이야(IT'S ART) M/V",
+      "url": "https://www.youtube.com/watch?v=1cKc1rkZwf8",
+      "count": 3,
+      "lastPlayed": "2026-11-04T07:14:17.7525170Z"
+    },
+    {
+      "country": "ko",
+      "id": "JzIT15DkZyI",
+      "title": "[MV] 허각 임한별 이무진 이진성(먼데이 키즈)  김희재 #안녕 '오래된 노래' | SBS '더 리슨: 너와 함께한 시간'",
+      "url": "https://www.youtube.com/watch?v=JzIT15DkZyI",
+      "count": 3,
+      "lastPlayed": "2026-11-04T07:09:53.2965277Z"
+    },
+    {
+      "country": "ko",
+      "id": "q_gwN9xgw-0",
+      "title": "[죽기 전에 한번은 들어야 할 노래] 가을 우체국 앞에서 - 윤도현 (1994, 가사포함) In front of the post office in autumn",
+      "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
+      "count": 3,
+      "lastPlayed": "2026-11-04T07:05:36.8264880Z"
+    },
+    {
+      "country": "ko",
+      "id": "_ZBriA4KWd0",
+      "title": "부활 - Jill's Theme",
+      "url": "https://www.youtube.com/watch?v=_ZBriA4KWd0",
+      "count": 3,
+      "lastPlayed": "2026-11-04T06:59:01.1476569Z"
+    },
+    {
+      "country": "ko",
+      "id": "sp3gSwWEsbI",
+      "title": "장사익 - 봄날은 간다 [가요무대/Music Stage] | KBS 240916 방송",
+      "url": "https://www.youtube.com/watch?v=sp3gSwWEsbI",
+      "count": 3,
+      "lastPlayed": "2026-11-02T06:48:18.7382699Z"
+    },
+    {
+      "country": "ko",
+      "id": "HrtgKlDOUkY",
+      "title": "채희 - 바람의 소원 / 임영웅 추천곡 ♬가을에 듣기 좋은곡 WISH OF THE WIND (가요베스트 2018)",
+      "url": "https://www.youtube.com/watch?v=HrtgKlDOUkY",
+      "count": 2,
+      "lastPlayed": "2026-11-04T07:28:07.8024461Z"
+    },
+    {
+      "country": "ko",
+      "id": "aJZlG3F0tVM",
+      "title": "김세영-밤의 길목에서 (1997) ,가사, 새벽이 오네요 이제 가요 당신은~ ,8090발라드 #김세영밤의길목에서 #김세영",
+      "url": "https://www.youtube.com/watch?v=aJZlG3F0tVM",
+      "count": 2,
+      "lastPlayed": "2026-11-04T07:23:34.1500336Z"
+    },
+    {
+      "country": "ko",
+      "id": "AOEQLM0QTtQ",
+      "title": "[STAR ZOOM IN] 윤민수&벤(YOON MIN SOO & BEN) - 지나간다 (원곡:김범수)",
+      "url": "https://www.youtube.com/watch?v=AOEQLM0QTtQ",
+      "count": 2,
+      "lastPlayed": "2026-11-04T07:18:58.9801364Z"
+    },
+    {
+      "country": "ko",
+      "id": "vPa8E2rqj3Y",
+      "title": "양현경 ---비몽",
+      "url": "https://www.youtube.com/watch?v=vPa8E2rqj3Y",
+      "count": 2,
+      "lastPlayed": "2026-11-02T07:14:04.0537163Z"
+    },
+    {
+      "country": "ko",
+      "id": "XliWRDUBVXI",
+      "title": "전유진(チョンユジン) - 바람의 소원(風の願い)｜한일톱텐쇼 34회",
+      "url": "https://www.youtube.com/watch?v=XliWRDUBVXI",
+      "count": 2,
+      "lastPlayed": "2026-11-01T08:56:06.5652689Z"
+    },
+    {
+      "country": "ko",
+      "id": "aeh7zUl1j4Q",
+      "title": "เต่างอย - จินตหรา พูนลาภ Jintara Poonlarp I Tao Ngoi 【OfficialLyric】",
+      "url": "https://www.youtube.com/watch?v=aeh7zUl1j4Q",
+      "count": 2,
+      "lastPlayed": "2026-11-01T08:41:49.6449148Z"
+    },
+    {
+      "country": "ko",
+      "id": "f4-4CNov7z0",
+      "title": "린 - 상사화｜현역가왕 12회",
+      "url": "https://www.youtube.com/watch?v=f4-4CNov7z0",
+      "count": 2,
+      "lastPlayed": "2026-10-31T06:52:46.0350345Z"
+    },
+    {
+      "country": "ko",
+      "id": "je0qTh93fR8",
+      "title": "미련이 춤을춰 - 중년애창곡 | 원작자 안무영상 | 다이어트댄스 | MIRRORED | 지니댄스안무",
+      "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
+      "count": 2,
+      "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "R05FtOb5Hz8",
+      "title": "[Lyrics Video] Seung-Chul Lee(이승철) - The western sky(서쪽 하늘)",
+      "url": "https://www.youtube.com/watch?v=R05FtOb5Hz8",
+      "count": 1,
+      "lastPlayed": "2026-11-01T09:17:57.7202700Z"
+    },
+    {
+      "country": "ko",
+      "id": "f5r7hUMLFaY",
+      "title": "다시 사랑한다면  - 도원경 | 잊혀지지 않는 명곡 리메이크",
+      "url": "https://www.youtube.com/watch?v=f5r7hUMLFaY",
+      "count": 1,
+      "lastPlayed": "2026-11-01T09:14:16.3433765Z"
+    },
+    {
+      "country": "ko",
+      "id": "vbvyNnw8Qjg",
+      "title": "Queen - Bohemian Rhapsody (Live Aid 1985)",
+      "url": "https://www.youtube.com/watch?v=vbvyNnw8Qjg",
+      "count": 1,
+      "lastPlayed": "2026-11-01T09:11:29.6717794Z"
+    },
+    {
+      "country": "ko",
+      "id": "J_067MeuFUw",
+      "title": "조용필 - 바람의 노래 (가사포함)",
+      "url": "https://www.youtube.com/watch?v=J_067MeuFUw",
+      "count": 1,
+      "lastPlayed": "2026-11-01T09:06:20.6176474Z"
+    },
+    {
+      "country": "ko",
+      "id": "_bXarqHwbkY",
+      "title": "스탠딩 에그(Standing Egg) - 오래된 노래 / 가사(Lyrics)",
+      "url": "https://www.youtube.com/watch?v=_bXarqHwbkY",
+      "count": 1,
+      "lastPlayed": "2026-11-01T07:46:27.8693010Z"
+    },
+    {
+      "country": "ko",
+      "id": "q023j6npFi4",
+      "title": "바이브 - 그남자 그여자 [Re Feel]ㅣ가사/Lyrics",
+      "url": "https://www.youtube.com/watch?v=q023j6npFi4",
+      "count": 1,
+      "lastPlayed": "2026-10-31T06:00:09.1404788Z"
+    },
+    {
+      "country": "ko",
+      "id": "zRcoicJ3R7E",
+      "title": "편승엽 - 찬찬찬 [가요무대/Music Stage] | KBS 210208 방송",
+      "url": "https://www.youtube.com/watch?v=zRcoicJ3R7E",
+      "count": 1,
+      "lastPlayed": "2026-10-30T15:00:58.7888338Z"
+    },
+    {
+      "country": "ko",
+      "id": "3JhmYC0ETs8",
+      "title": "잊지말아요",
+      "url": "https://www.youtube.com/watch?v=3JhmYC0ETs8",
+      "count": 1,
+      "lastPlayed": "2026-10-30T15:00:22.2070593Z"
+    },
+    {
+      "country": "ko",
+      "id": "uSdlduWm4HM",
+      "title": "백지영 (Baek Ji Young) _ 총맞은것처럼(Like Being Shot by a bullet) MV",
+      "url": "https://www.youtube.com/watch?v=uSdlduWm4HM",
+      "count": 1,
+      "lastPlayed": "2026-10-30T14:59:48.1803632Z"
+    },
+    {
+      "country": "ko",
+      "id": "xiAgC_52x7U",
+      "title": "[성시경 노래] 50. 뜨거운 안녕 (With.싸이) l Sung Si Kyung Music",
+      "url": "https://www.youtube.com/watch?v=xiAgC_52x7U",
+      "count": 1,
+      "lastPlayed": "2026-10-30T14:53:11.8449494Z"
+    },
+    {
+      "country": "ko",
+      "id": "9BxJXMdnciw",
+      "title": "모란동백 | 이 노래는 왜 눈물부터 날까요…나도 이제 너무 늙었나 봐요",
+      "url": "https://www.youtube.com/watch?v=9BxJXMdnciw",
+      "count": 1,
+      "lastPlayed": "2026-10-30T14:32:25.3668556Z"
+    },
+    {
+      "country": "ko",
+      "id": "7MIbxkHF-Cg",
+      "title": "회상",
+      "url": "https://www.youtube.com/watch?v=7MIbxkHF-Cg",
+      "count": 1,
+      "lastPlayed": "2026-10-29T16:29:08.4843953Z"
+    },
+    {
+      "country": "ko",
+      "id": "t-LRKWon50c",
+      "title": "산울림 Playlist",
+      "url": "https://www.youtube.com/watch?v=t-LRKWon50c",
+      "count": 1,
+      "lastPlayed": "2026-10-29T16:28:53.4029395Z"
+    },
+    {
+      "country": "ko",
+      "id": "_24xO_ZKmcU",
+      "title": "[MLB WS 5차전] 밀워키 vs 탬파베이｜5분 하이라이트｜2026 MLB (10.29)",
+      "url": "https://www.youtube.com/watch?v=_24xO_ZKmcU",
+      "count": 1,
+      "lastPlayed": "2026-10-29T16:21:37.6788692Z"
+    },
+    {
+      "country": "ko",
+      "id": "FtHFHgmsxeM",
+      "title": "[DJ티비씨] 김윤아(Kim Yuna) - 봄날은 간다 ♬ #비긴어게인2 #DJ티비씨",
+      "url": "https://www.youtube.com/watch?v=FtHFHgmsxeM",
+      "count": 1,
+      "lastPlayed": "2026-10-24T04:48:12.3865649Z"
+    }
+  ]
 }
