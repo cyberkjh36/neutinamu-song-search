@@ -1,0 +1,20 @@
+{
+  "format": "WorldKaraoke.CloudFavorites",
+  "version": 1,
+  "updatedAt": null,
+  "countries": [
+    "ko",
+    "th",
+    "fil",
+    "vi",
+    "ne",
+    "mn",
+    "id",
+    "lo",
+    "my",
+    "zh-CN",
+    "ja",
+    "und"
+  ],
+  "rows": []
+}
