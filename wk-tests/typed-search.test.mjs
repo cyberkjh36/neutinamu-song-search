@@ -33,6 +33,12 @@ test('delayed change after submitted NFC normalization does not announce a new d
  h.field.value=normalizeTypedQuery(h.field.value);h.fire('change');assert.equal(h.drafts,1);
  h.field.value='Nơi này';h.fire('change');assert.equal(h.drafts,2);
 });
+test('IME confirmation ends on keyup without swallowing the next soft Search action',()=>{
+ const h=input();h.fire('compositionstart');h.fire('keydown',{key:'Enter',keyCode:229});
+ h.fire('compositionend');h.fire('keyup',{key:'Enter'});
+ assert.equal(h.sends,0);
+ assert.equal(h.fire('beforeinput',{inputType:'insertParagraph'}),true);assert.equal(h.sends,1);
+});
 test('Enter sends once; repeat, paired beforeinput and busy presses cannot duplicate it',()=>{
  const h=input();assert.equal(h.fire('keydown',{key:'Enter'}),true);h.fire('beforeinput',{inputType:'insertLineBreak'});h.fire('keydown',{key:'Enter',repeat:true});
  assert.equal(h.sends,1);h.ready(true);h.fire('keydown',{key:'Enter',repeat:true});assert.equal(h.sends,1);

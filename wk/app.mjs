@@ -1,7 +1,7 @@
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.6';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.7';
-import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.1';
-import {createRemoteUi} from './remote-ui.mjs?v=3.4';
+import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
+import {createRemoteUi} from './remote-ui.mjs?v=3.7.2';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';
 import { LANGUAGES } from './labels.mjs?v=2.1';
@@ -291,7 +291,7 @@ async function searchVideos() {
   catch (error) { showError(error); }
   finally { refreshControls(); }
 }
-$('legacy-search').addEventListener('click',async()=>{if($('legacy-search').disabled)return;try{const r=await connection.search($('query').value,currentLanguage.code);if(!r.ok)showError(r.code);else feedback('connected');}catch(e){showError(e);}finally{refreshControls();}});
+$('legacy-search').addEventListener('click',async()=>{if($('legacy-search').disabled)return;try{const query=normalizeTypedQuery($('query').value);$('query').value=query;const r=await connection.search(query,currentLanguage.code);if(!r.ok)showError(r.code);else feedback('connected');}catch(e){showError(e);}finally{refreshControls();}});
 function voiceErrorKey(reason) {
   if (['not-allowed','service-not-allowed','audio-capture'].includes(reason)) return 'permission';
   if (reason === 'language-not-supported') return 'language';

@@ -1,6 +1,7 @@
 import {REMOTE_TEXT} from './remote-text.mjs?v=3.2';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
+import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 export function createRemoteUi({connection,getLanguage,blocked,onRender=()=>{},$=id=>document.getElementById(id),doc=document}){
  let generation=connection.generation,language=getLanguage(),pending=false,controlStatus='',favoriteStatus='',failed=false,rows=[],page=0,applied='',loaded=false;
  const retries=new Map(),words=()=>REMOTE_TEXT[getLanguage()],connected=()=>['ready','sending'].includes(connection.state);
@@ -48,6 +49,7 @@ export function createRemoteUi({connection,getLanguage,blocked,onRender=()=>{},$
  }
  async function load(target,query){
   if(pending||blocked()||connection.state!=='ready'||!connection.favoritesSupported)return;
+  query=normalizeTypedQuery(query);
   if(query.length>160){favoriteStatus='long';failed=true;render();return;}
   const g=connection.generation,lang=getLanguage();pending=true;favoriteStatus='loading';failed=false;render();
   try{const catalog=await connection.favorites(query,target,lang);if(g!==connection.generation||lang!==getLanguage())return;
@@ -59,8 +61,14 @@ export function createRemoteUi({connection,getLanguage,blocked,onRender=()=>{},$
   if($('favorites-open').disabled)return;const panel=$('favorites-panel');panel.hidden=!panel.hidden;render();
   if(!panel.hidden)void load(0,$('favorites-query').value.trim());
  });
- $('favorites-search').addEventListener('click',()=>{if(!$('favorites-search').disabled)void load(0,$('favorites-query').value.trim());});
- $('favorites-query').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&!$('favorites-search').disabled){e.preventDefault();void load(0,$('favorites-query').value.trim());}});
+ function searchFavorites(){
+  if($('favorites-search').disabled)return;
+  const field=$('favorites-query');field.value=normalizeTypedQuery(field.value);
+  return load(0,field.value);
+ }
+ $('favorites-search').addEventListener('click',searchFavorites);
+ bindTypedSearch({field:$('favorites-query'),submit:searchFavorites,
+  canSubmit:()=>!$('favorites-search').disabled&&!$('favorites-panel').hidden,onDraft:()=>{}});
  $('favorites-previous').addEventListener('click',()=>{if(!$('favorites-previous').disabled)void load(page-1,applied);});
  $('favorites-more').addEventListener('click',()=>{if(!$('favorites-more').disabled)void load(page+1,applied);});
  function changeLanguage(){if(language===getLanguage())return;language=getLanguage();rows=[];loaded=false;page=0;applied='';favoriteStatus='';$('favorites-list').replaceChildren();$('favorites-query').value='';render();if(!$('favorites-panel').hidden)void load(0,'');}

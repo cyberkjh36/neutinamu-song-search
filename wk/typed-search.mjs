@@ -39,6 +39,11 @@ export function bindTypedSearch({field, submit, canSubmit, onDraft}) {
     if (event.repeat) { event.preventDefault(); return; }
     search(event);
   });
+  field.addEventListener('keyup', event => {
+    // IME confirmation can finish without a line-break/input event. Its guard
+    // must not swallow the next, separate soft-keyboard Search action.
+    if (event.key === 'Enter') allowLineBreak = false;
+  });
   field.addEventListener('beforeinput', event => {
     if (!['insertLineBreak', 'insertParagraph'].includes(event.inputType)) return;
     if (allowLineBreak) { allowLineBreak = false; return; }
