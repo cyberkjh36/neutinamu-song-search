@@ -1,5 +1,6 @@
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.6';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.7';
+import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.1';
 import {createRemoteUi} from './remote-ui.mjs?v=3.4';
 import { BROWSE_TEXT } from './browse-text.mjs?v=3.0';
 import { createBrowseUi } from './browse-ui.mjs?v=3.1';
@@ -270,20 +271,26 @@ $('connect').addEventListener('click', () => {
   });
 });
 $('disconnect').addEventListener('click', () => { connectionAttempt++; void connection.disconnect(); });
-$('query').addEventListener('input', () => { searchComplete = false; refreshControls(); });
-$('send').addEventListener('click', async () => {
+bindTypedSearch({field:$('query'), submit:searchVideos,
+  canSubmit:() => !$('send').disabled,
+  onDraft:() => { searchComplete = false; refreshControls(); }});
+$('send').addEventListener('click', searchVideos);
+async function searchVideos() {
   if ($('send').disabled) return;
   if (searchComplete) {
     searchComplete = false; $('query').value = ''; $('interim').textContent = '';
     browseUi.clear(); feedback('queryHint'); refreshControls(); $('query').focus();
     return;
   }
-  if($('query').value.trim().length>200){$('feedback').textContent=BROWSE_TEXT[currentLanguage.code].long;return;}
+  const query = normalizeTypedQuery($('query').value);
+  if(!query){refreshControls();return;}
+  if(query.length>200){$('feedback').textContent=BROWSE_TEXT[currentLanguage.code].long;return;}
+  $('query').value = query;
   browseUi.clear();feedback('sending');
-  try { const catalog = await connection.browse($('query').value, currentLanguage.code); browseUi.show(catalog); searchComplete = !catalog.error; feedback(catalog.error?'confirmHelp':'sent'); if(catalog.items.length)$('results').scrollIntoView({behavior:'smooth',block:'start'}); }
+  try { const catalog = await connection.browse(query, currentLanguage.code); browseUi.show(catalog); searchComplete = !catalog.error; feedback(catalog.error?'confirmHelp':'sent'); if(catalog.items.length)$('results').scrollIntoView({behavior:'smooth',block:'start'}); }
   catch (error) { showError(error); }
   finally { refreshControls(); }
-});
+}
 $('legacy-search').addEventListener('click',async()=>{if($('legacy-search').disabled)return;try{const r=await connection.search($('query').value,currentLanguage.code);if(!r.ok)showError(r.code);else feedback('connected');}catch(e){showError(e);}finally{refreshControls();}});
 function voiceErrorKey(reason) {
   if (['not-allowed','service-not-allowed','audio-capture'].includes(reason)) return 'permission';

@@ -29,6 +29,40 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
    await wait(()=>$('send').disabled===false);const count=calls.length;$('send').click();
    assert.equal($('query').value,'');assert.equal(document.activeElement,$('query'));assert.equal($('query').readOnly,false);assert.equal($('country-keyboard').hidden,true);assert.equal(calls.length,count);
   });
+  await t.test('Vietnamese IME stays local until explicit Search/Enter and sends accented title once',async()=>{
+   choose('vi-VN');$('query-keyboard').click();const count=calls.filter(c=>c.op==='search').length;
+   await $('query').fire('compositionstart');
+   typeNative('query','Đừng làm'.normalize('NFD'));
+   await $('query').fire('keydown',{key:'Enter',isComposing:true});
+   await $('query').fire('keydown',{key:'Enter',isComposing:false,keyCode:229});
+   assert.equal(calls.filter(c=>c.op==='search').length,count,'composition must not search');
+   const title='Đừng làm trái tim anh đau';typeNative('query',title.normalize('NFD'));
+   await $('query').fire('compositionend');
+   assert.equal($('query').value,title.normalize('NFD'),'do not rewrite the IME draft');
+   assert.equal(calls.filter(c=>c.op==='search').length,count);
+   let prevented=false;await $('query').fire('keydown',{key:'Enter',preventDefault(){prevented=true;}});
+   assert.equal(prevented,true);await wait(()=>calls.filter(c=>c.op==='search').length===count+1);await wait(()=>!$('send').disabled);
+   const req=calls.filter(c=>c.op==='search').at(-1);assert.equal(req.language,'vi-VN');assert.ok(req.text.endsWith(':'+title));
+   assert.equal($('query').value,title);assert.equal($('results-list').children.length,1);assert.equal($('connect').disabled,true);
+  });
+  await t.test('pasted Vietnamese title with newlines and keyboard change event works with app search button',async()=>{
+   const count=calls.filter(c=>c.op==='search').length;
+   $('query').value='  Nơi này có anh\nkaraoke\tbeat  '.normalize('NFD');await $('query').fire('change');
+   assert.equal(calls.filter(c=>c.op==='search').length,count);
+   $('send').click();await wait(()=>calls.filter(c=>c.op==='search').length===count+1);await wait(()=>!$('send').disabled);
+   const req=calls.filter(c=>c.op==='search').at(-1);assert.equal(req.language,'vi-VN');assert.ok(req.text.endsWith(':Nơi này có anh karaoke beat'));
+   assert.equal($('query').value,'Nơi này có anh karaoke beat');
+  });
+  await t.test('late blur/change after a successful keyboard search cannot resend the previous song',async()=>{
+   const count=calls.filter(c=>c.op==='search').length;await $('query').fire('change');$('send').click();
+   assert.equal($('query').value,'');assert.equal(calls.filter(c=>c.op==='search').length,count);
+  });
+  await t.test('phone Search action without a keydown submits the next Vietnamese title',async()=>{
+   const count=calls.filter(c=>c.op==='search').length;typeNative('query','Chúng ta của hiện tại');
+   let prevented=false;await $('query').fire('beforeinput',{inputType:'insertLineBreak',preventDefault(){prevented=true;}});
+   assert.equal(prevented,true);await wait(()=>calls.filter(c=>c.op==='search').length===count+1);await wait(()=>!$('send').disabled);
+   assert.ok(calls.filter(c=>c.op==='search').at(-1).text.endsWith(':Chúng ta của hiện tại'));
+  });
   await t.test('favorites native composition uses its own explicit search and keeps video draft',async()=>{
    choose('ko-KR');typeNative('query','보존할 영상');$('favorites-open').click();await wait(()=>!$('favorites-search').disabled&&$('favorites-list').children.length===1);
    $('favorites-keyboard').click();assert.equal(document.activeElement,$('favorites-query'));const count=calls.filter(c=>c.op==='search').length;
