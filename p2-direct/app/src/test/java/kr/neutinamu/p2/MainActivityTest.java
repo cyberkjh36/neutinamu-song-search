@@ -53,11 +53,12 @@ public class MainActivityTest {
         view("tjSettings").performClick();assertTrue(message().contains("먼저 ①"));
         assertNull(shadowOf(app).getNextStartedActivity());
     }
-    @Test public void preparationNeedsCaptureAndPermissionDenialDoesNotClaimSuccess(){
+    @Test @Config(sdk={28,29,31,35}) public void preparationNeedsCaptureAndPermissionDenialDoesNotClaimSuccess(){
         view("prepareWifi").performClick();assertEquals(Intent.ACTION_OPEN_DOCUMENT,shadowOf(app).getNextStartedActivity().getAction());
         app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_DENIED});
         assertTrue(((TextView)view("wifiStatus")).getText().toString().contains("[W03]"));
         assertEquals(android.os.Build.VERSION.SDK_INT>=33?"android.permission.NEARBY_WIFI_DEVICES":"android.permission.ACCESS_FINE_LOCATION",MainActivity.wifiPermission());
+        if(android.os.Build.VERSION.SDK_INT==31)assertArrayEquals(new String[]{"android.permission.ACCESS_FINE_LOCATION","android.permission.ACCESS_COARSE_LOCATION"},MainActivity.wifiPermissions());
     }
     @Test public void wifiClientSurvivesSettingsLifecycleUntilActivityDestroyed()throws Exception{
         final int[] counts=new int[3];

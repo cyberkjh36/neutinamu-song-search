@@ -121,12 +121,14 @@ public final class MainActivity extends Activity {
         });
     }
     static String wifiPermission(){return Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;}
+    static String[] wifiPermissions(){return Build.VERSION.SDK_INT>=31&&Build.VERSION.SDK_INT<=32?
+        new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION}:new String[]{wifiPermission()};}
     private void prepareWifi(){
         if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
         if(checkSelfPermission(wifiPermission())!=PackageManager.PERMISSION_GRANTED){
             wifiStatus.setText(Build.VERSION.SDK_INT>=33?"직접 Wi-Fi 연결 확인을 위해 ‘근처 기기’ 권한을 허용해 주세요.":
                 "이 안드로이드 버전에서는 직접 Wi-Fi 연결 확인에 위치 권한이 필요합니다. 위치를 수집하거나 저장하지 않습니다.");
-            diagnostics.event("P2P_PERMISSION_REQUESTED");requestPermissions(new String[]{wifiPermission()},P2P_PERMISSION);return;
+            diagnostics.event("P2P_PERMISSION_REQUESTED");requestPermissions(wifiPermissions(),P2P_PERMISSION);return;
         }
         if(!receiverRegistered){
             IntentFilter filter=new IntentFilter(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
@@ -141,8 +143,10 @@ public final class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
         super.onRequestPermissionsResult(request,permissions,results);
         if(request!=P2P_PERMISSION)return;
-        if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)prepareWifi();
-        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ①을 다시 눌러 허용해 주세요. TJ매니저는 종료하지 마세요.");}
+        boolean granted=false;
+        for(int i=0;i<permissions.length&&i<results.length;i++)if(permissions[i].equals(wifiPermission())&&results[i]==PackageManager.PERMISSION_GRANTED)granted=true;
+        if(granted)prepareWifi();
+        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ①을 다시 눌러 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다. TJ매니저는 종료하지 마세요.");}
     }
     private void showWifiState(P2pRegistration.State state){
         if(destroyed)return;
