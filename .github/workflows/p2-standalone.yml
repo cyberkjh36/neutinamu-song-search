@@ -33,7 +33,10 @@ jobs:
           cp p2-standalone/.pio/build/esp32dev/firmware.bin p2-device-build/
           cp p2-standalone/.pio/build/esp32dev/bootloader.bin p2-device-build/
           cp p2-standalone/.pio/build/esp32dev/partitions.bin p2-device-build/
+          cp "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" p2-device-build/
           cp p2-standalone/README_KO.md p2-device-build/
+          cp p2-standalone/FLASH_KO.txt p2-standalone/THIRD_PARTY.md p2-device-build/
+          git rev-parse HEAD > p2-device-build/SOURCE_COMMIT.txt
           sha256sum p2-device-build/*.bin > p2-device-build/SHA256SUMS.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
