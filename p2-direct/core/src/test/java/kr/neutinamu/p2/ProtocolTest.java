@@ -71,10 +71,13 @@ public class ProtocolTest {
     }
     static void send(Socket socket,int code,byte[] body)throws IOException{socket.getOutputStream().write(server(code,body));socket.getOutputStream().flush();}
     static class Harness implements AutoCloseable {
-        final ServerSocket server;final Socket peer;final Session session;final Thread thread;final List<String> messages=new CopyOnWriteArrayList<>();
+        final ServerSocket server;final Socket peer;final Session session;final Thread thread;final List<String> messages=new CopyOnWriteArrayList<>();final Diagnostics diagnostic=new Diagnostics();
         Harness(int timeout)throws Exception{
             server=new ServerSocket(0,1,InetAddress.getLoopbackAddress());Socket client=new Socket(InetAddress.getLoopbackAddress(),server.getLocalPort());peer=server.accept();peer.setSoTimeout(1500);
-            session=new Session(client,profile(),(s,m)->messages.add(m),timeout,5000);thread=new Thread(session::run);thread.start();assertEquals(3000,readFrame(peer).code);
+            session=new Session(client,profile(),new Session.Listener(){
+                public void changed(Session.State s,String m){messages.add(m);}
+                public void frame(boolean out,int code,int len,Long scalar){diagnostic.frame(out,code,len,scalar);}
+            },timeout,5000);thread=new Thread(session::run);thread.start();assertEquals(3000,readFrame(peer).code);
         }
         void ready()throws Exception{send(peer,3000,new byte[]{0});assertEquals(3100,readFrame(peer).code);send(peer,3100,id());await(Session.State.READY);}
         void await(Session.State state)throws Exception{long until=System.nanoTime()+TimeUnit.SECONDS.toNanos(3);while(session.state()!=state&&System.nanoTime()<until)Thread.sleep(5);assertEquals(state,session.state());}
@@ -106,5 +109,41 @@ public class ProtocolTest {
     }
     @Test public void cancelPendingPlayDoesNotBecomePlaybackSuccess()throws Exception{
         try(Harness h=new Harness(1000)){h.ready();h.session.play(10909);readFrame(h.peer);h.session.cancel();assertEquals(4100,readFrame(h.peer).code);send(h.peer,4300,cat(Wire.integer(10909),new byte[1]));send(h.peer,1000,new byte[0]);readFrame(h.peer);assertEquals(Session.State.CANCEL,h.session.state());send(h.peer,4100,Wire.integer(12));h.await(Session.State.READY);}
+    }
+    @Test public void changedInitialReplyExplainsCodeWithoutGuessingMeaning()throws Exception{
+        try(Harness h=new Harness(1000)){
+            send(h.peer,3000,new byte[]{1});h.await(Session.State.CLOSED);
+            assertTrue(h.messages.get(h.messages.size()-1).contains("[A01]"));
+            assertTrue(h.messages.get(h.messages.size()-1).contains("응답값=1"));
+            assertFalse(h.messages.get(h.messages.size()-1).contains("승인하지"));
+            assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=1 value=1"));
+            assertFalse(h.diagnostic.report().contains("TX cmd=4000"));
+        }
+    }
+    @Test public void unfamiliarInitialShapeRemainsBlocked()throws Exception{
+        try(Harness h=new Harness(1000)){
+            send(h.peer,3000,new byte[]{1,2,3});h.await(Session.State.CLOSED);
+            assertTrue(h.messages.get(h.messages.size()-1).contains("길이=3바이트"));
+            assertTrue(h.messages.get(h.messages.size()-1).contains("형식 미확인"));
+            assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=3"));
+        }
+    }
+    @Test public void authenticationTimeoutHasSpecificCode()throws Exception{
+        try(Harness h=new Harness(400)){h.await(Session.State.CLOSED);assertTrue(h.messages.get(h.messages.size()-1).contains("[A02]"));}
+    }
+    @Test public void playReplyIsNotPlaybackAndTimeoutExplainsDifference()throws Exception{
+        try(Harness h=new Harness(400)){
+            h.ready();h.session.play(10909);readFrame(h.peer);send(h.peer,4000,Wire.integer(2));
+            h.await(Session.State.READY);assertTrue(h.messages.stream().anyMatch(s->s.contains("[P10]")));
+            assertTrue(h.messages.get(h.messages.size()-1).contains("[P11]"));
+            assertEquals(1,h.diagnostic.report().split("TX cmd=4000",-1).length-1);
+        }
+    }
+    @Test public void diagnosticsOmitPayloadAndBoundMemory(){
+        Diagnostics d=new Diagnostics();d.frame(true,3000,47,123456789L);d.frame(false,3100,66,123456789L);
+        assertFalse(d.report().contains("value="));assertFalse(d.report().contains("123456789"));
+        try{d.event("private.example.com");fail();}catch(IllegalArgumentException expected){}
+        for(int i=0;i<70;i++)d.event("EVENT_"+i);
+        assertFalse(d.report().contains("cmd=3000"));assertEquals(50,d.report().split("\n").length);
     }
 }

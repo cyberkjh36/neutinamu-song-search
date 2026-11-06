@@ -3,16 +3,17 @@ android {
     namespace 'kr.neutinamu.p2'
     compileSdk 35
     defaultConfig {
-        applicationId 'kr.neutinamu.p2.directtrial'
+        applicationId 'kr.neutinamu.p2.directdiagnostic'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.1-experimental'
+        versionCode 2
+        versionName '0.2-diagnostic'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
     sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets') } }
     lint { abortOnError true }
+    testOptions { unitTests { includeAndroidResources = true } }
 }
 tasks.register('prepareCatalog', Copy) {
     from rootProject.projectDir.parentFile
@@ -20,4 +21,8 @@ tasks.register('prepareCatalog', Copy) {
     into layout.buildDirectory.dir('catalog-assets')
 }
 tasks.named('preBuild').configure { dependsOn 'prepareCatalog' }
-dependencies { implementation project(':core') }
+dependencies {
+    implementation project(':core')
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+}
