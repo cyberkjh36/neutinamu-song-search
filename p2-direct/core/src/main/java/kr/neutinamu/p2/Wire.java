@@ -1,0 +1,57 @@
+package kr.neutinamu.p2;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/** Experimental framing observed on one P2. Control bytes remain opaque. */
+public final class Wire {
+    public static final int MAX_BODY = 1024 * 1024;
+    private static final byte[] NORMAL = {1,0,0,0,0,4,0,1};
+    private static final byte[] INFO = {1,0,0,0,0,4,0,0};
+    private static final byte[] PLAY = {2,0,0,0,0,4,0,1};
+    private static final byte[] KEEP = {1,0,0,0,0,4,1,9};
+    private Wire() {}
+    public static long u32(byte[] b, int o) {
+        return (b[o]&255L)|((b[o+1]&255L)<<8)|((b[o+2]&255L)<<16)|((b[o+3]&255L)<<24);
+    }
+    static void put32(byte[] b, int o, long n) { for(int i=0;i<4;i++) b[o+i]=(byte)(n >>> (8*i)); }
+    public static byte[] integer(long n) { byte[] b=new byte[4];put32(b,0,n);return b; }
+    public static byte[] encode(int code, byte[] control, byte[] body) {
+        if(code<0||control.length!=8||body.length>MAX_BODY) throw new IllegalArgumentException("Invalid frame");
+        byte[] b=new byte[16+body.length];put32(b,0,code);System.arraycopy(control,0,b,4,8);
+        put32(b,12,body.length);System.arraycopy(body,0,b,16,body.length);return b;
+    }
+    public static byte[] info() { return encode(3100,INFO,new byte[0]); }
+    public static byte[] heartbeat() { return encode(1000,KEEP,integer(100)); }
+    public static byte[] play(int song) {
+        // Range is a UI constraint, not a discovered protocol limit.
+        if(song<1||song>99999999) throw new IllegalArgumentException("Invalid song number");
+        byte[] b=new byte[9];put32(b,0,1200);put32(b,4,song);return encode(4000,PLAY,b);
+    }
+    public static byte[] cancel() { return encode(4100,NORMAL,integer(12)); }
+    public static final class Frame {
+        public final int code;
+        public final byte[] control,body;
+        Frame(byte[] b) { code=(int)u32(b,0);control=Arrays.copyOfRange(b,4,12);body=Arrays.copyOfRange(b,16,b.length); }
+        public byte[] bytes() { return encode(code,control,body); }
+    }
+    /** Handles arbitrary TCP boundaries without discarding a partial header on timeouts. */
+    public static final class Decoder {
+        private byte[] buffer=new byte[0];
+        public List<Frame> feed(byte[] bytes,int count) throws IOException {
+            if(count<0||count>bytes.length||buffer.length+count>MAX_BODY+16+8192) throw new IOException("Frame buffer limit");
+            byte[] next=Arrays.copyOf(buffer,buffer.length+count);
+            System.arraycopy(bytes,0,next,buffer.length,count);int at=0;List<Frame> frames=new ArrayList<>();
+            while(next.length-at>=16) {
+                long len=u32(next,at+12);
+                if(len>MAX_BODY) { buffer=new byte[0];throw new IOException("Invalid frame length"); }
+                int end=at+16+(int)len;if(end>next.length)break;
+                frames.add(new Frame(Arrays.copyOfRange(next,at,end)));at=end;
+            }
+            buffer=Arrays.copyOfRange(next,at,next.length);return frames;
+        }
+        public void finish() throws IOException { if(buffer.length!=0)throw new IOException("Truncated frame"); }
+    }
+}

@@ -1,0 +1,42 @@
+name: P2 direct Android trial
+on:
+  pull_request:
+    paths:
+      - 'p2-direct/**'
+      - '.github/workflows/p2-direct-trial.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Test protocol, build Android trial, run lint
+        run: gradle -p p2-direct :core:test :core:jar :app:assembleDebug :app:lintDebug --no-daemon
+      - name: Confirm both existing catalogs are in APK
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('p2-direct/app/build/outputs/apk/debug/app-debug.apk') as z:
+              assert len(z.read('assets/catalog-20261018.csv')) > 3000000
+              assert len(z.read('assets/catalog-update-20261104.csv')) > 7000
+              assert not any(n.endswith(('.pcap','.pcapng','.p2profile')) for n in z.namelist())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: P2-Direct-Android-Trial
+          path: |
+            p2-direct/app/build/outputs/apk/debug/app-debug.apk
+            p2-direct/core/build/libs/core.jar
+            p2-direct/core/build/test-results/test/*.xml
+            p2-direct/app/build/reports/lint-results-debug.html
+          retention-days: 30

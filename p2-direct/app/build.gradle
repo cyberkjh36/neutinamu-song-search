@@ -1,0 +1,23 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'kr.neutinamu.p2'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'kr.neutinamu.p2.directtrial'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1-experimental'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
+    sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets') } }
+    lint { abortOnError true }
+}
+tasks.register('prepareCatalog', Copy) {
+    from rootProject.projectDir.parentFile
+    include 'catalog-20261018.csv', 'catalog-update-20261104.csv'
+    into layout.buildDirectory.dir('catalog-assets')
+}
+tasks.named('preBuild').configure { dependsOn 'prepareCatalog' }
+dependencies { implementation project(':core') }
