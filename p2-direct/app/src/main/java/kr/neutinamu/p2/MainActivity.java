@@ -45,10 +45,14 @@ public final class MainActivity extends Activity {
     private Button connect,play,cancel,importButton,search;
     private TextView wifiStatus;
     private P2pRegistration wifiRegistration;
+    private DirectWifi directWifi;private String directHost;private boolean findAfterPermission,directMode;
+    private AlertDialog peerDialog;
     private boolean receiverRegistered,tjSettingsVisited;
     private final BroadcastReceiver wifiReceiver=new BroadcastReceiver(){
         @Override public void onReceive(Context context,Intent intent){
-            if(!destroyed&&wifiRegistration!=null&&wifiRegistration.registered())wifiRegistration.refresh(null);
+            if(destroyed)return;
+            if(directWifi!=null)directWifi.changed();
+            if(wifiRegistration!=null&&wifiRegistration.registered())wifiRegistration.refresh(null);
         }
     };
     private final int bg=Color.rgb(10,27,40),fg=Color.rgb(238,246,245),accent=Color.rgb(186,225,129);
@@ -60,17 +64,18 @@ public final class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
         setContentView(scroll);
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"연결진단 시험판 0.3 · 실제 반주기 검증 필요",15,false);
+        text(root,"직접연결 시험판 0.4 · 실제 반주기 검증 필요",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         text(root,"1  연결 준비",22,true);
-        text(root,"TJ매니저에서 NFC로 P2에 연결한 뒤 홈 버튼으로 나와 이 앱을 여세요. 아래 ①을 먼저 눌러 직접 Wi-Fi 연결을 준비합니다. 매장 공유기 와이파이가 아닌 P2와의 직접 연결입니다. 노래 실행은 ③의 연결 확인 후 가능합니다.",16,false);
+        text(root,"PCAP 연결 기록을 선택한 뒤 ‘주변 P2 찾기’를 눌러 반주기를 선택하세요. 매장 공유기가 아니라 P2와 Wi-Fi Direct로 연결합니다. 처음 찾는 반주기가 연결을 허용해야 하며 기종 설정에 따라 NFC 연결 준비가 필요할 수 있습니다.",16,false);
         importButton=button(root,"내 PCAP 연결 기록 선택",this::chooseCapture);
         text(root,"보내 주신 PCAPdroid 파일을 선택하세요. 연결정보는 이 앱의 메모리에서만 사용하며 서버에 올리지 않습니다. 앱을 완전히 종료하면 다시 선택해야 합니다.",14,false);
-        button(root,"① 직접 Wi-Fi 연결 준비",this::prepareWifi).setTag("prepareWifi");
-        wifiStatus=text(root,"[W00] PCAP 파일을 선택한 뒤 ①을 눌러 주세요. 준비 확인 전에는 TJ매니저를 종료하지 마세요.",16,true);
+        button(root,"① 기존 직접 연결 확인",()->{directMode=false;prepareWifi();}).setTag("prepareWifi");
+        wifiStatus=text(root,"[W00] PCAP 파일을 선택하고 ‘주변 P2 찾기’를 눌러 주세요. 이미 P2에 연결되어 있다면 ①로 확인할 수 있습니다.",16,true);
         wifiStatus.setTag("wifiStatus");
-        text(root,"①에서 직접 Wi-Fi 연결이 확인되면 ②를 눌러 TJ매니저만 ‘강제 중지’하고 뒤로 돌아오세요. 이 시험 앱은 종료하지 마세요. 연결이 남아 있는지 확인하는 시험이며, 유지 성공을 보장하지 않습니다.",14,false);
-        button(root,"② TJ매니저 설정 열기",this::openTjSettings).setTag("tjSettings");
+        button(root,"② 주변 P2 찾기",this::findP2).setTag("findP2");
+        text(root,"TJ매니저가 이미 연결 중이면 연결 충돌이 생길 수 있습니다. 아래 설정 버튼은 기존 연결을 확인한 뒤 사용할 수 있습니다. 직접 검색과 연결 성공은 실제 P2에서 확인이 필요합니다.",14,false);
+        button(root,"TJ매니저 설정 (필요할 때)",this::openTjSettings).setTag("tjSettings");
         connect=button(root,"③ P2 연결 시험",()->{
             if(connecting||importing){feedback("연결 준비 중입니다. 잠시 기다려 주세요.");return;}
             if(session!=null){session.close();session=null;paint();return;}
@@ -107,9 +112,20 @@ public final class MainActivity extends Activity {
         });
         text(root,"작동하지 않으면 위 안내 문구를 보내 주시거나 ‘진단 결과 공유’에서 ChatGPT를 선택해 주세요. 개인정보와 인증값은 포함하지 않습니다.",14,false);
         text(root,"시작 버튼을 누르면 반주기에서 곡이 바뀔 수 있습니다. 시험판은 시작·취소만 지원합니다. 응답이 없으면 반복해서 누르지 말고 반주기 화면을 확인해 주세요.",14,false);
-        text(root,"공식 TJ 앱이 아닙니다. 새 NFC 연결 설정과 아이폰 직접 제어는 아직 구현되지 않았습니다.",13,false);
+        text(root,"공식 TJ 앱이 아닙니다. Wi-Fi Direct 검색·연결을 시험하는 안드로이드 앱입니다. NFC를 생략할 수 있는지는 P2의 연결 허용 상태에 따라 달라집니다.",13,false);
         wifiRegistration=new P2pRegistration(new AndroidP2pBackend(this),new Handler(getMainLooper()),
             ()->profile==null?null:profile.host,this::showWifiState,diagnostics);
+        directWifi=new DirectWifi(new AndroidDirectWifiBackend(this),new Handler(getMainLooper()),new DirectWifi.Listener(){
+            public void status(String code,String message){diagnostics.event(code);if(directMode)wifiStatus.setText("["+code+"] "+message);}
+            public void peers(List<DirectWifi.Peer> peers){
+                if(destroyed||!directMode||(peerDialog!=null&&peerDialog.isShowing()))return;
+                String[] names=new String[peers.size()];for(int i=0;i<names.length;i++)names[i]=peers.get(i).name;
+                peerDialog=new AlertDialog.Builder(MainActivity.this).setTitle("연결할 P2를 선택하세요")
+                    .setItems(names,(d,index)->{directHost=null;directWifi.select(peers.get(index));})
+                    .setNegativeButton("닫기",(d,w)->directWifi.stopFinding()).create();peerDialog.setOnCancelListener(d->directWifi.stopFinding());peerDialog.show();
+            }
+            public void connected(String host){if(destroyed)return;directHost=host;beginConnect();}
+        });
         paint();
         worker.execute(()->{
             SongCatalog loaded=new SongCatalog();
@@ -123,6 +139,11 @@ public final class MainActivity extends Activity {
     static String wifiPermission(){return Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;}
     static String[] wifiPermissions(){return Build.VERSION.SDK_INT>=31&&Build.VERSION.SDK_INT<=32?
         new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION}:new String[]{wifiPermission()};}
+    private void findP2(){
+        if(connecting||importing||session!=null||directWifi.joining()){feedback("연결 준비 또는 실행 연결 중입니다. 현재 연결을 해제한 뒤 찾아 주세요.");return;}
+        if(profile==null){chooseCapture();return;}
+        directMode=true;directHost=null;findAfterPermission=true;prepareWifi();
+    }
     private void prepareWifi(){
         if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
         if(checkSelfPermission(wifiPermission())!=PackageManager.PERMISSION_GRANTED){
@@ -133,12 +154,14 @@ public final class MainActivity extends Activity {
         if(!receiverRegistered){
             IntentFilter filter=new IntentFilter(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
             filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
             // These are protected Android system broadcasts; callbacks re-read system state.
             if(Build.VERSION.SDK_INT>=33)registerReceiver(wifiReceiver,filter,Context.RECEIVER_EXPORTED);
             else registerReceiver(wifiReceiver,filter);
             receiverRegistered=true;
         }
         wifiRegistration.prepare();
+        if(findAfterPermission){findAfterPermission=false;directWifi.find();}
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
         super.onRequestPermissionsResult(request,permissions,results);
@@ -149,7 +172,7 @@ public final class MainActivity extends Activity {
         else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ①을 다시 눌러 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다. TJ매니저는 종료하지 마세요.");}
     }
     private void showWifiState(P2pRegistration.State state){
-        if(destroyed)return;
+        if(destroyed||directMode)return;
         String message;
         switch(state){
             case MATCH:message=tjSettingsVisited?
@@ -183,6 +206,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onResume(){
         super.onResume();
+        if(directWifi!=null)directWifi.changed();
         if(wifiRegistration!=null&&wifiRegistration.registered()){
             diagnostics.event("APP_RESUMED_WITH_P2P");wifiRegistration.refresh(null);
         }
@@ -199,7 +223,7 @@ public final class MainActivity extends Activity {
         });
     }
     private void chooseCapture(){
-        if(connecting||importing||session!=null){feedback("연결 준비가 끝나거나 연결을 해제한 뒤 기록을 선택해 주세요.");return;}
+        if(connecting||importing||session!=null||(directWifi!=null&&directWifi.joining())){feedback("연결 준비가 끝나거나 연결을 해제한 뒤 기록을 선택해 주세요.");return;}
         Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT);pick.setType("*/*");pick.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(pick,PICK_CAPTURE);
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
@@ -210,7 +234,7 @@ public final class MainActivity extends Activity {
             try(InputStream in=getContentResolver().openInputStream(data.getData())){
                 if(in==null)throw new IOException("파일을 열 수 없습니다.");
                 CaptureProfile loaded=CaptureProfile.read(in);
-                ui(()->{profile=loaded;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ① 직접 Wi-Fi 연결 준비부터 진행해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
+                ui(()->{profile=loaded;directHost=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ① 직접 Wi-Fi 연결 준비부터 진행해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
@@ -218,18 +242,20 @@ public final class MainActivity extends Activity {
         if(profile==null){feedback("[C00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
         if(importing||connecting||session!=null)return;
         diagnostics.event("CONNECT_STARTED");
-        CaptureProfile selected=profile;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
+        CaptureProfile selected=profile;String target=directHost==null?selected.host:directHost;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
         worker.execute(()->{
             Socket socket=null;
             try{
-                socket=socketFor(selected.host);connectingSocket=socket;
+                socket=socketFor(target);connectingSocket=socket;
                 if(destroyed){socket.close();return;}
-                socket.connect(new InetSocketAddress(selected.host,7070),5000);
+                socket.connect(new InetSocketAddress(target,7070),5000);
+                CaptureProfile live=selected.forConnection(target,currentMac(socket));
+                diagnostics.event("CURRENT_WIFI_ADDRESS_APPLIED");
                 diagnostics.event("TCP_CONNECTED");
                 final Session[] holder=new Session[1];
-                Session opened=new Session(socket,selected,new Session.Listener(){
+                Session opened=new Session(socket,live,new Session.Listener(){
                     @Override public void changed(Session.State state,String message){
-                        diagnostics.event("STATE_"+state.name());
+                        diagnostics.event("STATE_"+state.name());diagnostics.status(message);
                         ui(()->{if(session!=holder[0])return;if(state==Session.State.CLOSED)session=null;connectionMessage=message;show(message);paint();});
                     }
                     @Override public void frame(boolean outgoing,int command,int length,Long scalar){diagnostics.frame(outgoing,command,length,scalar);}
@@ -239,14 +265,23 @@ public final class MainActivity extends Activity {
                 session=opened;reader.execute(opened::run);
             }catch(IOException|RuntimeException e){
                 if(socket!=null)try{socket.close();}catch(IOException ignored){}
-                String code=e instanceof NoRouteToHostException?"N10":e instanceof SocketTimeoutException?"N11":e instanceof ConnectException?"N12":e instanceof SecurityException?"N13":"N14";
+                String code=e instanceof CurrentAddressException?"A03":e instanceof NoRouteToHostException?"N10":e instanceof SocketTimeoutException?"N11":e instanceof ConnectException?"N12":e instanceof SecurityException?"N13":"N14";
                 diagnostics.event(code);
-                ui(()->{connectionMessage=code.equals("N10")?
-                    "[N10] P2로 접속할 네트워크 경로가 없습니다. 이 앱을 종료하지 않은 채 TJ매니저에서 NFC로 다시 연결한 뒤 ①을 눌러 주세요. ‘진단 결과 공유’로 연결 유지 시험 결과를 알려 주세요.":
+                ui(()->{connectionMessage=code.equals("A03")?
+                    "[A03] 휴대폰의 현재 Wi-Fi Direct 주소를 읽지 못했습니다. 이전 주소로 대신 접속하지 않았습니다. 안드로이드 버전과 진단 결과를 보내 주세요.":code.equals("N10")?
+                    "[N10] P2로 접속할 직접 Wi-Fi 경로가 없습니다. ‘주변 P2 찾기’에서 연결할 반주기를 선택해 주세요.":
                     "["+code+"] P2에 접속하지 못했습니다. 직접 Wi-Fi 연결 상태를 확인하고 PCAPdroid 캡처를 중지해 주세요.";show(connectionMessage);});
             }
             finally{connectingSocket=null;connecting=false;ui(this::paint);}
         });
+    }
+    private static final class CurrentAddressException extends IOException { }
+    private static String currentMac(Socket socket)throws IOException {
+        NetworkInterface iface=NetworkInterface.getByInetAddress(socket.getLocalAddress());
+        byte[] mac=iface==null?null:iface.getHardwareAddress();
+        if(mac==null||mac.length!=6||(mac[0]&1)!=0)throw new CurrentAddressException();
+        StringBuilder value=new StringBuilder();for(byte part:mac){if(value.length()>0)value.append(':');value.append(String.format(Locale.ROOT,"%02X",part&255));}
+        String result=value.toString();if(result.equals("02:00:00:00:00:00")||result.equals("00:00:00:00:00:00"))throw new CurrentAddressException();return result;
     }
     private Socket socketFor(String host)throws IOException {
         InetAddress remote=InetAddress.getByName(host);
@@ -309,6 +344,8 @@ public final class MainActivity extends Activity {
     private void ui(Runnable action){runOnUiThread(()->{if(!destroyed)action.run();});}
     @Override protected void onDestroy(){
         destroyed=true;
+        if(peerDialog!=null)peerDialog.dismiss();
+        if(directWifi!=null)try{directWifi.close();}catch(RuntimeException ignored){}
         if(receiverRegistered){unregisterReceiver(wifiReceiver);receiverRegistered=false;}
         // Keep the P2P registration throughout onPause/onStop while Settings is open.
         if(wifiRegistration!=null)try{wifiRegistration.close();}catch(RuntimeException ignored){}

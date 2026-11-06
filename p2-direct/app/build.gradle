@@ -3,11 +3,11 @@ android {
     namespace 'kr.neutinamu.p2'
     compileSdk 35
     defaultConfig {
-        applicationId 'kr.neutinamu.p2.directdiagnostic03'
+        applicationId 'kr.neutinamu.p2.directtrial04'
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '0.3-link-diagnostic'
+        versionCode 4
+        versionName '0.4-direct-wifi'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.

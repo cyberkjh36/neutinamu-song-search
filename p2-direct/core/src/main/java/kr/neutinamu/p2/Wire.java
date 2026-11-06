@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Experimental framing observed on one P2. Control bytes remain opaque. */
+/** Legacy frame layout checked against the user's capture and uploaded Android client. */
 public final class Wire {
     public static final int MAX_BODY = 1024 * 1024;
     private static final byte[] NORMAL = {1,0,0,0,0,4,0,1};
@@ -36,6 +36,7 @@ public final class Wire {
         public final byte[] control,body;
         Frame(byte[] b) { code=(int)u32(b,0);control=Arrays.copyOfRange(b,4,12);body=Arrays.copyOfRange(b,16,b.length); }
         public byte[] bytes() { return encode(code,control,body); }
+        public int bodyType(){return control[7]&255;}
     }
     /** Handles arbitrary TCP boundaries without discarding a partial header on timeouts. */
     public static final class Decoder {

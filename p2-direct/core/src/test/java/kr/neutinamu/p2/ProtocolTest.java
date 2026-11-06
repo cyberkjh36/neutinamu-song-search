@@ -100,7 +100,9 @@ public class ProtocolTest {
     @Test public void wrongIdentityClosesSession()throws Exception{
         try(Harness h=new Harness(1000)){send(h.peer,3000,new byte[]{0});readFrame(h.peer);send(h.peer,3100,new byte[14]);h.await(Session.State.CLOSED);try{h.session.play(10909);fail();}catch(IOException expected){}}
     }
-    @Test public void rejectedRegistrationClosesSession()throws Exception{try(Harness h=new Harness(1000)){send(h.peer,3000,new byte[]{1});h.await(Session.State.CLOSED);}}
+    @Test public void nonzeroColourSlotIsAcceptedButStillRequiresIdentity()throws Exception{
+        try(Harness h=new Harness(1000)){send(h.peer,3000,new byte[]{7});assertEquals(3100,readFrame(h.peer).code);h.await(Session.State.IDENTIFY);send(h.peer,3100,id());h.await(Session.State.READY);}
+    }
     @Test public void partialHeaderSurvivesSocketTimeout()throws Exception{
         try(Harness h=new Harness(1500)){
             byte[] ack=server(3000,new byte[]{0});h.peer.getOutputStream().write(ack,0,3);h.peer.getOutputStream().flush();Thread.sleep(350);
@@ -110,13 +112,13 @@ public class ProtocolTest {
     @Test public void cancelPendingPlayDoesNotBecomePlaybackSuccess()throws Exception{
         try(Harness h=new Harness(1000)){h.ready();h.session.play(10909);readFrame(h.peer);h.session.cancel();assertEquals(4100,readFrame(h.peer).code);send(h.peer,4300,cat(Wire.integer(10909),new byte[1]));send(h.peer,1000,new byte[0]);readFrame(h.peer);assertEquals(Session.State.CANCEL,h.session.state());send(h.peer,4100,Wire.integer(12));h.await(Session.State.READY);}
     }
-    @Test public void changedInitialReplyExplainsCodeWithoutGuessingMeaning()throws Exception{
+    @Test public void errorBodyWithZeroByteIsNeverMistakenForSuccess()throws Exception{
         try(Harness h=new Harness(1000)){
-            send(h.peer,3000,new byte[]{1});h.await(Session.State.CLOSED);
+            byte[] error=server(3000,new byte[]{0});error[11]=3;h.peer.getOutputStream().write(error);h.await(Session.State.CLOSED);
             assertTrue(h.messages.get(h.messages.size()-1).contains("[A01]"));
-            assertTrue(h.messages.get(h.messages.size()-1).contains("응답값=1"));
+            assertTrue(h.messages.get(h.messages.size()-1).contains("응답값=0"));
             assertFalse(h.messages.get(h.messages.size()-1).contains("승인하지"));
-            assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=1 value=1"));
+            assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=1 value=0"));
             assertFalse(h.diagnostic.report().contains("TX cmd=4000"));
         }
     }
@@ -148,6 +150,42 @@ public class ProtocolTest {
             assertTrue(h.messages.get(h.messages.size()-1).contains("[P11]"));
             assertEquals(1,h.diagnostic.report().split("TX cmd=4000",-1).length-1);
         }
+    }
+
+    @Test public void currentConnectionReplacesOnlyMacAndUsesCurrentOwner()throws Exception{
+        CaptureProfile original=profile(),live=original.forConnection("192.168.49.1","02:11:22:33:44:55");
+        byte[] changed=live.registration(),before=original.registration();
+        assertEquals("192.168.49.1",live.host);assertTrue(live.matchesIdentity(id()));
+        assertEquals("02:11:22:33:44:55",new String(changed,43,17,"US-ASCII"));
+        assertArrayEquals(Arrays.copyOf(before,43),Arrays.copyOf(changed,43));
+        assertArrayEquals(new byte[3],Arrays.copyOfRange(changed,60,63));assertArrayEquals(login(),original.registration());
+    }
+    @Test public void noStaleMacFallbackForInvalidCurrentAddresses()throws Exception{
+        for(String mac:new String[]{null,"02:00:00:00:00:00","00:00:00:00:00:00","FF:FF:FF:FF:FF:FF","bad"}){
+            try{profile().forConnection("192.168.49.1",mac);fail();}catch(IOException expected){}
+        }
+        for(String host:new String[]{"8.8.8.8","localhost","192.168.999.1"}){
+            try{profile().forConnection(host,"02:11:22:33:44:55");fail();}catch(IOException expected){}
+        }
+    }
+    @Test public void connectionContextIsPreservedInAllCommands()throws Exception{
+        byte[] registration=login();Wire.put32(registration,5,123456);registration[9]=2;
+        CaptureProfile p=CaptureProfile.read(new ByteArrayInputStream(capture(packet(registration,true,100),packet(server(3100,id()),false,400))));
+        for(byte[] frame:new byte[][]{Wire.play(10909),Wire.cancel(),Wire.heartbeat(),Wire.info()}){
+            byte[] adjusted=p.packet(frame);assertEquals(123456,Wire.u32(adjusted,5));assertEquals(2,adjusted[9]);
+            assertEquals(frame[4],adjusted[4]);assertArrayEquals(Arrays.copyOfRange(frame,10,frame.length),Arrays.copyOfRange(adjusted,10,adjusted.length));
+        }
+    }
+    @Test public void playbackErrorReplyDoesNotClaimAcceptanceOrRetry()throws Exception{
+        try(Harness h=new Harness(1000)){
+            h.ready();h.session.play(10909);readFrame(h.peer);byte[] error=server(4000,Wire.integer(3003));error[11]=3;h.peer.getOutputStream().write(error);h.await(Session.State.READY);
+            assertTrue(h.messages.get(h.messages.size()-1).contains("[P13]"));assertFalse(h.messages.stream().anyMatch(m->m.contains("[P10]")));
+            h.peer.setSoTimeout(150);try{h.peer.getInputStream().read();fail();}catch(SocketTimeoutException expected){}
+        }
+    }
+    @Test public void statusDiagnosticsIncludeReasonButNeverMessageContent(){
+        Diagnostics d=new Diagnostics();d.status("[A02] private address and credentials");d.status("password=secret");
+        assertTrue(d.report().contains("REASON_A02"));assertFalse(d.report().contains("private"));assertFalse(d.report().contains("secret"));
     }
     @Test public void diagnosticsOmitPayloadAndBoundMemory(){
         Diagnostics d=new Diagnostics();d.frame(true,3000,47,123456789L);d.frame(false,3100,66,123456789L);

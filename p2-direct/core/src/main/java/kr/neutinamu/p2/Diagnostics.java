@@ -6,6 +6,10 @@ import java.util.ArrayDeque;
 public final class Diagnostics {
     private final ArrayDeque<String> lines=new ArrayDeque<>();
     private final long started=System.nanoTime();
+    public synchronized void status(String message){
+        java.util.regex.Matcher m=java.util.regex.Pattern.compile("^\\[([A-Z][0-9]{2})\\]").matcher(message);
+        if(m.find())event("REASON_"+m.group(1));
+    }
     public synchronized void event(String code){
         if(!code.matches("[A-Z0-9_ -]{1,64}"))throw new IllegalArgumentException("Use a fixed diagnostic code");
         add(code);
@@ -19,5 +23,5 @@ public final class Diagnostics {
         while(lines.size()>=48)lines.removeFirst();
         lines.addLast(((System.nanoTime()-started)/1000000)+"ms "+text);
     }
-    public synchronized String report(){return "P2 연결진단 0.3\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+String.join("\n",lines);}
+    public synchronized String report(){return "P2 직접연결 시험판 0.4\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+String.join("\n",lines);}
 }

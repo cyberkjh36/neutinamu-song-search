@@ -2,6 +2,7 @@ package kr.neutinamu.p2;
 
 import java.io.*;
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 /** Imports only local TCP/7070 registration + device identity. Never logs payloads. */
 public final class CaptureProfile {
@@ -11,6 +12,22 @@ public final class CaptureProfile {
         this.host=host;this.registration=registration.clone();this.identity=identity.clone();
     }
     public byte[] registration() { return registration.clone(); }
+    /** Refresh the phone address for this radio connection. Never replay a stale MAC. */
+    public CaptureProfile forConnection(String currentHost,String currentMac) throws IOException {
+        if(currentHost==null||!currentHost.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"))throw new IOException("Invalid local address");
+        String[] octets=currentHost.split("\\.");byte[] address=new byte[4];
+        for(int i=0;i<4;i++){int value=Integer.parseInt(octets[i]);if(value>255)throw new IOException("Invalid local address");address[i]=(byte)value;}
+        if(!privateIp(address,0))throw new IOException("A private P2 address is required");
+        if(currentMac==null||!currentMac.matches("(?i)[0-9a-f]{2}(?::[0-9a-f]{2}){5}")||
+            currentMac.equalsIgnoreCase("02:00:00:00:00:00")||currentMac.equals("00:00:00:00:00:00")||
+            (Integer.parseInt(currentMac.substring(0,2),16)&1)!=0)throw new IOException("Current Wi-Fi Direct address unavailable");
+        byte[] fresh=registration.clone();Arrays.fill(fresh,43,63,(byte)0);
+        byte[] mac=currentMac.toUpperCase(Locale.ROOT).getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(mac,0,fresh,43,mac.length);
+        return new CaptureProfile(currentHost,fresh,identity);
+    }
+    /** Keep the connection password and app-protocol marker for subsequent requests. */
+    byte[] packet(byte[] packet){byte[] result=packet.clone();System.arraycopy(registration,5,result,5,5);return result;}
     public boolean matchesIdentity(byte[] info) {
         return info.length>=14 && Arrays.equals(identity,Arrays.copyOf(info,14));
     }

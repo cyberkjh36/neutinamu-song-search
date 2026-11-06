@@ -27,7 +27,7 @@ public final class Session implements Closeable {
     public synchronized State state(){return state;}
     private void change(State s,String text){state=s;deadline=now()+commandTimeoutMs;listener.changed(s,text);}
     private void write(byte[] frame)throws IOException{
-        socket.getOutputStream().write(frame);socket.getOutputStream().flush();
+        socket.getOutputStream().write(profile.packet(frame));socket.getOutputStream().flush();
         listener.frame(true,(int)Wire.u32(frame,0),frame.length-16,null);
     }
     public void run() {
@@ -63,24 +63,28 @@ public final class Session implements Closeable {
         listener.frame(false,f.code,f.body.length,scalar);
         if(f.code==1000&&f.body.length==0){write(Wire.heartbeat());return;}
         if(state==State.AUTH&&f.code==3000) {
-            if(f.body.length!=1||f.body[0]!=0){
+            if(f.bodyType()!=1||f.body.length!=1){
                 fail("[A01] P2에는 접속했지만 기록과 다른 초기 응답입니다. 길이="+f.body.length+"바이트, 응답값="+(scalar==null?"형식 미확인":scalar)+". 아래 ‘진단 결과 공유’를 눌러 알려 주세요.");return;
             }
-            change(State.IDENTIFY,"연결된 반주기를 확인합니다…");write(Wire.info());return;
+            // This byte is a user colour/slot identifier, not a zero-only status code.
+            change(State.IDENTIFY,"사용자 식별값을 받았습니다. 연결된 반주기를 확인합니다…");write(Wire.info());return;
         }
         if(state==State.IDENTIFY&&f.code==3100) {
-            if(!profile.matchesIdentity(f.body)){fail("[I01] 기록과 반주기 식별정보가 다릅니다. 곡 시작 명령은 보내지 않았습니다.");return;}
+            if(f.bodyType()!=1||!profile.matchesIdentity(f.body)){fail("[I01] 기록과 반주기 식별정보가 다릅니다. 곡 시작 명령은 보내지 않았습니다.");return;}
             change(State.READY,"[READY] P2 연결 응답 확인 · 곡을 선택한 뒤 시작을 누르세요.");return;
         }
         // 4000/2 is only observed acceptance; never display playback success for it.
         if(state==State.PLAY&&f.code==4000){
+            if(f.bodyType()==3||(f.bodyType()==9&&(scalar==null||scalar!=100))){
+                change(State.READY,"[P13] 반주기가 시작 요청에 오류 또는 안내를 보냈습니다. 응답값="+(scalar==null?"형식 미확인":scalar)+". 자동 재전송하지 않습니다.");return;
+            }
             playReply=true;
             // Progress must not reset the command deadline or imply playback success.
             listener.changed(state,"[P10] 시작 요청 응답을 받았습니다. 응답값="+(scalar==null?"형식 미확인":scalar)+" · 실제 재생 확인을 기다립니다…");
         }
-        if(state==State.PLAY&&f.code==4300&&f.body.length==5&&Wire.u32(f.body,0)==wanted)
+        if(state==State.PLAY&&f.code==4300&&f.bodyType()==1&&f.body.length==5&&Wire.u32(f.body,0)==wanted)
             change(State.READY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 실제 화면과 소리를 확인해 주세요.");
-        else if(state==State.CANCEL&&f.code==4100&&Arrays.equals(f.body,Wire.integer(12)))
+        else if(state==State.CANCEL&&f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))
             change(State.READY,"취소 응답을 받았습니다. 반주기에서 노래가 멈췄는지 확인해 주세요.");
     }
     public synchronized void play(int song)throws IOException {

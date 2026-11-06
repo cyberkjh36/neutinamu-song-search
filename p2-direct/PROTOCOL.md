@@ -1,30 +1,54 @@
-# Single-capture experimental P2 protocol
+# P2 legacy interoperability findings
 
-Evidence: one authorized local capture, user-confirmed song **10909** followed by **Cancel**. No public packet dump, phone number, MAC, device ID or connection password is included.
+Evidence: one user-authorized P2 capture with confirmed song **10909** followed by Cancel, physical diagnostics from 0.2/0.3, and static inspection of the user's uploaded **마이 티제이 2.0.0 / versionCode 98** (`kr.tj.tjsmartplay_B`). The latter is a consumer client, distinct from the owner client used for the capture. Vendor APK/code and private captures are not included in this repository.
 
-Frame: little-endian u32 command at 0; eight **opaque** bytes at 4; little-endian u32 body length at 12; body at 16. TCP message boundaries are not packet boundaries. This is an observation, not a vendor specification.
+## Frame fields and corrections in 0.4
 
-| Command | Observed body | Interpretation |
+All integer fields below are little-endian. TCP boundaries are not message boundaries.
+
+| Offset | Length | Finding |
 | --- | --- | --- |
-| 3000 outbound | 47 private bytes, starts `TJAA` | initial registration; imported in memory only |
-| 3000 inbound | `00` | observed initial reply, only this form accepted by trial |
-| 3100 outbound | empty | device information request |
-| 3100 inbound | 66 bytes in capture | first 14 bytes used as private device identity; remaining fields unknown |
-| 1000 inbound | empty | periodic keepalive request |
-| 1000 outbound | u32 100 | observed keepalive reply |
-| 4000 outbound | u32 1200, u32 10909, u8 0 | user-confirmed song start action |
-| 4000 inbound | u32 2 | observed response, not assumed general success |
-| 4300 inbound | u32 10909, u8 0 | correlates with playing song; second song still needed |
-| 4100 outbound/inbound | u32 12 | user-confirmed cancel action / corresponding response |
-| 4220 inbound | 26 bytes | meaning unconfirmed; ignored |
-| 3200 TCP7071 | catalog database transfer | observed but not requested by trial |
+| 0 | 4 | Command |
+| 4 | 1 | Packet version/variant; preserve the observed play variant 2 |
+| 5 | 4 | Connection password; copied from the user's authorized connection profile |
+| 9 | 1 | Client/protocol marker; preserve the imported value, do not force the consumer client's value |
+| 10 | 1 | Request/response-related flag; preserve command-specific values |
+| 11 | 1 | Body type: 1 data, 3 error, 9 message |
+| 12 | 4 | Body length |
+| 16 | variable | Body |
 
-The exact non-private play/cancel/keepalive frames are regression fixtures. Opaque header fields are deliberately not assigned guessed semantic names. Reusing their observed values is **experimental**, especially for repeated commands or another device/session. Registration import is also experimental and not proof of a valid independent login implementation.
+Static inspection locators: frame encoder `jc.c`, registration encoder `mc.i`, legacy socket parser `ic.d$b`, registration callback `kr.tj.tjsmartplay_B.utility.manager.o`. These names refer to this APK version only. Original interoperability implementation was written in this repository; decompiled implementation is not distributed.
 
-No automatic reconnect or command replay. A play acknowledgment cannot enable a second play until a matching song notification or explicit unknown-outcome timeout. A cancel can interrupt a pending play. The device identity must match the selected private capture before controls are enabled.
+- Command 3000 registration body has fixed-width UTF-8 fields: 2-byte application prefix, 10-byte marker, 15-byte phone/account field, 20-byte **current phone Wi-Fi Direct interface MAC**. The observed `TJAA` prefix is the beginning of the first two fields, not an opaque authentication token.
+- Official `WifiP2pManagerService` obtains the current P2P interface hardware address on Android 10. The trial previously replayed an address from an earlier capture. 0.4 replaces that field from the actual connected socket's local interface; it refuses missing/placeholder addresses and does not spoof or silently reuse old ones.
+- A 3000 data reply of one byte is a user colour/slot identifier. **Nonzero is not automatically failure.** 0.4 accepts this data shape, then still requires the device identity to match before controls are enabled. Error/message body types cannot satisfy that step.
+- Subsequent requests now preserve the connection password and protocol marker. The previous hardcoded zero password would not match profiles with a nonzero password.
+- `3003` is processed through the error-body path in the inspected client. Its detailed meaning and remedy were **not established**. Do not label it duplicate login, valid login, or success.
 
-## 2026-11-06 physical trial evidence
+| Command | Body observed in user capture | Treatment |
+| --- | --- | --- |
+| 3000 out | 47 bytes | Rebuilt for current local interface; no private values logged |
+| 3000 in | one-byte data | Assigned identifier, followed by identity check |
+| 3100 | request empty / response 66 bytes | Compare existing imported device identity |
+| 1000 | empty request / u32 100 reply | Keepalive |
+| 4000 | u32 1200, u32 song number, byte 0 | Observed start command |
+| 4000 in | u32 2 | Request response, not proof of playback |
+| 4300 in | u32 song number, byte 0 | Matching notification used for playback-state confirmation |
+| 4100 | u32 12 | Cancel / corresponding reply |
+| 4220 | 26 bytes | Ignored; full semantics not established |
+| 3200 / TCP 7071 | catalog transfer | Not requested by trial |
 
-- 0.2: private profile import succeeded; local interface route found; TCP connected; initial request command 3000/body 47; reply command 3000/body 4/little-endian value **3003**. The trial then closed its socket. This does not prove that P2 closed it or establish what 3003 means. No play command was sent.
-- After force-stopping TJ Manager, confirmed by the user: profile import succeeded; no matching network route was found (`N10`), before TCP connection. This does not resolve the 3003 response.
-- 0.3 registers our own Android Wi-Fi P2P client across visits to Settings and checks current connection information. This addresses a missing Android lifecycle step; it is not an assertion that Samsung/P2 preserve the group, or that captured authentication fields remain valid. No unknown protocol values are reclassified as success.
+## Independent radio setup added in 0.4
+
+The inspected legacy client discovers peers using Android Wi-Fi Direct, filters the karaoke WPS category, and calls connect with PBC and group-owner intent 0. NFC supplies initial configuration; it does not carry song-control commands.
+
+0.4 adds user-selected peer discovery and connection with public Android APIs. It checks the selected peer is the current remote group owner, uses the current owner IP, reads the current local interface address, and only then performs registration/identity verification. It does not remove existing groups, pick arbitrary peers automatically, emulate NFC, or bypass the P2's connection approval. Whether this physical P2 accepts discovery/PBC without a new NFC tag is **unverified**. An existing valid private profile remains necessary. Changing the P2's connection password may invalidate that profile.
+
+Scan, join and authentication are separate stages. Callback generations and deadlines prevent stale success after cancellation/destruction/timeout. The legacy existing-group path remains available. Diagnostics now retain fixed reason codes such as A02 without raw exception messages or addresses.
+
+## Actual hardware evidence before 0.4
+
+- 0.2: TCP connected; command 3000/body 47 sent; response 3000/body 4/value **3003**; our trial closed the socket. No song-start command was sent.
+- After user force-stopped TJ Manager, 0.2 reported no network route (`N10`).
+- 0.3 at 20:17 KST: our P2P client remained registered; group matched after visiting Settings; TCP connected; registration sent; no complete response recorded for about 10 seconds; our session closed at its deadline. A later query reported no group. This does not prove which side caused the radio group loss.
+- Software tests use synthetic identities and simulated sockets. They do **not** establish successful playback on the user's physical P2 or compatibility with iPhone/new Android MAC restrictions.
