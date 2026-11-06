@@ -128,6 +128,16 @@ public class ProtocolTest {
             assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=3"));
         }
     }
+    @Test public void observed3003DoesNotBecomeSuccessfulLoginOrSendControls()throws Exception{
+        try(Harness h=new Harness(1000)){
+            send(h.peer,3000,Wire.integer(3003));h.await(Session.State.CLOSED);
+            assertTrue(h.messages.get(h.messages.size()-1).contains("응답값=3003"));
+            try{h.session.play(10909);fail();}catch(IOException expected){}
+            assertTrue(h.diagnostic.report().contains("RX cmd=3000 bytes=4 value=3003"));
+            assertFalse(h.diagnostic.report().contains("TX cmd=4000"));
+            assertFalse(h.diagnostic.report().contains("TX cmd=3100"));
+        }
+    }
     @Test public void authenticationTimeoutHasSpecificCode()throws Exception{
         try(Harness h=new Harness(400)){h.await(Session.State.CLOSED);assertTrue(h.messages.get(h.messages.size()-1).contains("[A02]"));}
     }

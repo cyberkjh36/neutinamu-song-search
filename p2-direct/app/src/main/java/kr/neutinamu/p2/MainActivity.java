@@ -2,12 +2,21 @@ package kr.neutinamu.p2;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import android.content.ActivityNotFoundException;
+import android.content.pm.PackageManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.*;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Build;
+import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
 import android.view.*;
@@ -20,7 +29,8 @@ import java.util.concurrent.*;
 
 /** Native-only trial. Does not expose a socket bridge to arbitrary web content. */
 public final class MainActivity extends Activity {
-    private static final int PICK_CAPTURE=1;
+    private static final int PICK_CAPTURE=1,P2P_PERMISSION=2;
+    private static final String TJ_PACKAGE="kr.tj.tjsmartplay_U";
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final ExecutorService reader=Executors.newSingleThreadExecutor();
     private volatile Session session;private volatile Socket connectingSocket;
@@ -33,6 +43,14 @@ public final class MainActivity extends Activity {
     private ScrollView scroll;
     private EditText query,number;private LinearLayout results;
     private Button connect,play,cancel,importButton,search;
+    private TextView wifiStatus;
+    private P2pRegistration wifiRegistration;
+    private boolean receiverRegistered,tjSettingsVisited;
+    private final BroadcastReceiver wifiReceiver=new BroadcastReceiver(){
+        @Override public void onReceive(Context context,Intent intent){
+            if(!destroyed&&wifiRegistration!=null&&wifiRegistration.registered())wifiRegistration.refresh(null);
+        }
+    };
     private final int bg=Color.rgb(10,27,40),fg=Color.rgb(238,246,245),accent=Color.rgb(186,225,129);
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -42,13 +60,18 @@ public final class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
         setContentView(scroll);
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"연결진단 시험판 0.2 · 실제 반주기 검증 필요",15,false);
+        text(root,"연결진단 시험판 0.3 · 실제 반주기 검증 필요",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         text(root,"1  연결 준비",22,true);
-        text(root,"TJ매니저에서 NFC로 P2에 연결한 뒤 홈 버튼으로 나와 이 앱을 여세요. 휴대폰과 P2의 직접 Wi-Fi 연결을 유지하는 시험입니다. 매장 공유기의 같은 와이파이에 접속하라는 뜻이 아닙니다. 검색은 P2 연결 없이도 되지만, 곡 실행은 연결 확인 후 가능합니다.",16,false);
+        text(root,"TJ매니저에서 NFC로 P2에 연결한 뒤 홈 버튼으로 나와 이 앱을 여세요. 아래 ①을 먼저 눌러 직접 Wi-Fi 연결을 준비합니다. 매장 공유기 와이파이가 아닌 P2와의 직접 연결입니다. 노래 실행은 ③의 연결 확인 후 가능합니다.",16,false);
         importButton=button(root,"내 PCAP 연결 기록 선택",this::chooseCapture);
         text(root,"보내 주신 PCAPdroid 파일을 선택하세요. 연결정보는 이 앱의 메모리에서만 사용하며 서버에 올리지 않습니다. 앱을 완전히 종료하면 다시 선택해야 합니다.",14,false);
-        connect=button(root,"P2 연결 시험",()->{
+        button(root,"① 직접 Wi-Fi 연결 준비",this::prepareWifi).setTag("prepareWifi");
+        wifiStatus=text(root,"[W00] PCAP 파일을 선택한 뒤 ①을 눌러 주세요. 준비 확인 전에는 TJ매니저를 종료하지 마세요.",16,true);
+        wifiStatus.setTag("wifiStatus");
+        text(root,"①에서 직접 Wi-Fi 연결이 확인되면 ②를 눌러 TJ매니저만 ‘강제 중지’하고 뒤로 돌아오세요. 이 시험 앱은 종료하지 마세요. 연결이 남아 있는지 확인하는 시험이며, 유지 성공을 보장하지 않습니다.",14,false);
+        button(root,"② TJ매니저 설정 열기",this::openTjSettings).setTag("tjSettings");
+        connect=button(root,"③ P2 연결 시험",()->{
             if(connecting||importing){feedback("연결 준비 중입니다. 잠시 기다려 주세요.");return;}
             if(session!=null){session.close();session=null;paint();return;}
             beginConnect();
@@ -85,6 +108,8 @@ public final class MainActivity extends Activity {
         text(root,"작동하지 않으면 위 안내 문구를 보내 주시거나 ‘진단 결과 공유’에서 ChatGPT를 선택해 주세요. 개인정보와 인증값은 포함하지 않습니다.",14,false);
         text(root,"시작 버튼을 누르면 반주기에서 곡이 바뀔 수 있습니다. 시험판은 시작·취소만 지원합니다. 응답이 없으면 반복해서 누르지 말고 반주기 화면을 확인해 주세요.",14,false);
         text(root,"공식 TJ 앱이 아닙니다. 새 NFC 연결 설정과 아이폰 직접 제어는 아직 구현되지 않았습니다.",13,false);
+        wifiRegistration=new P2pRegistration(new AndroidP2pBackend(this),new Handler(getMainLooper()),
+            ()->profile==null?null:profile.host,this::showWifiState,diagnostics);
         paint();
         worker.execute(()->{
             SongCatalog loaded=new SongCatalog();
@@ -94,6 +119,69 @@ public final class MainActivity extends Activity {
                 ui(()->{catalog=loaded;catalogStatus.setText(String.format(Locale.KOREA,"%,d곡 · 제목·가수 또는 번호로 검색",loaded.size()));search.setEnabled(true);});
             }catch(IOException e){ui(()->{catalogStatus.setText("곡 목록을 읽지 못했습니다. 곡번호로 시험할 수 있습니다.");search.setEnabled(false);});}
         });
+    }
+    static String wifiPermission(){return Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;}
+    private void prepareWifi(){
+        if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
+        if(checkSelfPermission(wifiPermission())!=PackageManager.PERMISSION_GRANTED){
+            wifiStatus.setText(Build.VERSION.SDK_INT>=33?"직접 Wi-Fi 연결 확인을 위해 ‘근처 기기’ 권한을 허용해 주세요.":
+                "이 안드로이드 버전에서는 직접 Wi-Fi 연결 확인에 위치 권한이 필요합니다. 위치를 수집하거나 저장하지 않습니다.");
+            diagnostics.event("P2P_PERMISSION_REQUESTED");requestPermissions(new String[]{wifiPermission()},P2P_PERMISSION);return;
+        }
+        if(!receiverRegistered){
+            IntentFilter filter=new IntentFilter(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+            // These are protected Android system broadcasts; callbacks re-read system state.
+            if(Build.VERSION.SDK_INT>=33)registerReceiver(wifiReceiver,filter,Context.RECEIVER_EXPORTED);
+            else registerReceiver(wifiReceiver,filter);
+            receiverRegistered=true;
+        }
+        wifiRegistration.prepare();
+    }
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
+        super.onRequestPermissionsResult(request,permissions,results);
+        if(request!=P2P_PERMISSION)return;
+        if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)prepareWifi();
+        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ①을 다시 눌러 허용해 주세요. TJ매니저는 종료하지 마세요.");}
+    }
+    private void showWifiState(P2pRegistration.State state){
+        if(destroyed)return;
+        String message;
+        switch(state){
+            case MATCH:message=tjSettingsVisited?
+                "[W01] 설정에서 돌아온 뒤에도 직접 Wi-Fi 연결이 확인됩니다. ③ P2 연결 시험을 눌러 주세요. 아직 노래 실행 연결 전입니다.":
+                "[W01] 직접 Wi-Fi 연결과 앱 등록을 확인했습니다. ②에서 TJ매니저만 종료한 뒤 돌아와 ③을 눌러 주세요. 아직 노래 실행 연결 전입니다.";break;
+            case NO_GROUP:message="[W02] P2 직접 Wi-Fi 연결이 없습니다. 이 앱을 종료하지 않은 채 TJ매니저에서 NFC로 다시 연결하고 돌아오세요.";break;
+            case OTHER_GROUP:message="[W04] 현재 직접 연결이 PCAP 기록의 P2 연결 주소와 다릅니다. 같은 반주기에 연결했는지 확인하세요. TJ매니저는 종료하지 마세요.";break;
+            case DENIED:message="[W03] 직접 Wi-Fi 연결 확인 권한이 없습니다. ①을 눌러 권한을 확인해 주세요.";break;
+            case TIMEOUT:message="[W05] 안드로이드에서 연결 상태를 받지 못했습니다. ①을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
+            case UNAVAILABLE:message="[W06] 직접 Wi-Fi 사용 앱으로 등록하거나 상태를 확인하지 못했습니다. Wi-Fi를 켜고 ①을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
+            default:message="직접 Wi-Fi 연결 상태를 확인하고 있습니다…";
+        }
+        wifiStatus.setText(message);
+    }
+    private void openTjSettings(){
+        if(connecting||session!=null){feedback("연결 시험을 끝낸 뒤 TJ매니저 설정을 열어 주세요.");return;}
+        if(wifiRegistration==null||wifiRegistration.state()!=P2pRegistration.State.MATCH){
+            feedback("[W00] 먼저 ①에서 직접 Wi-Fi 연결 확인을 받아 주세요. TJ매니저를 미리 종료하면 연결이 끊길 수 있습니다.");return;
+        }
+        // Recheck rather than trusting the old label. Never stop another app ourselves.
+        wifiRegistration.refresh(()->{
+            try{
+                getPackageManager().getPackageInfo(TJ_PACKAGE,0);
+                diagnostics.event("TJ_SETTINGS_OPENED");
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+TJ_PACKAGE)));
+                tjSettingsVisited=true;
+            }catch(PackageManager.NameNotFoundException|ActivityNotFoundException|SecurityException e){
+                feedback("TJ매니저 설정을 바로 열 수 없습니다. 휴대폰 설정 → 애플리케이션 → TJ매니저(업주용)에서 강제 중지한 뒤 이 앱으로 돌아오세요.");
+            }
+        });
+    }
+    @Override protected void onResume(){
+        super.onResume();
+        if(wifiRegistration!=null&&wifiRegistration.registered()){
+            diagnostics.event("APP_RESUMED_WITH_P2P");wifiRegistration.refresh(null);
+        }
     }
     private void search(){
         if(catalog==null)return;String q=query.getText().toString().trim();results.removeAllViews();
@@ -118,7 +206,7 @@ public final class MainActivity extends Activity {
             try(InputStream in=getContentResolver().openInputStream(data.getData())){
                 if(in==null)throw new IOException("파일을 열 수 없습니다.");
                 CaptureProfile loaded=CaptureProfile.read(in);
-                ui(()->{profile=loaded;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. 아직 P2 연결 전입니다. ‘P2 연결 시험’을 눌러 주세요.";show(connectionMessage);paint();});
+                ui(()->{profile=loaded;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ① 직접 Wi-Fi 연결 준비부터 진행해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
@@ -149,7 +237,9 @@ public final class MainActivity extends Activity {
                 if(socket!=null)try{socket.close();}catch(IOException ignored){}
                 String code=e instanceof NoRouteToHostException?"N10":e instanceof SocketTimeoutException?"N11":e instanceof ConnectException?"N12":e instanceof SecurityException?"N13":"N14";
                 diagnostics.event(code);
-                ui(()->{connectionMessage="["+code+"] P2에 접속하지 못했습니다. TJ매니저로 만든 직접 Wi-Fi 연결을 유지하고 PCAPdroid 캡처를 중지해 주세요.";show(connectionMessage);});
+                ui(()->{connectionMessage=code.equals("N10")?
+                    "[N10] P2로 접속할 네트워크 경로가 없습니다. 이 앱을 종료하지 않은 채 TJ매니저에서 NFC로 다시 연결한 뒤 ①을 눌러 주세요. ‘진단 결과 공유’로 연결 유지 시험 결과를 알려 주세요.":
+                    "["+code+"] P2에 접속하지 못했습니다. 직접 Wi-Fi 연결 상태를 확인하고 PCAPdroid 캡처를 중지해 주세요.";show(connectionMessage);});
             }
             finally{connectingSocket=null;connecting=false;ui(this::paint);}
         });
@@ -204,7 +294,7 @@ public final class MainActivity extends Activity {
     }
     private void paint(){
         if(play==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
-        connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"P2 연결 시험");
+        connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"③ P2 연결 시험");
         // Clickable guards explain missing connection; a disabled button would look unresponsive.
         importButton.setEnabled(true);play.setEnabled(true);cancel.setEnabled(true);
         play.setText(s==Session.State.PLAY?"시작 요청 확인 중…":"▶  선택한 곡 시작");
@@ -213,7 +303,14 @@ public final class MainActivity extends Activity {
     private void show(String text){status.setText(text);if(actionStatus!=null)actionStatus.setText(text);}
     private void feedback(String text){show(text);Toast.makeText(this,text,Toast.LENGTH_LONG).show();}
     private void ui(Runnable action){runOnUiThread(()->{if(!destroyed)action.run();});}
-    @Override protected void onDestroy(){destroyed=true;Session s=session;if(s!=null)s.close();Socket pending=connectingSocket;if(pending!=null)try{pending.close();}catch(IOException ignored){}worker.shutdownNow();reader.shutdownNow();super.onDestroy();}
+    @Override protected void onDestroy(){
+        destroyed=true;
+        if(receiverRegistered){unregisterReceiver(wifiReceiver);receiverRegistered=false;}
+        // Keep the P2P registration throughout onPause/onStop while Settings is open.
+        if(wifiRegistration!=null)try{wifiRegistration.close();}catch(RuntimeException ignored){}
+        Session s=session;if(s!=null)s.close();Socket pending=connectingSocket;if(pending!=null)try{pending.close();}catch(IOException ignored){}
+        worker.shutdownNow();reader.shutdownNow();super.onDestroy();
+    }
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
     private TextView text(LinearLayout parent,String value,int size,boolean bold){TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(fg);v.setPadding(0,dp(12),0,dp(10));if(bold)v.setTypeface(null,android.graphics.Typeface.BOLD);parent.addView(v);return v;}
     private Button button(LinearLayout parent,String title,Runnable action){Button b=new Button(this);b.setText(title);b.setTextSize(17);b.setAllCaps(false);b.setMinHeight(dp(58));b.setTextColor(bg);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(accent));b.setOnClickListener(v->action.run());LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=dp(6);p.bottomMargin=dp(6);parent.addView(b,p);return b;}

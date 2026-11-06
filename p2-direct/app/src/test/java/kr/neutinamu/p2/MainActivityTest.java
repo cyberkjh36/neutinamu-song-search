@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk={28,35})
+@Config(sdk={28,29,35})
 public class MainActivityTest {
     private ActivityController<MainActivity> controller;private MainActivity app;
     @Before public void open(){controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();}
@@ -47,6 +47,31 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 연결진단 0.2"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 연결진단 0.3"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+    }
+    @Test public void managerSettingsBlockedBeforeWifiPreparation(){
+        view("tjSettings").performClick();assertTrue(message().contains("먼저 ①"));
+        assertNull(shadowOf(app).getNextStartedActivity());
+    }
+    @Test public void preparationNeedsCaptureAndPermissionDenialDoesNotClaimSuccess(){
+        view("prepareWifi").performClick();assertEquals(Intent.ACTION_OPEN_DOCUMENT,shadowOf(app).getNextStartedActivity().getAction());
+        app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_DENIED});
+        assertTrue(((TextView)view("wifiStatus")).getText().toString().contains("[W03]"));
+        assertEquals(android.os.Build.VERSION.SDK_INT>=33?"android.permission.NEARBY_WIFI_DEVICES":"android.permission.ACCESS_FINE_LOCATION",MainActivity.wifiPermission());
+    }
+    @Test public void wifiClientSurvivesSettingsLifecycleUntilActivityDestroyed()throws Exception{
+        final int[] counts=new int[3];
+        P2pRegistration.Backend backend=new P2pRegistration.Backend(){
+            public boolean open(Runnable lost){counts[0]++;return true;}
+            public void info(java.util.function.Consumer<P2pRegistration.Info> result){counts[1]++;result.accept(new P2pRegistration.Info(true,false,"192.0.2.1"));}
+            public void close(){counts[2]++;}
+        };
+        P2pRegistration registration=new P2pRegistration(backend,new android.os.Handler(Looper.getMainLooper()),()->"192.0.2.1",s->{},new Diagnostics());
+        Field f=MainActivity.class.getDeclaredField("wifiRegistration");f.setAccessible(true);f.set(app,registration);registration.prepare();
+        controller.pause().stop();assertEquals(0,counts[2]);assertTrue(registration.registered());
+        controller.start().resume();assertEquals(1,counts[0]);assertEquals(2,counts[1]);assertEquals(0,counts[2]);
+        controller.pause().stop().destroy();assertEquals(1,counts[2]);assertFalse(registration.registered());
+        // Recreate only so the common teardown still owns a live Activity.
+        controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();
     }
 }

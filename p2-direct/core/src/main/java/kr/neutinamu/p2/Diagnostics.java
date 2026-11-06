@@ -19,5 +19,5 @@ public final class Diagnostics {
         while(lines.size()>=48)lines.removeFirst();
         lines.addLast(((System.nanoTime()-started)/1000000)+"ms "+text);
     }
-    public synchronized String report(){return "P2 연결진단 0.2\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+String.join("\n",lines);}
+    public synchronized String report(){return "P2 연결진단 0.3\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+String.join("\n",lines);}
 }

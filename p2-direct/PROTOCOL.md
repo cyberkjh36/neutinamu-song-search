@@ -22,3 +22,9 @@ Frame: little-endian u32 command at 0; eight **opaque** bytes at 4; little-endia
 The exact non-private play/cancel/keepalive frames are regression fixtures. Opaque header fields are deliberately not assigned guessed semantic names. Reusing their observed values is **experimental**, especially for repeated commands or another device/session. Registration import is also experimental and not proof of a valid independent login implementation.
 
 No automatic reconnect or command replay. A play acknowledgment cannot enable a second play until a matching song notification or explicit unknown-outcome timeout. A cancel can interrupt a pending play. The device identity must match the selected private capture before controls are enabled.
+
+## 2026-11-06 physical trial evidence
+
+- 0.2: private profile import succeeded; local interface route found; TCP connected; initial request command 3000/body 47; reply command 3000/body 4/little-endian value **3003**. The trial then closed its socket. This does not prove that P2 closed it or establish what 3003 means. No play command was sent.
+- After force-stopping TJ Manager, confirmed by the user: profile import succeeded; no matching network route was found (`N10`), before TCP connection. This does not resolve the 3003 response.
+- 0.3 registers our own Android Wi-Fi P2P client across visits to Settings and checks current connection information. This addresses a missing Android lifecycle step; it is not an assertion that Samsung/P2 preserve the group, or that captured authentication fields remain valid. No unknown protocol values are reclassified as success.
