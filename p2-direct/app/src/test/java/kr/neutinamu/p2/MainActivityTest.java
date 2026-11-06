@@ -26,7 +26,13 @@ public class MainActivityTest {
     private Object field(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(app);}
     private void set(String name,Object value)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);f.set(app,value);}
     private void call(String name)throws Exception{Method method=MainActivity.class.getDeclaredMethod(name);method.setAccessible(true);method.invoke(app);}
-    private void finishWorker()throws Exception{((java.util.concurrent.ExecutorService)field("worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);shadowOf(Looper.getMainLooper()).idle();}
+    private void finishWorker()throws Exception{
+        // Older Android dialog buttons post their listener to the main Handler.
+        // Dispatch that click before placing a barrier behind the background work.
+        shadowOf(Looper.getMainLooper()).idle();
+        ((java.util.concurrent.ExecutorService)field("worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
+        shadowOf(Looper.getMainLooper()).idle();
+    }
     @Test public void savedProfileRestoresWithoutConnectingOrStartingPlayback()throws Exception{
         java.io.File path=new java.io.File(app.getNoBackupFilesDir(),"test-profile.enc");
         ProfileStore store=new ProfileStore(path,()->ProfileStoreTest.KEY);store.save(ProfileStoreTest.sample());
