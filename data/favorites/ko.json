@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-06T04:43:09.695Z",
+  "updatedAt": "2026-11-06T13:45:53.180Z",
   "countries": [
     "ko"
   ],
@@ -253,6 +253,22 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "3sPRQofjlvw",
+      "title": "[26/27 UCL] 바르셀로나 vs 아스톤 빌라 3분 하이라이트｜SPOTV FOOTBALL",
+      "url": "https://www.youtube.com/watch?v=3sPRQofjlvw",
+      "count": 1,
+      "lastPlayed": "2026-11-06T13:45:31.7281827Z"
+    },
+    {
+      "country": "ko",
+      "id": "FBvzZJDjDYY",
+      "title": "김예건 \"딱 0.3초\" 수비농락 드리블에 환상 크로스로 1골 만들자 현지 넋나간 상황ㄷㄷ",
+      "url": "https://www.youtube.com/watch?v=FBvzZJDjDYY",
+      "count": 1,
+      "lastPlayed": "2026-11-06T13:45:11.3657829Z"
     },
     {
       "country": "ko",
