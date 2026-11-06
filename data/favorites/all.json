@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-05T15:29:31.203Z",
+  "updatedAt": "2026-11-06T04:43:09.695Z",
   "countries": [
     "ko",
     "th",
@@ -264,6 +264,14 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "UFwqT9Epxkc",
+      "title": "이강인 2골 - 아틀레티코 마드리드 대 바르셀로나 4-2 - 모든 골 및 하이라이트 - 2026년 11월 6일",
+      "url": "https://www.youtube.com/watch?v=UFwqT9Epxkc",
+      "count": 1,
+      "lastPlayed": "2026-11-06T04:42:44.7852680Z"
     },
     {
       "country": "ko",
