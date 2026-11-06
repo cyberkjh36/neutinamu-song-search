@@ -19,6 +19,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
+import android.text.TextWatcher;
+import android.text.Editable;
 import android.view.*;
 import android.view.inputmethod.EditorInfo;
 import android.widget.*;
@@ -33,16 +35,19 @@ public final class MainActivity extends Activity {
     private static final String TJ_PACKAGE="kr.tj.tjsmartplay_U";
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final ExecutorService reader=Executors.newSingleThreadExecutor();
+    private final ExecutorService searchWorker=Executors.newSingleThreadExecutor();
+    private Future<?> pendingSearch;private int searchGeneration,pageOffset;private String activeQuery="";
     private volatile Session session;private volatile Socket connectingSocket;
     private volatile boolean destroyed=false,connecting=false;
     private boolean importing=false,commandQueued=false;
     private final Diagnostics diagnostics=new Diagnostics();
     private String connectionMessage="PCAP 연결 기록을 선택하고 P2 연결 시험을 눌러 주세요.";
     private CaptureProfile profile;private ProfileStore profileStore;private SongCatalog catalog;
-    private TextView profileStatus;
+    private TextView profileStatus,connectionBanner;
     private TextView status,actionStatus,catalogStatus,selection;
     private ScrollView scroll;
-    private EditText query,number;private LinearLayout results;
+    private EditText query,number;private LinearLayout results,contentRoot,connectionDetails,selectionPanel,resultsPanel;
+    private Button settingsToggle,previousPage,nextPage;private boolean settingsExpanded;
     private Button connect,play,cancel,importButton,search;
     private TextView wifiStatus;
     private P2pRegistration wifiRegistration;
@@ -62,65 +67,78 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         profileStore=new ProfileStore(this);
         scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(bg);
-        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(22),dp(24),dp(22),dp(30));scroll.addView(root);
+        LinearLayout root=new LinearLayout(this);contentRoot=root;root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(22),dp(24),dp(22),dp(30));scroll.addView(root);
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
         setContentView(scroll);
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"직접연결 시험판 0.5 · 연결 정보 자동 저장",15,false);
+        text(root,"직접연결 0.6 · 노래를 검색하고 선택해 주세요",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
-        text(root,"1  연결 준비",22,true);
-        text(root,"처음 한 번 PCAP 연결 기록을 선택하세요. 다음부터는 저장된 정보를 불러옵니다. ‘주변 P2 찾기’에서 반주기를 선택하면 직접 연결을 시도합니다.",16,false);
-        importButton=button(root,"내 PCAP 연결 기록 선택",this::chooseCapture);
-        profileStatus=text(root,"저장된 연결 정보가 없습니다. 이전에 보내 주신 PCAP 파일을 선택해 주세요.",14,false);profileStatus.setTag("profileStatus");
-        text(root,"필요한 연결 정보만 휴대폰 안에 암호화해 저장합니다. 원본 PCAP을 복사하거나 서버로 보내지 않습니다. 앱 삭제·데이터 초기화 후에는 다시 선택해야 합니다.",14,false);
-        button(root,"저장된 연결 정보 지우기",this::askForgetProfile).setTag("forgetProfile");
-        button(root,"① 기존 직접 연결 확인",()->{if(directWifi.joining()){feedback("직접 연결이 끝날 때까지 기다려 주세요.");return;}directMode=false;directHost=null;directInterface=null;prepareWifi();}).setTag("prepareWifi");
-        wifiStatus=text(root,"[W00] PCAP 파일을 선택하고 ‘주변 P2 찾기’를 눌러 주세요. 이미 P2에 연결되어 있다면 ①로 확인할 수 있습니다.",16,true);
-        wifiStatus.setTag("wifiStatus");
-        button(root,"② 주변 P2 찾기",this::findP2).setTag("findP2");
-        text(root,"P2와 Wi-Fi Direct로 연결합니다. 반주기 설정에 따라 NFC 연결 준비가 필요할 수 있습니다. TJ매니저가 이미 연결 중이면 아래 설정에서 종료한 뒤 이용하세요.",14,false);
-        button(root,"TJ매니저 설정 (필요할 때)",this::openTjSettings).setTag("tjSettings");
-        connect=button(root,"③ P2 연결 시험",()->{
-            if(connecting||importing){feedback("연결 준비 중입니다. 잠시 기다려 주세요.");return;}
+        connectionBanner=text(root,"○ P2 연결 전",20,true);connectionBanner.setTag("connectionBanner");
+        connectionBanner.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        LinearLayout connectionRow=row(root);
+        connect=button(connectionRow,"P2 연결",()->{
+            if(connecting||importing||directWifi.joining()){feedback("연결 준비 중입니다. 잠시 기다려 주세요.");return;}
             if(session!=null){session.close();session=null;paint();return;}
             beginConnect();
         });connect.setTag("connect");
-        button(root,"휴대폰 Wi-Fi 설정 열기",()->startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)));
-        status=text(root,"[C00] 아직 P2에 연결되지 않았습니다. 검색만 가능합니다.",17,true);status.setTag("connectionStatus");
-        text(root,"2  노래 찾기",22,true);
-        query=input(root,"노래 제목 · 가수 · 곡번호",InputType.TYPE_CLASS_TEXT);query.setTag("query");
-        query.setImeOptions(EditorInfo.IME_ACTION_SEARCH);query.setSingleLine(true);
-        search=button(root,"검색",this::search);search.setTag("search");
-        query.setOnEditorActionListener((v,action,event)->{if(action==EditorInfo.IME_ACTION_SEARCH){search();return true;}return false;});
-        catalogStatus=text(root,"기존 곡 목록을 준비합니다…",14,false);
-        results=new LinearLayout(this);results.setOrientation(LinearLayout.VERTICAL);root.addView(results);
-        text(root,"3  선택한 곡 실행",22,true);
-        number=input(root,"곡번호 직접 입력 (예: 10909)",InputType.TYPE_CLASS_NUMBER);number.setTag("songNumber");
-        selection=text(root,"검색 결과를 누르면 곡번호가 선택됩니다.",16,false);
-        actionStatus=text(root,"[C00] 검색은 가능하지만 P2 연결 전에는 곡을 실행할 수 없습니다.",18,true);
-        actionStatus.setTag("actionStatus");actionStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        play=button(root,"▶  선택한 곡 시작",()->{
-            if(!ensureControlReady(true))return;
-            final int song;try{song=Integer.parseInt(number.getText().toString().trim());Wire.play(song);}catch(IllegalArgumentException e){feedback("[P01] 올바른 곡번호를 입력하거나 검색 결과에서 곡을 선택해 주세요.");return;}
-            dispatch(true,song);
-        });play.setTag("play");
-        cancel=button(root,"■  현재 곡 취소",()->{if(ensureControlReady(false))dispatch(false,0);});cancel.setTag("cancel");
-        button(root,"진단 결과 공유",()->{
+        button(connectionRow,"주변 P2 찾기",this::findP2).setTag("findP2");equalButtons(connectionRow);
+        status=text(root,"처음에는 ‘P2 연결’을 눌러 기존 PCAP 파일을 선택하세요.",15,false);status.setTag("connectionStatus");
+        settingsToggle=button(root,"연결 설정 · 도움말 ▾",()->setSettingsExpanded(!settingsExpanded));settingsToggle.setTag("settingsToggle");
+        connectionDetails=column(root);connectionDetails.setTag("connectionDetails");connectionDetails.setVisibility(View.GONE);
+        text(connectionDetails,"처음 한 번 연결 기록을 선택하면 다음부터 자동으로 불러옵니다. 반주기와의 연결은 직접 눌러 시작하세요.",15,false);
+        importButton=button(connectionDetails,"PCAP 연결 기록 선택",this::chooseCapture);importButton.setTag("importProfile");
+        profileStatus=text(connectionDetails,"저장된 연결 정보가 없습니다. 전에 보내 주신 PCAP 파일을 선택하세요.",14,false);profileStatus.setTag("profileStatus");
+        text(connectionDetails,"연결 정보는 휴대폰 안에 암호화해 저장합니다. 앱 삭제·데이터 초기화 후에는 다시 선택해야 합니다.",14,false);
+        button(connectionDetails,"저장된 연결 정보 지우기",this::askForgetProfile).setTag("forgetProfile");
+        button(connectionDetails,"기존 직접 연결 확인",()->{
+            if(connecting||session!=null||directWifi.joining()){feedback("현재 연결을 해제하거나 연결 준비가 끝난 뒤 확인해 주세요.");return;}
+            directMode=false;directHost=null;directInterface=null;prepareWifi();
+        }).setTag("prepareWifi");
+        wifiStatus=text(connectionDetails,"이미 P2에 연결되어 있다면 ‘기존 직접 연결 확인’을 누르세요.",15,false);wifiStatus.setTag("wifiStatus");
+        button(connectionDetails,"TJ매니저 설정 (필요할 때)",this::openTjSettings).setTag("tjSettings");
+        button(connectionDetails,"휴대폰 Wi-Fi 설정",()->startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS)));
+        text(connectionDetails,"P2와 Wi-Fi Direct로 연결합니다. 반주기 설정에 따라 NFC 준비가 필요할 수 있습니다. TJ매니저가 이미 연결 중이면 기존 직접 연결을 확인한 뒤 해당 앱만 종료하세요.",14,false);
+        button(connectionDetails,"진단 결과 복사",()->{
+            ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("P2 연결진단",diagnostics.report()));
+            Toast.makeText(this,"복사했습니다. 현재 ChatGPT 대화에 붙여넣어 주세요.",Toast.LENGTH_LONG).show();
+        });
+        button(connectionDetails,"진단 결과 공유",()->{
             diagnostics.event("USER_SHARE");
             Intent share=new Intent(Intent.ACTION_SEND);share.setType("text/plain");share.putExtra(Intent.EXTRA_TEXT,diagnostics.report());
             startActivity(Intent.createChooser(share,"ChatGPT에 진단 결과 보내기"));
         }).setTag("shareDiagnostics");
-        button(root,"진단 결과 복사",()->{
-            ((ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("P2 연결진단",diagnostics.report()));
-            Toast.makeText(this,"복사했습니다. ChatGPT 대화창에 붙여넣어 주세요.",Toast.LENGTH_LONG).show();
-        });
-        text(root,"작동하지 않으면 위 안내 문구를 보내 주시거나 ‘진단 결과 공유’에서 ChatGPT를 선택해 주세요. 개인정보와 인증값은 포함하지 않습니다.",14,false);
-        text(root,"시작 버튼을 누르면 반주기에서 곡이 바뀔 수 있습니다. 시험판은 시작·취소만 지원합니다. 응답이 없으면 반복해서 누르지 말고 반주기 화면을 확인해 주세요.",14,false);
-        text(root,"공식 TJ 앱이 아닙니다. Wi-Fi Direct 검색·연결을 시험하는 안드로이드 앱입니다. NFC를 생략할 수 있는지는 P2의 연결 허용 상태에 따라 달라집니다.",13,false);
+        text(connectionDetails,"진단에는 개인정보와 인증값을 넣지 않습니다. 공식 TJ 앱이 아니며 아이폰 직접 제어는 지원하지 않습니다.",13,false);
+        text(root,"노래 찾기",22,true);
+        query=input(root,"노래 제목 · 가수 · 곡번호",InputType.TYPE_CLASS_TEXT);query.setTag("query");
+        query.setImeOptions(EditorInfo.IME_ACTION_SEARCH);query.setSingleLine(true);
+        LinearLayout searchRow=row(root);
+        search=button(searchRow,"검색",this::search);search.setTag("search");
+        button(searchRow,"새 검색",this::newSearch).setTag("newSearch");equalButtons(searchRow);
+        query.setOnEditorActionListener((v,action,event)->{if(action==EditorInfo.IME_ACTION_SEARCH){search();return true;}return false;});
+        catalogStatus=text(root,"곡 목록을 준비합니다…",14,false);catalogStatus.setTag("catalogStatus");
+        selectionPanel=column(root);selectionPanel.setTag("selectionPanel");
+        selection=text(selectionPanel,"곡을 선택하거나 번호를 입력하세요.",20,true);selection.setTag("selection");
+        number=input(selectionPanel,"곡번호 (예: 10909)",InputType.TYPE_CLASS_NUMBER);number.setTag("songNumber");number.setSingleLine(true);
+        number.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){refreshSelection();}public void afterTextChanged(Editable e){}});
+        LinearLayout playbackRow=row(selectionPanel);
+        play=button(playbackRow,"▶ 곡 시작",()->{
+            if(!ensureControlReady(true))return;
+            final int song;try{song=Integer.parseInt(number.getText().toString().trim());Wire.play(song);}catch(IllegalArgumentException e){feedback("[P01] 올바른 곡번호를 입력하거나 검색 결과에서 곡을 선택해 주세요.");return;}
+            dispatch(true,song);
+        });play.setTag("play");
+        cancel=button(playbackRow,"■ 곡 취소",()->{if(ensureControlReady(false))dispatch(false,0);});cancel.setTag("cancel");equalButtons(playbackRow);
+        actionStatus=text(selectionPanel,"P2에 연결한 뒤 ‘곡 시작’을 눌러 주세요.",15,false);actionStatus.setTag("actionStatus");actionStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        resultsPanel=column(root);resultsPanel.setTag("resultsPanel");
+        results=column(resultsPanel);results.setTag("results");
+        LinearLayout pageRow=row(resultsPanel);
+        previousPage=button(pageRow,"◀ 이전",()->searchPage(Math.max(0,pageOffset-30)));previousPage.setTag("previousPage");
+        nextPage=button(pageRow,"다음 ▶",()->searchPage(pageOffset+30));nextPage.setTag("nextPage");equalButtons(pageRow);
+        previousPage.setVisibility(View.GONE);nextPage.setVisibility(View.GONE);
+        text(root,"검색 결과를 누르면 곡만 선택됩니다. ‘곡 시작’을 눌러야 반주기로 실행 명령을 보냅니다.",14,false);
         wifiRegistration=new P2pRegistration(new AndroidP2pBackend(this),new Handler(getMainLooper()),
             ()->profile==null?null:profile.host,this::showWifiState,diagnostics);
         directWifi=new DirectWifi(new AndroidDirectWifiBackend(this),new Handler(getMainLooper()),new DirectWifi.Listener(){
-            public void status(String code,String message){diagnostics.event(code);if(directMode)wifiStatus.setText("["+code+"] "+message);}
+            public void status(String code,String message){diagnostics.event(code);if(directMode){wifiStatus.setText("["+code+"] "+message);show("["+code+"] "+message);}paint();}
             public void peers(List<DirectWifi.Peer> peers){
                 if(destroyed||!directMode||(peerDialog!=null&&peerDialog.isShowing()))return;
                 String[] names=new String[peers.size()];for(int i=0;i<names.length;i++)names[i]=peers.get(i).name;
@@ -141,7 +159,7 @@ public final class MainActivity extends Activity {
             try{
                 for(String file:new String[]{"catalog-20261018.csv","catalog-update-20261104.csv"})
                     try(Reader r=new InputStreamReader(getAssets().open(file),"UTF-8")){loaded.load(r);}
-                ui(()->{catalog=loaded;catalogStatus.setText(String.format(Locale.KOREA,"%,d곡 · 제목·가수 또는 번호로 검색",loaded.size()));search.setEnabled(true);});
+                ui(()->{catalog=loaded;catalogStatus.setText(String.format(Locale.KOREA,"%,d곡 · 제목·가수 또는 번호로 검색",loaded.size()));search.setEnabled(true);refreshSelection();});
             }catch(IOException e){ui(()->{catalogStatus.setText("곡 목록을 읽지 못했습니다. 곡번호로 시험할 수 있습니다.");search.setEnabled(false);});}
         });
     }
@@ -179,20 +197,20 @@ public final class MainActivity extends Activity {
         boolean granted=false;
         for(int i=0;i<permissions.length&&i<results.length;i++)if(permissions[i].equals(wifiPermission())&&results[i]==PackageManager.PERMISSION_GRANTED)granted=true;
         if(granted)prepareWifi();
-        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ①을 다시 눌러 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다. TJ매니저는 종료하지 마세요.");}
+        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ‘기존 직접 연결 확인’을 다시 눌러 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다. TJ매니저는 종료하지 마세요.");}
     }
     private void showWifiState(P2pRegistration.State state){
         if(destroyed||directMode)return;
         String message;
         switch(state){
             case MATCH:message=tjSettingsVisited?
-                "[W01] 설정에서 돌아온 뒤에도 직접 Wi-Fi 연결이 확인됩니다. ③ P2 연결 시험을 눌러 주세요. 아직 노래 실행 연결 전입니다.":
-                "[W01] 직접 Wi-Fi 연결과 앱 등록을 확인했습니다. 필요하면 ‘TJ매니저 설정’에서 해당 앱만 종료한 뒤 돌아와 ③을 눌러 주세요. 아직 노래 실행 연결 전입니다.";break;
+                "[W01] 설정에서 돌아온 뒤에도 직접 Wi-Fi 연결이 확인됩니다. ‘P2 연결’을 눌러 주세요. 아직 노래 실행 연결 전입니다.":
+                "[W01] 직접 Wi-Fi 연결과 앱 등록을 확인했습니다. 필요하면 ‘TJ매니저 설정’에서 해당 앱만 종료한 뒤 돌아와 ‘P2 연결’을 눌러 주세요. 아직 노래 실행 연결 전입니다.";break;
             case NO_GROUP:message="[W02] P2 직접 Wi-Fi 연결이 없습니다. 이 앱을 종료하지 않은 채 TJ매니저에서 NFC로 다시 연결하고 돌아오세요.";break;
             case OTHER_GROUP:message="[W04] 현재 직접 연결이 PCAP 기록의 P2 연결 주소와 다릅니다. 같은 반주기에 연결했는지 확인하세요. TJ매니저는 종료하지 마세요.";break;
-            case DENIED:message="[W03] 직접 Wi-Fi 연결 확인 권한이 없습니다. ①을 눌러 권한을 확인해 주세요.";break;
-            case TIMEOUT:message="[W05] 안드로이드에서 연결 상태를 받지 못했습니다. ①을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
-            case UNAVAILABLE:message="[W06] 직접 Wi-Fi 사용 앱으로 등록하거나 상태를 확인하지 못했습니다. Wi-Fi를 켜고 ①을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
+            case DENIED:message="[W03] 직접 Wi-Fi 연결 확인 권한이 없습니다. ‘기존 직접 연결 확인’을 눌러 권한을 확인해 주세요.";break;
+            case TIMEOUT:message="[W05] 안드로이드에서 연결 상태를 받지 못했습니다. ‘기존 직접 연결 확인’을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
+            case UNAVAILABLE:message="[W06] 직접 Wi-Fi 사용 앱으로 등록하거나 상태를 확인하지 못했습니다. Wi-Fi를 켜고 ‘기존 직접 연결 확인’을 다시 눌러 주세요. TJ매니저는 종료하지 마세요.";break;
             default:message="직접 Wi-Fi 연결 상태를 확인하고 있습니다…";
         }
         wifiStatus.setText(message);
@@ -200,7 +218,7 @@ public final class MainActivity extends Activity {
     private void openTjSettings(){
         if(connecting||session!=null){feedback("연결 시험을 끝낸 뒤 TJ매니저 설정을 열어 주세요.");return;}
         if(wifiRegistration==null||wifiRegistration.state()!=P2pRegistration.State.MATCH){
-            feedback("[W00] 먼저 ①에서 직접 Wi-Fi 연결 확인을 받아 주세요. TJ매니저를 미리 종료하면 연결이 끊길 수 있습니다.");return;
+            feedback("[W00] 먼저 ‘기존 직접 연결 확인’에서 직접 Wi-Fi 연결 확인을 받아 주세요. TJ매니저를 미리 종료하면 연결이 끊길 수 있습니다.");return;
         }
         // Recheck rather than trusting the old label. Never stop another app ourselves.
         wifiRegistration.refresh(()->{
@@ -222,15 +240,50 @@ public final class MainActivity extends Activity {
         }
     }
     private void search(){
-        if(catalog==null)return;String q=query.getText().toString().trim();results.removeAllViews();
+        searchPage(0);
+    }
+    private void cancelSearch(){searchGeneration++;if(pendingSearch!=null)pendingSearch.cancel(true);pendingSearch=null;}
+    private void newSearch(){
+        cancelSearch();activeQuery="";pageOffset=0;query.setText("");number.setText("");results.removeAllViews();
+        previousPage.setVisibility(View.GONE);nextPage.setVisibility(View.GONE);
+        catalogStatus.setText("새로 찾을 노래 제목·가수 또는 곡번호를 입력하세요.");
+        query.requestFocus();scrollTo(query);
+        ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(query,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+    }
+    private void searchPage(int offset){
+        SongCatalog source=catalog;if(source==null)return;
+        String q=query.getText().toString().trim();if(!q.equals(activeQuery))offset=0;
+        activeQuery=q;cancelSearch();final int generation=searchGeneration,requestedOffset=offset;
+        results.removeAllViews();previousPage.setVisibility(View.GONE);nextPage.setVisibility(View.GONE);
         if(q.isEmpty()){catalogStatus.setText("제목·가수 또는 곡번호를 입력해 주세요.");return;}
-        List<SongCatalog.Song> found=catalog.search(q,30);
-        catalogStatus.setText(found.isEmpty()?"검색 결과가 없습니다.":"검색 결과 "+found.size()+"곡 (최대 30곡) · 곡을 선택하세요.");
-        for(SongCatalog.Song s:found)button(results,s.number+"  "+s.title+"\n"+s.artist,()->{
-            number.setText(String.valueOf(s.number));selection.setText(s.title+" · "+s.artist);
-            ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(query.getWindowToken(),0);
-            actionStatus.post(()->scroll.smoothScrollTo(0,number.getTop()));
+        catalogStatus.setText("노래를 찾고 있습니다…");
+        ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(query.getWindowToken(),0);
+        pendingSearch=searchWorker.submit(()->{
+            try{SongCatalog.Page page=source.page(q,requestedOffset,30);ui(()->{
+                if(generation!=searchGeneration)return;pageOffset=page.offset;
+                catalogStatus.setText(page.total==0?"검색 결과가 없습니다. 제목이나 가수 이름을 짧게 입력해 보세요.":
+                    String.format(Locale.KOREA,"총 %,d곡 · %,d–%,d번째 · 곡을 선택하세요",page.total,page.offset+1,page.offset+page.songs.size()));
+                for(SongCatalog.Song s:page.songs)button(results,s.number+"  "+s.title+"\n"+s.artist,()->{number.setText(String.valueOf(s.number));scrollTo(selectionPanel);});
+                previousPage.setVisibility(page.offset>0?View.VISIBLE:View.GONE);
+                nextPage.setVisibility(page.hasNext()?View.VISIBLE:View.GONE);
+                if(!page.songs.isEmpty())scrollTo(resultsPanel);
+            });}catch(CancellationException ignored){}
+            catch(RuntimeException e){ui(()->{if(generation==searchGeneration)catalogStatus.setText("검색을 마치지 못했습니다. 검색 버튼을 다시 눌러 주세요.");});}
         });
+    }
+    private void refreshSelection(){
+        if(number==null||selection==null)return;String text=number.getText().toString().trim();
+        if(text.isEmpty()){selection.setText("곡을 선택하거나 번호를 입력하세요.");return;}
+        try{int value=Integer.parseInt(text);Wire.play(value);SongCatalog.Song song=catalog==null?null:catalog.byNumber(value);
+            selection.setText(song==null?value+"번 · 제목 정보 없음":song.title+"\n"+song.artist+" · "+song.number+"번");
+        }catch(IllegalArgumentException e){selection.setText("올바른 곡번호를 입력해 주세요.");}
+    }
+    private void scrollTo(View target){
+        target.post(()->{if(destroyed)return;android.graphics.Rect rect=new android.graphics.Rect();target.getDrawingRect(rect);contentRoot.offsetDescendantRectToMyCoords(target,rect);scroll.smoothScrollTo(0,Math.max(0,rect.top-dp(12)));});
+    }
+    private void setSettingsExpanded(boolean expanded){
+        settingsExpanded=expanded;connectionDetails.setVisibility(expanded?View.VISIBLE:View.GONE);
+        settingsToggle.setText(expanded?"연결 설정 · 도움말 ▴":"연결 설정 · 도움말 ▾");
     }
     private void chooseCapture(){
         if(connecting||importing||session!=null||(directWifi!=null&&directWifi.joining())){feedback("연결 준비가 끝나거나 연결을 해제한 뒤 기록을 선택해 주세요.");return;}
@@ -248,10 +301,10 @@ public final class MainActivity extends Activity {
             try{
                 CaptureProfile saved=profileStore.load();
                 ui(()->{importing=false;profile=saved;
-                    if(saved!=null){diagnostics.event("PROFILE_RESTORED");profileStatus.setText("저장된 연결 정보를 불러왔습니다. PCAP 파일을 다시 선택하지 않아도 됩니다.");connectionMessage="[C01] ② 주변 P2 찾기에서 반주기를 선택해 주세요. 이미 연결되어 있다면 ①로 확인할 수 있습니다.";show(connectionMessage);}
+                    if(saved!=null){diagnostics.event("PROFILE_RESTORED");profileStatus.setText("저장된 연결 정보를 불러왔습니다. PCAP 파일을 다시 선택하지 않아도 됩니다.");connectionMessage="[C01] ‘주변 P2 찾기’에서 반주기를 선택해 주세요. 이미 연결되어 있다면 ‘기존 직접 연결 확인’으로 확인할 수 있습니다.";show(connectionMessage);}
                     paint();});
             }catch(IOException|java.security.GeneralSecurityException|RuntimeException e){ui(()->{
-                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");paint();
+                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");setSettingsExpanded(true);paint();
             });}
         });
     }
@@ -290,7 +343,8 @@ public final class MainActivity extends Activity {
                 final boolean saved=stored;
                 ui(()->{profile=loaded;directHost=null;directInterface=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");diagnostics.event(saved?"PROFILE_SAVED":"PROFILE_SAVE_FAILED");
                     profileStatus.setText(saved?"연결 정보를 암호화해 저장했습니다. 다음부터 자동으로 불러옵니다.":"자동 저장하지 못했습니다. 이번에는 사용할 수 있으나, 다음 실행 때 PCAP을 다시 선택하세요. 이전 저장 정보가 있다면 그대로 유지됩니다.");
-                    connectionMessage="[C01] 연결 기록을 읽었습니다. ② 주변 P2 찾기에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
+                    setSettingsExpanded(!saved);
+                    connectionMessage="[C01] 연결 기록을 읽었습니다. ‘주변 P2 찾기’에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
@@ -382,7 +436,7 @@ public final class MainActivity extends Activity {
             diagnostics.event("CONTROL_BLOCKED_NOT_CONNECTED");
             feedback("[C00] P2 연결이 완료되지 않아 곡 실행·취소 명령을 보내지 않았습니다.\n"+connectionMessage);
             new AlertDialog.Builder(this).setTitle("P2 연결이 필요합니다").setMessage(connectionMessage)
-                .setPositiveButton(profile==null?"연결 기록 선택":"P2 연결 시험",(d,w)->{if(profile==null)chooseCapture();else beginConnect();})
+                .setPositiveButton(profile==null?"연결 기록 선택":"P2 연결",(d,w)->{if(profile==null)chooseCapture();else beginConnect();})
                 .setNegativeButton("닫기",null).show();return false;
         }
         if(s!=Session.State.READY&&!(s==Session.State.PLAY&&!start)){
@@ -402,10 +456,14 @@ public final class MainActivity extends Activity {
     }
     private void paint(){
         if(play==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
-        connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"③ P2 연결 시험");
+        boolean busy=connecting||importing||(directWifi!=null&&directWifi.joining());
+        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL;
+        connectionBanner.setText(linked?"● P2 연결됨":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ 연결 준비 중…":"○ P2 연결 전");
+        connectionBanner.setTextColor(linked?accent:fg);
+        connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"P2 연결");
         // Clickable guards explain missing connection; a disabled button would look unresponsive.
         importButton.setEnabled(true);play.setEnabled(true);cancel.setEnabled(true);
-        play.setText(s==Session.State.PLAY?"시작 요청 확인 중…":"▶  선택한 곡 시작");
+        play.setText(s==Session.State.PLAY?"시작 확인 중…":"▶ 곡 시작");
         search.setEnabled(catalog!=null);
     }
     private void show(String text){status.setText(text);if(actionStatus!=null)actionStatus.setText(text);}
@@ -419,8 +477,11 @@ public final class MainActivity extends Activity {
         // Keep the P2P registration throughout onPause/onStop while Settings is open.
         if(wifiRegistration!=null)try{wifiRegistration.close();}catch(RuntimeException ignored){}
         Session s=session;if(s!=null)s.close();Socket pending=connectingSocket;if(pending!=null)try{pending.close();}catch(IOException ignored){}
-        worker.shutdownNow();reader.shutdownNow();super.onDestroy();
+        cancelSearch();searchWorker.shutdownNow();worker.shutdownNow();reader.shutdownNow();super.onDestroy();
     }
+    private LinearLayout column(LinearLayout parent){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);parent.addView(box);return box;}
+    private LinearLayout row(LinearLayout parent){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.HORIZONTAL);parent.addView(box);return box;}
+    private void equalButtons(LinearLayout row){for(int i=0;i<row.getChildCount();i++){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.topMargin=dp(6);p.bottomMargin=dp(6);if(i>0)p.leftMargin=dp(8);row.getChildAt(i).setLayoutParams(p);}}
     private int dp(int n){return Math.round(n*getResources().getDisplayMetrics().density);}
     private TextView text(LinearLayout parent,String value,int size,boolean bold){TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(fg);v.setPadding(0,dp(12),0,dp(10));if(bold)v.setTypeface(null,android.graphics.Typeface.BOLD);parent.addView(v);return v;}
     private Button button(LinearLayout parent,String title,Runnable action){Button b=new Button(this);b.setText(title);b.setTextSize(17);b.setAllCaps(false);b.setMinHeight(dp(58));b.setTextColor(bg);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(accent));b.setOnClickListener(v->action.run());LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=dp(6);p.bottomMargin=dp(6);parent.addView(b,p);return b;}

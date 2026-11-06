@@ -61,3 +61,10 @@ On 2026-11-06 (Asia/Seoul), the user confirmed that trial 0.4 actually started a
 0.5 preserves Wire, Session and the Wi-Fi Direct protocol unchanged. The imported template is serialized in a bounded, versioned format and encrypted locally with AES-GCM/Android Keystore. Restoring a profile does not connect or send playback commands; `forConnection` still replaces the old phone address only with the current interface address. The template and key are not backed up or uploaded. Changed passwords/identity still require a new authorized import. Encryption failure is reported and never falls back to a plaintext file.
 
 Diagnostic 1000 frames are aggregated into RX/TX counters and last-seen elapsed times, leaving the last 48 non-heartbeat events intact during idle time. Original payloads, song query text, addresses, registration identity and exception details remain excluded.
+
+
+## Search and control UI (0.6)
+
+No changes to Wire, Session, CaptureProfile, ProfileStore, or Wi-Fi backends. The Android application ID and release signing key remain the same as 0.5, preserving app-private encrypted data on an in-place update. The status banner uses live protocol state, not profile presence, to show connection readiness.
+
+Song search runs on a separate cancellable executor with a generation check for late UI results. Paging exposes all catalog matches, exact song numbers rank ahead of title matches, and title/artist tokens may appear in either order. A direct number edit refreshes the selected title or explicitly reports an unknown title. Selecting a search result and clearing a search do not send playback commands. Connection setup and diagnostics remain reachable in the collapsible setup panel.

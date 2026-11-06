@@ -47,4 +47,5 @@ jobs:
             p2-direct/core/build/test-results/test/*.xml
             p2-direct/app/build/test-results/testDebugUnitTest/*.xml
             p2-direct/app/build/reports/lint-results-debug.html
+            **/build/reports/p2-ui/*.png
           retention-days: 30

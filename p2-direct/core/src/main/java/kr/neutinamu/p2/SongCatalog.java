@@ -7,9 +7,15 @@ import java.text.Normalizer;
 /** Existing repository CSV catalog, read offline; no new song source or cloud service. */
 public final class SongCatalog {
     public static final class Song {
-        public final int number;public final String title,artist;private final String hay;
-        Song(int n,String t,String a){number=n;title=t;artist=a;hay=normalize(t+" "+a);}
+        public final int number;public final String title,artist;private final String hay,titleKey;
+        Song(int n,String t,String a){number=n;title=t;artist=a;titleKey=normalize(t);hay=normalize(t+" "+a);}
     }
+    public static final class Page {
+        public final List<Song> songs;public final int total,offset;
+        Page(List<Song> songs,int total,int offset){this.songs=Collections.unmodifiableList(songs);this.total=total;this.offset=offset;}
+        public boolean hasNext(){return offset+songs.size()<total;}
+    }
+    private static final java.util.regex.Pattern SPACE=java.util.regex.Pattern.compile("[\\s\\p{Z}]+");
     private final Map<Integer,Song> songs=new LinkedHashMap<>();
     public void load(Reader reader)throws IOException {
         PushbackReader in=new PushbackReader(new BufferedReader(reader),1);
@@ -32,13 +38,25 @@ public final class SongCatalog {
         try{int n=Integer.parseInt(row.get(0).trim());String title=row.get(1).trim();if(n>0&&n<=99999999&&!title.isEmpty())songs.put(n,new Song(n,title,row.get(2).trim()));}catch(NumberFormatException ignored){}
     }
     public int size(){return songs.size();}
-    private static String normalize(String s){return Normalizer.normalize(s,Normalizer.Form.NFC).toLowerCase(Locale.ROOT).replaceAll("\\s+","");}
+    public Song byNumber(int number){return songs.get(number);}
+    private static String normalize(String s){return SPACE.matcher(Normalizer.normalize(s,Normalizer.Form.NFC).toLowerCase(Locale.ROOT)).replaceAll("");}
     public List<Song> search(String query,int limit) {
-        List<Song> exact=new ArrayList<>(),rest=new ArrayList<>();String q=normalize(query.trim());if(q.isEmpty())return exact;
-        for(Song s:songs.values()){
-            if(String.valueOf(s.number).equals(q)||normalize(s.title).equals(q))exact.add(s);
-            else if(s.hay.contains(q)&&rest.size()<limit)rest.add(s);
-        }
-        exact.addAll(rest);return new ArrayList<>(exact.subList(0,Math.min(limit,exact.size())));
+        return page(query,0,limit).songs;
     }
+    public Page page(String query,int offset,int limit) {
+        if(offset<0||limit<1)throw new IllegalArgumentException("Invalid page");
+        String q=normalize(query);if(q.isEmpty())return new Page(new ArrayList<>(),0,0);
+        List<String> terms=new ArrayList<>();for(String part:SPACE.split(query)){String term=normalize(part);if(!term.isEmpty())terms.add(term);}
+        List<Song> numbers=new ArrayList<>(),exact=new ArrayList<>(),rest=new ArrayList<>();
+        for(Song s:songs.values()){
+            if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException();
+            if(String.valueOf(s.number).equals(q))numbers.add(s);
+            else if(s.titleKey.equals(q))exact.add(s);
+            else if(s.hay.contains(q)||containsAll(s.hay,terms))rest.add(s);
+        }
+        numbers.addAll(exact);numbers.addAll(rest);int start=Math.min(offset,numbers.size());
+        int end=start+(int)Math.min((long)limit,numbers.size()-start);
+        return new Page(new ArrayList<>(numbers.subList(start,end)),numbers.size(),start);
+    }
+    private static boolean containsAll(String text,List<String> terms){for(String term:terms)if(!text.contains(term))return false;return true;}
 }

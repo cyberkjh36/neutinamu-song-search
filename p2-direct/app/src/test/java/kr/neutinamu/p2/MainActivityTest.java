@@ -33,6 +33,54 @@ public class MainActivityTest {
         ((java.util.concurrent.ExecutorService)field("worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
         shadowOf(Looper.getMainLooper()).idle();
     }
+    private void finishSearch()throws Exception{
+        shadowOf(Looper.getMainLooper()).idle();
+        ((java.util.concurrent.ExecutorService)field("searchWorker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
+        shadowOf(Looper.getMainLooper()).idle();
+    }
+    private void installCatalog()throws Exception{
+        finishWorker();SongCatalog catalog=new SongCatalog();StringBuilder csv=new StringBuilder();
+        for(int i=1;i<=65;i++)csv.append(i).append(",사랑 ").append(i).append(",가수\n");
+        catalog.load(new java.io.StringReader(csv.toString()));set("catalog",catalog);call("paint");
+    }
+    @Test public void resultsBeyondThirtyAreReachableAndSelectionNeverStartsSong()throws Exception{
+        installCatalog();EditText query=view("query");query.setText("사랑");assertEquals(0,((LinearLayout)view("results")).getChildCount());
+        view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(30,list.getChildCount());
+        assertTrue(((TextView)view("catalogStatus")).getText().toString().contains("65"));
+        view("nextPage").performClick();finishSearch();assertTrue(((Button)list.getChildAt(0)).getText().toString().startsWith("31  "));
+        view("nextPage").performClick();finishSearch();assertEquals(5,list.getChildCount());assertEquals(View.GONE,view("nextPage").getVisibility());
+        list.getChildAt(4).performClick();assertEquals("65",((EditText)view("songNumber")).getText().toString());
+        assertTrue(((TextView)view("selection")).getText().toString().contains("사랑 65"));assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+        view("previousPage").performClick();finishSearch();assertEquals(30,list.getChildCount());
+    }
+    @Test public void manualNumberChangeCannotLeavePreviouslySelectedTitle()throws Exception{
+        installCatalog();EditText number=view("songNumber");number.setText("1");assertTrue(((TextView)view("selection")).getText().toString().contains("사랑 1"));
+        number.setText("2");String title=((TextView)view("selection")).getText().toString();assertTrue(title.contains("사랑 2"));assertFalse(title.contains("사랑 1"));
+        number.setText("10909");assertTrue(((TextView)view("selection")).getText().toString().contains("제목 정보 없음"));
+        number.setText("");assertTrue(((TextView)view("selection")).getText().toString().contains("곡을 선택"));
+    }
+    @Test public void newSearchClearsSelectionAndRejectsLateResultsWithoutSendingCancel()throws Exception{
+        installCatalog();((EditText)view("query")).setText("사랑");((EditText)view("songNumber")).setText("1");view("search").performClick();
+        view("newSearch").performClick();finishSearch();assertEquals(0,((LinearLayout)view("results")).getChildCount());
+        assertEquals("",((EditText)view("query")).getText().toString());assertEquals("",((EditText)view("songNumber")).getText().toString());
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("CANCEL_TAPPED"));assertNull(field("session"));
+    }
+    @Test public void settingsToggleKeepsQueryAndSelectedNumber()throws Exception{
+        ((EditText)view("query")).setText("꿈");((EditText)view("songNumber")).setText("10909");
+        assertEquals(View.GONE,view("connectionDetails").getVisibility());view("settingsToggle").performClick();assertEquals(View.VISIBLE,view("connectionDetails").getVisibility());
+        view("settingsToggle").performClick();assertEquals(View.GONE,view("connectionDetails").getVisibility());
+        assertEquals("꿈",((EditText)view("query")).getText().toString());assertEquals("10909",((EditText)view("songNumber")).getText().toString());
+    }
+    @Test public void bannerRequiresProtocolReadinessNotJustSavedProfile()throws Exception{
+        set("profile",ProfileStoreTest.sample());call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결 전"));
+        Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
+        try{set("session",session);call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("준비 중"));
+            Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);call("paint");
+            assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
+        }finally{session.close();set("session",null);call("paint");}
+        assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결 전"));
+    }
     @Test public void savedProfileRestoresWithoutConnectingOrStartingPlayback()throws Exception{
         java.io.File path=new java.io.File(app.getNoBackupFilesDir(),"test-profile.enc");
         ProfileStore store=new ProfileStore(path,()->ProfileStoreTest.KEY);store.save(ProfileStoreTest.sample());
@@ -78,10 +126,10 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 시험판 0.5"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 시험판 0.6"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
-        view("tjSettings").performClick();assertTrue(message().contains("먼저 ①"));
+        view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));
         assertNull(shadowOf(app).getNextStartedActivity());
     }
     @Test @Config(sdk={28,29,31,35}) public void preparationNeedsCaptureAndPermissionDenialDoesNotClaimSuccess(){
