@@ -48,4 +48,4 @@
 
 프로필은 Android Keystore의 AES-256-GCM 키로 암호화하고 앱 전용 백업 제외 디렉터리에 원자적으로 저장합니다. 공개 저장소에는 공식 앱 APK/복원 코드와 개인 통신 기록을 포함하지 않습니다. 참고: [Android KeyGenParameterSpec](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec).
 
-0.5부터 배포 서명키를 별도로 보관해 이후 같은 앱 ID(`kr.neutinamu.p2.direct`)로 업데이트할 수 있도록 구성했습니다. CI의 임시 디버그 APK는 검증용이며, 사용자에게 제공하는 APK는 별도 배포 키로 서명합니다. 개인 키와 연결 정보는 저장소와 CI 산출물에 포함하지 않습니다.
+0.5부터 배포 서명키를 별도로 보관해 이후 같은 앱 ID(`kr.neutinamu.p2.direct`)로 업데이트할 수 있도록 구성했습니다. CI의 임시 디버그 APK는 검증용이며, 사용자에게 제공하는 APK는 디버그 기능을 끈 릴리스 빌드를 별도 배포 키로 서명합니다. 개인 키와 연결 정보는 저장소와 CI 산출물에 포함하지 않습니다.
