@@ -152,6 +152,11 @@ public class ProtocolTest {
         }
     }
 
+    @Test public void fullTwentyByteIdentityCannotBeMatchedByFourteenBytePrefix()throws Exception{
+        byte[] identity=Arrays.copyOf(id(),66);identity[19]='A';
+        CaptureProfile p=CaptureProfile.read(new ByteArrayInputStream(capture(packet(login(),true,100),packet(server(3100,identity),false,400))));
+        assertTrue(p.matchesIdentity(identity));identity[19]='B';assertFalse(p.matchesIdentity(identity));assertFalse(p.matchesIdentity(id()));
+    }
     @Test public void currentConnectionReplacesOnlyMacAndUsesCurrentOwner()throws Exception{
         CaptureProfile original=profile(),live=original.forConnection("192.168.49.1","02:11:22:33:44:55");
         byte[] changed=live.registration(),before=original.registration();

@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
     private Button connect,play,cancel,importButton,search;
     private TextView wifiStatus;
     private P2pRegistration wifiRegistration;
-    private DirectWifi directWifi;private String directHost;private boolean findAfterPermission,directMode;
+    private DirectWifi directWifi;private String directHost,directInterface;private boolean findAfterPermission,directMode;
     private AlertDialog peerDialog;
     private boolean receiverRegistered,tjSettingsVisited;
     private final BroadcastReceiver wifiReceiver=new BroadcastReceiver(){
@@ -70,7 +70,7 @@ public final class MainActivity extends Activity {
         text(root,"PCAP 연결 기록을 선택한 뒤 ‘주변 P2 찾기’를 눌러 반주기를 선택하세요. 매장 공유기가 아니라 P2와 Wi-Fi Direct로 연결합니다. 처음 찾는 반주기가 연결을 허용해야 하며 기종 설정에 따라 NFC 연결 준비가 필요할 수 있습니다.",16,false);
         importButton=button(root,"내 PCAP 연결 기록 선택",this::chooseCapture);
         text(root,"보내 주신 PCAPdroid 파일을 선택하세요. 연결정보는 이 앱의 메모리에서만 사용하며 서버에 올리지 않습니다. 앱을 완전히 종료하면 다시 선택해야 합니다.",14,false);
-        button(root,"① 기존 직접 연결 확인",()->{directMode=false;prepareWifi();}).setTag("prepareWifi");
+        button(root,"① 기존 직접 연결 확인",()->{if(directWifi.joining()){feedback("직접 연결이 끝날 때까지 기다려 주세요.");return;}directMode=false;directHost=null;directInterface=null;prepareWifi();}).setTag("prepareWifi");
         wifiStatus=text(root,"[W00] PCAP 파일을 선택하고 ‘주변 P2 찾기’를 눌러 주세요. 이미 P2에 연결되어 있다면 ①로 확인할 수 있습니다.",16,true);
         wifiStatus.setTag("wifiStatus");
         button(root,"② 주변 P2 찾기",this::findP2).setTag("findP2");
@@ -124,7 +124,11 @@ public final class MainActivity extends Activity {
                     .setItems(names,(d,index)->{directHost=null;directWifi.select(peers.get(index));})
                     .setNegativeButton("닫기",(d,w)->directWifi.stopFinding()).create();peerDialog.setOnCancelListener(d->directWifi.stopFinding());peerDialog.show();
             }
-            public void connected(String host){if(destroyed)return;directHost=host;beginConnect();}
+            public void connected(DirectWifi.Link link){
+                if(destroyed)return;
+                if(link.interfaceName==null||link.interfaceName.isEmpty()){diagnostics.event("N10");feedback("[N10] 직접 연결의 네트워크 정보를 읽지 못했습니다. 다시 찾아 연결해 주세요.");return;}
+                directHost=link.host;directInterface=link.interfaceName;beginConnect();
+            }
         });
         paint();
         worker.execute(()->{
@@ -142,7 +146,7 @@ public final class MainActivity extends Activity {
     private void findP2(){
         if(connecting||importing||session!=null||directWifi.joining()){feedback("연결 준비 또는 실행 연결 중입니다. 현재 연결을 해제한 뒤 찾아 주세요.");return;}
         if(profile==null){chooseCapture();return;}
-        directMode=true;directHost=null;findAfterPermission=true;prepareWifi();
+        directMode=true;directHost=null;directInterface=null;findAfterPermission=true;prepareWifi();
     }
     private void prepareWifi(){
         if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
@@ -234,24 +238,24 @@ public final class MainActivity extends Activity {
             try(InputStream in=getContentResolver().openInputStream(data.getData())){
                 if(in==null)throw new IOException("파일을 열 수 없습니다.");
                 CaptureProfile loaded=CaptureProfile.read(in);
-                ui(()->{profile=loaded;directHost=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ① 직접 Wi-Fi 연결 준비부터 진행해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
+                ui(()->{profile=loaded;directHost=null;directInterface=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ② 주변 P2 찾기에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
     private void beginConnect(){
         if(profile==null){feedback("[C00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
-        if(importing||connecting||session!=null)return;
+        if(importing||connecting||session!=null||(directWifi!=null&&directWifi.joining()))return;
         diagnostics.event("CONNECT_STARTED");
-        CaptureProfile selected=profile;String target=directHost==null?selected.host:directHost;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
+        CaptureProfile selected=profile;String target=directHost==null?selected.host:directHost;String radio=directInterface;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
         worker.execute(()->{
             Socket socket=null;
             try{
-                socket=socketFor(target);connectingSocket=socket;
+                socket=socketFor(target,radio);connectingSocket=socket;
                 if(destroyed){socket.close();return;}
                 socket.connect(new InetSocketAddress(target,7070),5000);
+                diagnostics.event("TCP_CONNECTED");
                 CaptureProfile live=selected.forConnection(target,currentMac(socket));
                 diagnostics.event("CURRENT_WIFI_ADDRESS_APPLIED");
-                diagnostics.event("TCP_CONNECTED");
                 final Session[] holder=new Session[1];
                 Session opened=new Session(socket,live,new Session.Listener(){
                     @Override public void changed(Session.State state,String message){
@@ -283,8 +287,21 @@ public final class MainActivity extends Activity {
         StringBuilder value=new StringBuilder();for(byte part:mac){if(value.length()>0)value.append(':');value.append(String.format(Locale.ROOT,"%02X",part&255));}
         String result=value.toString();if(result.equals("02:00:00:00:00:00")||result.equals("00:00:00:00:00:00"))throw new CurrentAddressException();return result;
     }
-    private Socket socketFor(String host)throws IOException {
+    private Socket socketFor(String host,String radio)throws IOException {
         InetAddress remote=InetAddress.getByName(host);
+        if(radio!=null){
+            // The selected Wi-Fi Direct group identifies the exact interface. Never use a
+            // different Wi-Fi network merely because its subnet overlaps the P2's subnet.
+            NetworkInterface iface=NetworkInterface.getByName(radio);
+            if(iface!=null&&iface.isUp())for(InterfaceAddress address:iface.getInterfaceAddresses()){
+                InetAddress local=address.getAddress();if(!(local instanceof Inet4Address))continue;
+                int prefix=address.getNetworkPrefixLength();byte[] a=local.getAddress(),b=remote.getAddress();
+                if(b.length!=4||prefix<=0||prefix>32)continue;
+                boolean match=true;for(int i=0;i<prefix;i++)if(((a[i/8]^b[i/8])&(128>>(i%8)))!=0){match=false;break;}
+                if(match){Socket socket=new Socket();socket.bind(new InetSocketAddress(local,0));diagnostics.event("ROUTE_SELECTED_P2P_INTERFACE");return socket;}
+            }
+            throw new NoRouteToHostException();
+        }
         ConnectivityManager manager=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
         // Match a concrete local route, never bind the whole process to Wi-Fi.
         for(Network network:manager.getAllNetworks()){

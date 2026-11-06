@@ -64,7 +64,7 @@ public final class Session implements Closeable {
         if(f.code==1000&&f.body.length==0){write(Wire.heartbeat());return;}
         if(state==State.AUTH&&f.code==3000) {
             if(f.bodyType()!=1||f.body.length!=1){
-                fail("[A01] P2에는 접속했지만 기록과 다른 초기 응답입니다. 길이="+f.body.length+"바이트, 응답값="+(scalar==null?"형식 미확인":scalar)+". 아래 ‘진단 결과 공유’를 눌러 알려 주세요.");return;
+                fail("[A01] P2 초기 연결이 완료되지 않았습니다. 응답종류="+f.bodyType()+", 길이="+f.body.length+"바이트, 응답값="+(scalar==null?"형식 미확인":scalar)+". 아래 ‘진단 결과 공유’를 눌러 알려 주세요.");return;
             }
             // This byte is a user colour/slot identifier, not a zero-only status code.
             change(State.IDENTIFY,"사용자 식별값을 받았습니다. 연결된 반주기를 확인합니다…");write(Wire.info());return;

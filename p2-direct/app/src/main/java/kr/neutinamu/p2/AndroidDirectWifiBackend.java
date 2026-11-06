@@ -38,7 +38,7 @@ final class AndroidDirectWifiBackend implements DirectWifi.Backend {
             if(channel==null){done.accept(null);return;}
             try{permission();manager.requestGroupInfo(channel,group->done.accept(group==null?null:new DirectWifi.Link(true,info.isGroupOwner,
                 group==null||group.getOwner()==null?null:group.getOwner().deviceAddress,
-                info.groupOwnerAddress==null?null:info.groupOwnerAddress.getHostAddress())));}
+                info.groupOwnerAddress==null?null:info.groupOwnerAddress.getHostAddress(),group.getInterface())));}
             catch(SecurityException e){done.accept(null);}
         });
     }

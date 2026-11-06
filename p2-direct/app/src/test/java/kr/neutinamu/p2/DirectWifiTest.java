@@ -14,7 +14,7 @@ import static org.robolectric.Shadows.shadowOf;
 @RunWith(RobolectricTestRunner.class) @Config(sdk={29,35})
 public class DirectWifiTest {
     static final DirectWifi.Peer PEER=new DirectWifi.Peer("Test P2","02:11:22:33:44:55");
-    static final DirectWifi.Link UP=new DirectWifi.Link(true,false,PEER.address,"192.168.49.1");
+    static final DirectWifi.Link UP=new DirectWifi.Link(true,false,PEER.address,"192.168.49.1","p2p0");
     static class Fake implements DirectWifi.Backend {
         boolean denied,available=true;int joined,closed;Runnable lost;Consumer<Boolean> discovery,join;
         Consumer<List<DirectWifi.Peer>> peers;List<Consumer<DirectWifi.Link>> links=new ArrayList<>();
@@ -28,7 +28,7 @@ public class DirectWifiTest {
     }
     Fake backend;DirectWifi client;List<String> codes,hosts;List<DirectWifi.Peer> visible;
     @Before public void setup(){backend=new Fake();codes=new ArrayList<>();hosts=new ArrayList<>();client=new DirectWifi(backend,new Handler(Looper.getMainLooper()),new DirectWifi.Listener(){
-        public void status(String code,String text){codes.add(code);}public void peers(List<DirectWifi.Peer> list){visible=list;}public void connected(String host){hosts.add(host);}
+        public void status(String code,String text){codes.add(code);}public void peers(List<DirectWifi.Peer> list){visible=list;}public void connected(DirectWifi.Link link){hosts.add(link.host);}
     });}
     @After public void close(){client.close();}
     void found(){client.find();backend.discovery.accept(true);backend.peers.accept(Collections.singletonList(PEER));}

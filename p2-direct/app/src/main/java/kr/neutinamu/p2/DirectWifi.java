@@ -11,8 +11,9 @@ final class DirectWifi implements AutoCloseable {
         Peer(String name,String address){this.name=name;this.address=address;}
     }
     static final class Link {
-        final boolean formed,localOwner;final String owner,host;
-        Link(boolean formed,boolean localOwner,String owner,String host){this.formed=formed;this.localOwner=localOwner;this.owner=owner;this.host=host;}
+        final boolean formed,localOwner;final String owner,host,interfaceName;
+        Link(boolean formed,boolean localOwner,String owner,String host){this(formed,localOwner,owner,host,null);}
+        Link(boolean formed,boolean localOwner,String owner,String host,String interfaceName){this.formed=formed;this.localOwner=localOwner;this.owner=owner;this.host=host;this.interfaceName=interfaceName;}
     }
     interface Backend {
         boolean open(Runnable lost);
@@ -25,7 +26,7 @@ final class DirectWifi implements AutoCloseable {
     interface Listener {
         void status(String code,String message);
         void peers(List<Peer> peers);
-        void connected(String host);
+        void connected(Link link);
     }
     private final Backend backend;private final Handler handler;private final Listener listener;
     private boolean opened,closed,joining,searching;private int generation;private List<Peer> peers=Collections.emptyList();
@@ -77,7 +78,7 @@ final class DirectWifi implements AutoCloseable {
                 if(link.localOwner||link.owner==null||!link.owner.equalsIgnoreCase(selected.address)||link.host==null){
                     fail("W24","선택한 반주기와 현재 Wi-Fi Direct 연결이 다릅니다. 휴대폰 Wi-Fi Direct에서 기존 연결을 해제한 뒤 다시 선택해 주세요.");return;
                 }
-                invalidate();joining=false;listener.status("W27","직접 무선 연결을 확인했습니다. 이어서 반주기 응답을 확인합니다…");listener.connected(link.host);return;
+                invalidate();joining=false;listener.status("W27","직접 무선 연결을 확인했습니다. 이어서 반주기 응답을 확인합니다…");listener.connected(link);return;
             }
             if(canStart){
                 try{backend.join(selected,ok->{if(!current(request))return;if(ok)schedule(request);else fail("W25","P2 직접 연결 요청이 거절되었습니다. 반주기 연결 대기 상태를 확인해 주세요.");});}

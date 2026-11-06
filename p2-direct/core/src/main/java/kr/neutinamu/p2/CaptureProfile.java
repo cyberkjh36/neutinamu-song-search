@@ -29,7 +29,7 @@ public final class CaptureProfile {
     /** Keep the connection password and app-protocol marker for subsequent requests. */
     byte[] packet(byte[] packet){byte[] result=packet.clone();System.arraycopy(registration,5,result,5,5);return result;}
     public boolean matchesIdentity(byte[] info) {
-        return info.length>=14 && Arrays.equals(identity,Arrays.copyOf(info,14));
+        return info.length>=identity.length && Arrays.equals(identity,Arrays.copyOf(info,identity.length));
     }
     public static CaptureProfile read(InputStream input) throws IOException {
         byte[] global=readExact(input,24);
@@ -65,7 +65,7 @@ public final class CaptureProfile {
             byte[] registration=null,id=null;
             for(Wire.Frame frame:outgoing)if(frame.code==3000&&frame.body.length==47&&
                 frame.body[0]=='T'&&frame.body[1]=='J'&&frame.body[2]=='A'&&frame.body[3]=='A')registration=frame.bytes();
-            for(Wire.Frame frame:incoming)if(frame.code==3100&&frame.body.length>=14)id=Arrays.copyOf(frame.body,14);
+            for(Wire.Frame frame:incoming)if(frame.code==3100&&frame.body.length>=14)id=Arrays.copyOf(frame.body,Math.min(20,frame.body.length));
             if(registration!=null&&id!=null) {
                 if(result!=null&&(!result.host.equals(f.host)||!Arrays.equals(result.identity,id)))
                     throw new IOException("여러 반주기가 기록되어 있습니다. 한 대만 연결한 기록을 선택해 주세요.");
