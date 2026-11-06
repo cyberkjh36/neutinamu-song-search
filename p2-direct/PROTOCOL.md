@@ -52,3 +52,12 @@ Scan, join and authentication are separate stages. Callback generations and dead
 - After user force-stopped TJ Manager, 0.2 reported no network route (`N10`).
 - 0.3 at 20:17 KST: our P2P client remained registered; group matched after visiting Settings; TCP connected; registration sent; no complete response recorded for about 10 seconds; our session closed at its deadline. A later query reported no group. This does not prove which side caused the radio group loss.
 - Software tests use synthetic identities and simulated sockets. They do **not** establish successful playback on the user's physical P2 or compatibility with iPhone/new Android MAC restrictions.
+
+
+## Physical evidence and persistence update (0.5)
+
+On 2026-11-06 (Asia/Seoul), the user confirmed that trial 0.4 actually started and cancelled song 10909 on their P2. The available shared diagnostic excerpt shows a 4100 data reply with value 12, STATE_READY, and incoming/outgoing 1000 traffic at roughly nine-second intervals through 371313 ms. The start command is not present in that excerpt; physical playback is the user's report. This does not establish NFC-free fresh association, multiple phones or long-duration reliability.
+
+0.5 preserves Wire, Session and the Wi-Fi Direct protocol unchanged. The imported template is serialized in a bounded, versioned format and encrypted locally with AES-GCM/Android Keystore. Restoring a profile does not connect or send playback commands; `forConnection` still replaces the old phone address only with the current interface address. The template and key are not backed up or uploaded. Changed passwords/identity still require a new authorized import. Encryption failure is reported and never falls back to a plaintext file.
+
+Diagnostic 1000 frames are aggregated into RX/TX counters and last-seen elapsed times, leaving the last 48 non-heartbeat events intact during idle time. Original payloads, song query text, addresses, registration identity and exception details remain excluded.

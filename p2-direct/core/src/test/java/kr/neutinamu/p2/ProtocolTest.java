@@ -197,6 +197,29 @@ public class ProtocolTest {
         assertFalse(d.report().contains("value="));assertFalse(d.report().contains("123456789"));
         try{d.event("private.example.com");fail();}catch(IllegalArgumentException expected){}
         for(int i=0;i<70;i++)d.event("EVENT_"+i);
-        assertFalse(d.report().contains("cmd=3000"));assertEquals(50,d.report().split("\n").length);
+        assertFalse(d.report().contains("cmd=3000"));assertEquals(53,d.report().split("\n").length);
+    }
+
+    @Test public void idleHeartbeatsDoNotEraseStartAndCancelEvidence(){
+        Diagnostics d=new Diagnostics();d.event("PLAY_TAPPED");d.frame(true,4000,9,10909L);
+        d.event("CANCEL_TAPPED");d.frame(false,4100,4,12L);
+        for(int i=0;i<10000;i++){d.frame(false,1000,0,null);d.frame(true,1000,4,100L);}
+        String report=d.report();assertTrue(report.contains("PLAY_TAPPED"));assertTrue(report.contains("CANCEL_TAPPED"));
+        assertTrue(report.contains("cmd=4100 bytes=4 value=12"));assertFalse(report.contains("10909"));
+        assertTrue(report.contains("HEARTBEAT_RX=10000"));assertTrue(report.contains("HEARTBEAT_TX=10000"));assertTrue(report.length()<1000);
+    }
+    @Test public void storedProfileRetainsIdentityAndHeaderButRefreshesLiveAddress()throws Exception{
+        CaptureProfile original=profile(),restored=CaptureProfile.fromStorage(original.storageBytes());
+        assertEquals(original.host,restored.host);assertArrayEquals(original.registration(),restored.registration());assertTrue(restored.matchesIdentity(id()));
+        CaptureProfile live=restored.forConnection("192.168.49.1","02:11:22:33:44:55");
+        assertArrayEquals(original.packet(Wire.play(10909)),live.packet(Wire.play(10909)));assertTrue(live.matchesIdentity(id()));
+        assertArrayEquals(original.registration(),restored.registration());
+    }
+    @Test public void storedProfileRejectsTruncationWrongVersionAndExtraData()throws Exception{
+        byte[] valid=profile().storageBytes();
+        for(int n=0;n<valid.length;n++)try{CaptureProfile.fromStorage(Arrays.copyOf(valid,n));fail("truncated "+n);}catch(IOException expected){}
+        byte[] bad=valid.clone();bad[3]=2;
+        for(byte[] bytes:new byte[][]{bad,cat(valid,new byte[1]),new byte[129]})try{CaptureProfile.fromStorage(bytes);fail();}catch(IOException expected){}
+        bad=valid.clone();bad[5]='8';try{CaptureProfile.fromStorage(bad);fail("public address");}catch(IOException expected){}
     }
 }

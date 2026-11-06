@@ -12,12 +12,36 @@ public final class CaptureProfile {
         this.host=host;this.registration=registration.clone();this.identity=identity.clone();
     }
     public byte[] registration() { return registration.clone(); }
+    /** Sensitive bytes: callers must encrypt before persisting; never publish or log. */
+    public byte[] storageBytes() throws IOException {
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
+        out.writeInt(0x50325001);byte[] h=host.getBytes(StandardCharsets.US_ASCII);
+        out.writeByte(h.length);out.write(h);out.write(registration);out.writeByte(identity.length);out.write(identity);
+        return bytes.toByteArray();
+    }
+    public static CaptureProfile fromStorage(byte[] bytes) throws IOException {
+        if(bytes==null||bytes.length>128)throw new IOException("Invalid saved profile");
+        DataInputStream in=new DataInputStream(new ByteArrayInputStream(bytes));
+        if(in.readInt()!=0x50325001)throw new IOException("Unsupported saved profile");
+        int n=in.readUnsignedByte();if(n<7||n>15)throw new IOException("Invalid saved address");
+        String host=new String(readExact(in,n),StandardCharsets.US_ASCII);validateHost(host);
+        byte[] registration=readExact(in,63);
+        if(Wire.u32(registration,0)!=3000||Wire.u32(registration,12)!=47||
+            registration[16]!='T'||registration[17]!='J'||registration[18]!='A'||registration[19]!='A')
+            throw new IOException("Invalid saved registration");
+        int length=in.readUnsignedByte();if(length<14||length>20)throw new IOException("Invalid saved identity");
+        byte[] identity=readExact(in,length);if(in.read()!=-1)throw new IOException("Unexpected saved data");
+        return new CaptureProfile(host,registration,identity);
+    }
+    private static void validateHost(String host)throws IOException {
+        if(host==null||!host.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"))throw new IOException("Invalid local address");
+        String[] parts=host.split("\\.");byte[] address=new byte[4];
+        for(int i=0;i<4;i++){int value=Integer.parseInt(parts[i]);if(value>255)throw new IOException("Invalid local address");address[i]=(byte)value;}
+        if(!privateIp(address,0))throw new IOException("A private P2 address is required");
+    }
     /** Refresh the phone address for this radio connection. Never replay a stale MAC. */
     public CaptureProfile forConnection(String currentHost,String currentMac) throws IOException {
-        if(currentHost==null||!currentHost.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"))throw new IOException("Invalid local address");
-        String[] octets=currentHost.split("\\.");byte[] address=new byte[4];
-        for(int i=0;i<4;i++){int value=Integer.parseInt(octets[i]);if(value>255)throw new IOException("Invalid local address");address[i]=(byte)value;}
-        if(!privateIp(address,0))throw new IOException("A private P2 address is required");
+        validateHost(currentHost);
         if(currentMac==null||!currentMac.matches("(?i)[0-9a-f]{2}(?::[0-9a-f]{2}){5}")||
             currentMac.equalsIgnoreCase("02:00:00:00:00:00")||currentMac.equals("00:00:00:00:00:00")||
             (Integer.parseInt(currentMac.substring(0,2),16)&1)!=0)throw new IOException("Current Wi-Fi Direct address unavailable");

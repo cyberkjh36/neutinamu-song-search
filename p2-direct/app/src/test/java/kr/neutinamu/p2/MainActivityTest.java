@@ -24,6 +24,31 @@ public class MainActivityTest {
     private <T extends View>T view(String tag){return app.getWindow().getDecorView().findViewWithTag(tag);}
     private String message(){return ((TextView)view("actionStatus")).getText().toString();}
     private Object field(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(app);}
+    private void set(String name,Object value)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);f.set(app,value);}
+    private void call(String name)throws Exception{Method method=MainActivity.class.getDeclaredMethod(name);method.setAccessible(true);method.invoke(app);}
+    private void finishWorker()throws Exception{((java.util.concurrent.ExecutorService)field("worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);shadowOf(Looper.getMainLooper()).idle();}
+    @Test public void savedProfileRestoresWithoutConnectingOrStartingPlayback()throws Exception{
+        java.io.File path=new java.io.File(app.getNoBackupFilesDir(),"test-profile.enc");
+        ProfileStore store=new ProfileStore(path,()->ProfileStoreTest.KEY);store.save(ProfileStoreTest.sample());
+        try{
+            set("profileStore",store);call("restoreProfile");finishWorker();
+            assertNotNull(field("profile"));assertNull(field("session"));assertNull(field("connectingSocket"));assertEquals(false,field("connecting"));
+            assertTrue(((TextView)view("profileStatus")).getText().toString().contains("불러왔습니다"));
+            assertNull(shadowOf(app).getNextStartedActivity());
+            view("forgetProfile").performClick();AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertTrue(store.exists());
+            view("forgetProfile").performClick();ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();finishWorker();
+            assertNull(field("profile"));assertFalse(store.exists());assertNull(field("session"));
+        }finally{store.clear();}
+    }
+    @Test public void brokenSavedProfileExplainsReimportAndDoesNotConnect()throws Exception{
+        java.io.File path=new java.io.File(app.getNoBackupFilesDir(),"test-broken.enc");
+        try(java.io.FileOutputStream out=new java.io.FileOutputStream(path)){out.write(new byte[]{1,2,3});}
+        ProfileStore store=new ProfileStore(path,()->ProfileStoreTest.KEY);
+        try{set("profileStore",store);call("restoreProfile");finishWorker();assertNull(field("profile"));assertNull(field("session"));
+            assertTrue(((TextView)view("profileStatus")).getText().toString().contains("다시 선택"));assertEquals(false,field("importing"));
+        }finally{store.clear();}
+    }
     @Test public void startBeforeConnectionIsClickableAndExplained()throws Exception{
         ((EditText)view("songNumber")).setText("10909");
         Button button=view("play");assertTrue(button.isEnabled());assertTrue(button.performClick());
@@ -47,7 +72,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 시험판 0.4"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 시험판 0.5"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("먼저 ①"));

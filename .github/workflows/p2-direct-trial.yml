@@ -34,12 +34,15 @@ jobs:
               assert len(z.read('assets/catalog-update-20261104.csv')) > 7000
               assert not any(n.endswith(('.pcap','.pcapng','.p2profile')) for n in z.namelist())
           PY
+      - name: Package public APK signing tool
+        run: cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" p2-direct/apksigner.jar
       - uses: actions/upload-artifact@v4
         with:
           name: P2-Direct-Android-Trial
           path: |
             p2-direct/app/build/outputs/apk/debug/app-debug.apk
             p2-direct/core/build/libs/core.jar
+            p2-direct/apksigner.jar
             p2-direct/core/build/test-results/test/*.xml
             p2-direct/app/build/test-results/testDebugUnitTest/*.xml
             p2-direct/app/build/reports/lint-results-debug.html

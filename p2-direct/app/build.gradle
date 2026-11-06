@@ -3,11 +3,11 @@ android {
     namespace 'kr.neutinamu.p2'
     compileSdk 35
     defaultConfig {
-        applicationId 'kr.neutinamu.p2.directtrial04'
+        applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 4
-        versionName '0.4-direct-wifi'
+        versionCode 5
+        versionName '0.5-saved-profile'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.

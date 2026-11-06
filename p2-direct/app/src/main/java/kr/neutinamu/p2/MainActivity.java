@@ -38,7 +38,8 @@ public final class MainActivity extends Activity {
     private boolean importing=false,commandQueued=false;
     private final Diagnostics diagnostics=new Diagnostics();
     private String connectionMessage="PCAP 연결 기록을 선택하고 P2 연결 시험을 눌러 주세요.";
-    private CaptureProfile profile;private SongCatalog catalog;
+    private CaptureProfile profile;private ProfileStore profileStore;private SongCatalog catalog;
+    private TextView profileStatus;
     private TextView status,actionStatus,catalogStatus,selection;
     private ScrollView scroll;
     private EditText query,number;private LinearLayout results;
@@ -59,22 +60,25 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        profileStore=new ProfileStore(this);
         scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(bg);
         LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(22),dp(24),dp(22),dp(30));scroll.addView(root);
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
         setContentView(scroll);
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"직접연결 시험판 0.4 · 실제 반주기 검증 필요",15,false);
+        text(root,"직접연결 시험판 0.5 · 연결 정보 자동 저장",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         text(root,"1  연결 준비",22,true);
-        text(root,"PCAP 연결 기록을 선택한 뒤 ‘주변 P2 찾기’를 눌러 반주기를 선택하세요. 매장 공유기가 아니라 P2와 Wi-Fi Direct로 연결합니다. 처음 찾는 반주기가 연결을 허용해야 하며 기종 설정에 따라 NFC 연결 준비가 필요할 수 있습니다.",16,false);
+        text(root,"처음 한 번 PCAP 연결 기록을 선택하세요. 다음부터는 저장된 정보를 불러옵니다. ‘주변 P2 찾기’에서 반주기를 선택하면 직접 연결을 시도합니다.",16,false);
         importButton=button(root,"내 PCAP 연결 기록 선택",this::chooseCapture);
-        text(root,"보내 주신 PCAPdroid 파일을 선택하세요. 연결정보는 이 앱의 메모리에서만 사용하며 서버에 올리지 않습니다. 앱을 완전히 종료하면 다시 선택해야 합니다.",14,false);
+        profileStatus=text(root,"저장된 연결 정보가 없습니다. 이전에 보내 주신 PCAP 파일을 선택해 주세요.",14,false);profileStatus.setTag("profileStatus");
+        text(root,"필요한 연결 정보만 휴대폰 안에 암호화해 저장합니다. 원본 PCAP을 복사하거나 서버로 보내지 않습니다. 앱 삭제·데이터 초기화 후에는 다시 선택해야 합니다.",14,false);
+        button(root,"저장된 연결 정보 지우기",this::askForgetProfile).setTag("forgetProfile");
         button(root,"① 기존 직접 연결 확인",()->{if(directWifi.joining()){feedback("직접 연결이 끝날 때까지 기다려 주세요.");return;}directMode=false;directHost=null;directInterface=null;prepareWifi();}).setTag("prepareWifi");
         wifiStatus=text(root,"[W00] PCAP 파일을 선택하고 ‘주변 P2 찾기’를 눌러 주세요. 이미 P2에 연결되어 있다면 ①로 확인할 수 있습니다.",16,true);
         wifiStatus.setTag("wifiStatus");
         button(root,"② 주변 P2 찾기",this::findP2).setTag("findP2");
-        text(root,"TJ매니저가 이미 연결 중이면 연결 충돌이 생길 수 있습니다. 아래 설정 버튼은 기존 연결을 확인한 뒤 사용할 수 있습니다. 직접 검색과 연결 성공은 실제 P2에서 확인이 필요합니다.",14,false);
+        text(root,"P2와 Wi-Fi Direct로 연결합니다. 반주기 설정에 따라 NFC 연결 준비가 필요할 수 있습니다. TJ매니저가 이미 연결 중이면 아래 설정에서 종료한 뒤 이용하세요.",14,false);
         button(root,"TJ매니저 설정 (필요할 때)",this::openTjSettings).setTag("tjSettings");
         connect=button(root,"③ P2 연결 시험",()->{
             if(connecting||importing){feedback("연결 준비 중입니다. 잠시 기다려 주세요.");return;}
@@ -130,6 +134,7 @@ public final class MainActivity extends Activity {
                 directHost=link.host;directInterface=link.interfaceName;beginConnect();
             }
         });
+        restoreProfile();
         paint();
         worker.execute(()->{
             SongCatalog loaded=new SongCatalog();
@@ -149,6 +154,7 @@ public final class MainActivity extends Activity {
         directMode=true;directHost=null;directInterface=null;findAfterPermission=true;prepareWifi();
     }
     private void prepareWifi(){
+        if(importing){feedback("연결 정보를 준비 중입니다. 잠시 기다려 주세요.");return;}
         if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
         if(checkSelfPermission(wifiPermission())!=PackageManager.PERMISSION_GRANTED){
             wifiStatus.setText(Build.VERSION.SDK_INT>=33?"직접 Wi-Fi 연결 확인을 위해 ‘근처 기기’ 권한을 허용해 주세요.":
@@ -181,7 +187,7 @@ public final class MainActivity extends Activity {
         switch(state){
             case MATCH:message=tjSettingsVisited?
                 "[W01] 설정에서 돌아온 뒤에도 직접 Wi-Fi 연결이 확인됩니다. ③ P2 연결 시험을 눌러 주세요. 아직 노래 실행 연결 전입니다.":
-                "[W01] 직접 Wi-Fi 연결과 앱 등록을 확인했습니다. ②에서 TJ매니저만 종료한 뒤 돌아와 ③을 눌러 주세요. 아직 노래 실행 연결 전입니다.";break;
+                "[W01] 직접 Wi-Fi 연결과 앱 등록을 확인했습니다. 필요하면 ‘TJ매니저 설정’에서 해당 앱만 종료한 뒤 돌아와 ③을 눌러 주세요. 아직 노래 실행 연결 전입니다.";break;
             case NO_GROUP:message="[W02] P2 직접 Wi-Fi 연결이 없습니다. 이 앱을 종료하지 않은 채 TJ매니저에서 NFC로 다시 연결하고 돌아오세요.";break;
             case OTHER_GROUP:message="[W04] 현재 직접 연결이 PCAP 기록의 P2 연결 주소와 다릅니다. 같은 반주기에 연결했는지 확인하세요. TJ매니저는 종료하지 마세요.";break;
             case DENIED:message="[W03] 직접 Wi-Fi 연결 확인 권한이 없습니다. ①을 눌러 권한을 확인해 주세요.";break;
@@ -230,15 +236,61 @@ public final class MainActivity extends Activity {
         if(connecting||importing||session!=null||(directWifi!=null&&directWifi.joining())){feedback("연결 준비가 끝나거나 연결을 해제한 뒤 기록을 선택해 주세요.");return;}
         Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT);pick.setType("*/*");pick.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(pick,PICK_CAPTURE);
     }
+    private void stopDiscovery(){
+        findAfterPermission=false;
+        if(peerDialog!=null){peerDialog.dismiss();peerDialog=null;}
+        if(directWifi!=null)directWifi.stopFinding();
+    }
+    private void restoreProfile(){
+        if(!profileStore.exists())return;
+        importing=true;profileStatus.setText("저장된 연결 정보를 불러오는 중입니다…");
+        worker.execute(()->{
+            try{
+                CaptureProfile saved=profileStore.load();
+                ui(()->{importing=false;profile=saved;
+                    if(saved!=null){diagnostics.event("PROFILE_RESTORED");profileStatus.setText("저장된 연결 정보를 불러왔습니다. PCAP 파일을 다시 선택하지 않아도 됩니다.");connectionMessage="[C01] ② 주변 P2 찾기에서 반주기를 선택해 주세요. 이미 연결되어 있다면 ①로 확인할 수 있습니다.";show(connectionMessage);}
+                    paint();});
+            }catch(IOException|java.security.GeneralSecurityException|RuntimeException e){ui(()->{
+                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");paint();
+            });}
+        });
+    }
+    private boolean canForgetProfile(){
+        if(importing||connecting||session!=null||commandQueued||(directWifi!=null&&directWifi.joining())){
+            feedback("연결 준비가 끝나거나 P2 연결을 해제한 뒤 지워 주세요.");return false;
+        }
+        return true;
+    }
+    private void askForgetProfile(){
+        if(!canForgetProfile())return;
+        new AlertDialog.Builder(this).setTitle("연결 정보를 지울까요?")
+            .setMessage("다음 연결 때 PCAP 파일을 다시 선택해야 합니다. 원본 PCAP 파일과 반주기의 노래는 삭제하지 않습니다.")
+            .setNegativeButton("유지",null).setPositiveButton("지우기",(d,w)->forgetProfile()).show();
+    }
+    private void forgetProfile(){
+        if(!canForgetProfile())return;stopDiscovery();importing=true;
+        worker.execute(()->{
+            try{profileStore.clear();ui(()->{
+                profile=null;directHost=null;directInterface=null;directMode=false;importing=false;
+                diagnostics.event("PROFILE_FORGOTTEN");profileStatus.setText("저장된 연결 정보를 지웠습니다. 연결하려면 PCAP 파일을 선택해 주세요.");
+                connectionMessage="[C00] PCAP 연결 기록을 먼저 선택해 주세요.";show(connectionMessage);wifiStatus.setText(connectionMessage);paint();
+            });}catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_DELETE_FAILED");feedback("연결 정보를 지우지 못했습니다. 다시 시도해 주세요.");paint();});}
+        });
+    }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
         if(request!=PICK_CAPTURE||result!=RESULT_OK||data==null||data.getData()==null)return;
-        importing=true;diagnostics.event("PROFILE_IMPORT_STARTED");show("연결 기록을 읽는 중입니다…");
+        stopDiscovery();importing=true;diagnostics.event("PROFILE_IMPORT_STARTED");show("연결 기록을 읽는 중입니다…");
         worker.execute(()->{
             try(InputStream in=getContentResolver().openInputStream(data.getData())){
                 if(in==null)throw new IOException("파일을 열 수 없습니다.");
                 CaptureProfile loaded=CaptureProfile.read(in);
-                ui(()->{profile=loaded;directHost=null;directInterface=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");connectionMessage="[C01] 연결 기록을 읽었습니다. ② 주변 P2 찾기에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
+                boolean stored;
+                try{profileStore.save(loaded);stored=true;}catch(IOException|java.security.GeneralSecurityException|RuntimeException e){stored=false;}
+                final boolean saved=stored;
+                ui(()->{profile=loaded;directHost=null;directInterface=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");diagnostics.event(saved?"PROFILE_SAVED":"PROFILE_SAVE_FAILED");
+                    profileStatus.setText(saved?"연결 정보를 암호화해 저장했습니다. 다음부터 자동으로 불러옵니다.":"자동 저장하지 못했습니다. 이번에는 사용할 수 있으나, 다음 실행 때 PCAP을 다시 선택하세요. 이전 저장 정보가 있다면 그대로 유지됩니다.");
+                    connectionMessage="[C01] 연결 기록을 읽었습니다. ② 주변 P2 찾기에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
