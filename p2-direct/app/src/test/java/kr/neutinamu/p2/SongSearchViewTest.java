@@ -60,6 +60,17 @@ public class SongSearchViewTest {
         search.result(SongSearchView.EXPORT,Activity.RESULT_CANCELED,null);
         search.bridge.saveCsv("../evil.csv","x");shadowOf(Looper.getMainLooper()).idle();assertNull(shadowOf(activity).getNextStartedActivity());
     }
+    @Test public void speechResultReturnsOnlyToRequestingScreenAndNeverAfterClose(){
+        List<String> received=new ArrayList<>();search.startVoice((texts,error)->received.addAll(texts));
+        assertNotNull(shadowOf(activity).getNextStartedActivity());
+        search.handle("{\"command\":\"voice\"}");assertNull(shadowOf(activity).getNextStartedActivity());
+        Intent data=new Intent().putStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS,new ArrayList<>(Arrays.asList(null," ","사랑해")));
+        search.result(SongSearchView.VOICE,Activity.RESULT_OK,data);
+        assertEquals(Arrays.asList("사랑해"),received);assertFalse(search.isVoicePending());assertTrue(calls.isEmpty());
+        search.result(SongSearchView.VOICE,Activity.RESULT_OK,data);assertEquals(1,received.size());
+        search.startVoice((texts,error)->received.addAll(texts));search.close();
+        search.result(SongSearchView.VOICE,Activity.RESULT_OK,data);assertEquals(1,received.size());
+    }
     @Test public void csvReadIsUtf8AndBounded()throws Exception{
         String value="곡번호,제목,가수\n1,꿈,조용필";
         assertEquals(value,SongSearchView.readCsv(new ByteArrayInputStream(value.getBytes("UTF-8"))));

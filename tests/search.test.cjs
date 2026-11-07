@@ -50,7 +50,7 @@ for(const api of ['SpeechRecognition','webkitSpeechRecognition'])test(`${api}: c
 test('unsupported browser and failed microphone preserve retry and dictation fallback',()=>{
  const {c,el}=app();el('query').value='이전';c.startVoice();assert.equal(el('query').value,'');assert.equal(el('voiceDialog').open,true);c.cancelVoice();
  c.SpeechRecognition=class{start(){throw Error('unavailable')}};
- c.startVoice();assert.equal(el('voiceBtn').disabled,false);assert.match(el('voiceBtn').innerHTML,/노래제목으로 번호검색/);
+ c.startVoice();assert.equal(el('voiceBtn').disabled,false);assert.match(el('voiceBtn').innerHTML,/음성으로 노래 찾기/);
 });
 test('late recognition cannot overwrite a newer search',async()=>{
  const {c,el}=app();el('query').value='새 검색';await c.useSpeechAlternatives(['꿈'],-1);assert.equal(el('query').value,'새 검색');

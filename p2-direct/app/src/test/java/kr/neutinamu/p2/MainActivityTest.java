@@ -78,6 +78,32 @@ public class MainActivityTest {
         assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
         view("previousPage").performClick();finishSearch();assertEquals(30,list.getChildCount());
     }
+    @Test public void connectionVoiceSearchFindsSongsWithoutPlayingAndIgnoresDoubleTap()throws Exception{
+        installCatalog();view("voiceSearch").performClick();
+        assertEquals(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH,shadowOf(app).getNextStartedActivity().getAction());
+        view("voiceSearch").performClick();assertNull(shadowOf(app).getNextStartedActivity());
+        Intent data=new Intent().putStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS,new java.util.ArrayList<>(java.util.Arrays.asList("사랑")));
+        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_OK,data);finishSearch();
+        assertEquals("사랑",((EditText)view("query")).getText().toString());assertEquals(30,((LinearLayout)view("results")).getChildCount());
+        assertEquals("",((EditText)view("songNumber")).getText().toString());assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+    }
+    @Test public void cancelledAndStaleVoiceResultsDoNotReplaceManualSearch()throws Exception{
+        installCatalog();((EditText)view("query")).setText("기존 검색");view("voiceSearch").performClick();shadowOf(app).getNextStartedActivity();
+        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_CANCELED,null);
+        assertEquals("기존 검색",((EditText)view("query")).getText().toString());assertTrue(((TextView)view("catalogStatus")).getText().toString().contains("취소"));
+        view("voiceSearch").performClick();assertNotNull(shadowOf(app).getNextStartedActivity());view("newSearch").performClick();
+        Intent data=new Intent().putStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS,new java.util.ArrayList<>(java.util.Arrays.asList("사랑")));
+        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_OK,data);finishSearch();
+        assertEquals("",((EditText)view("query")).getText().toString());assertEquals(0,((LinearLayout)view("results")).getChildCount());
+    }
+    @Test public void connectionSearchAcceptsTitleAndArtistInitialsOnlyAfterSearchTap()throws Exception{
+        finishWorker();SongCatalog catalog=new SongCatalog();catalog.load(new java.io.StringReader("1,사랑해,김범수\n2,사랑아,홍길동\n3,꿈,조용필\n"));set("catalog",catalog);
+        ((EditText)view("query")).setText("ㄱㅂㅅ ㅅㄹ");assertEquals(0,((LinearLayout)view("results")).getChildCount());
+        view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(1,list.getChildCount());
+        assertTrue(((Button)list.getChildAt(0)).getText().toString().contains("사랑해"));
+        assertEquals("",((EditText)view("songNumber")).getText().toString());assertNull(field("session"));
+    }
     @Test public void manualNumberChangeCannotLeavePreviouslySelectedTitle()throws Exception{
         installCatalog();EditText number=view("songNumber");number.setText("1");assertTrue(((TextView)view("selection")).getText().toString().contains("사랑 1"));
         number.setText("2");String title=((TextView)view("selection")).getText().toString();assertTrue(title.contains("사랑 2"));assertFalse(title.contains("사랑 1"));
@@ -150,7 +176,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.8.1"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.8.2"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));

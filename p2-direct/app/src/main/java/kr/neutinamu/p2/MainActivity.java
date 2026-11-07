@@ -75,7 +75,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
         button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"통합판 0.8.1 · P2 연결 설정",15,false);
+        text(root,"통합판 0.8.2 · P2 연결 설정",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -114,8 +114,10 @@ public final class MainActivity extends Activity {
             startActivity(Intent.createChooser(share,"ChatGPT에 진단 결과 보내기"));
         }).setTag("shareDiagnostics");
         text(connectionDetails,"진단에는 개인정보와 인증값을 넣지 않습니다. 공식 TJ 앱이 아니며 아이폰 직접 제어는 지원하지 않습니다.",13,false);
-        text(root,"노래 찾기",22,true);
-        query=input(root,"노래 제목 · 가수 · 곡번호",InputType.TYPE_CLASS_TEXT);query.setTag("query");
+        text(root,"음성·초성으로 노래 찾기",22,true);
+        button(root,"🎙 음성으로 노래 찾기",this::startVoiceSearch).setTag("voiceSearch");
+        text(root,"제목이나 가수를 말하거나 초성으로 입력하세요.\n예: ㅅㄹ → 사랑 · ㄱㅂㅅ → 김범수",14,false);
+        query=input(root,"제목 · 가수 · 초성 · 곡번호",InputType.TYPE_CLASS_TEXT);query.setTag("query");
         query.setImeOptions(EditorInfo.IME_ACTION_SEARCH);query.setSingleLine(true);
         LinearLayout searchRow=row(root);
         search=button(searchRow,"검색",this::search);search.setTag("search");
@@ -182,7 +184,7 @@ public final class MainActivity extends Activity {
             try{
                 for(String file:new String[]{"catalog-20261018.csv","catalog-update-20261104.csv"})
                     try(Reader r=new InputStreamReader(getAssets().open(file),"UTF-8")){loaded.load(r);}
-                ui(()->{catalog=loaded;catalogStatus.setText(String.format(Locale.KOREA,"%,d곡 · 제목·가수 또는 번호로 검색",loaded.size()));search.setEnabled(true);refreshSelection();});
+                ui(()->{catalog=loaded;catalogStatus.setText(String.format(Locale.KOREA,"%,d곡 · 제목·가수·초성·번호로 검색",loaded.size()));search.setEnabled(true);refreshSelection();});
             }catch(IOException e){ui(()->{catalogStatus.setText("곡 목록을 읽지 못했습니다. 곡번호로 시험할 수 있습니다.");search.setEnabled(false);});}
         });
     }
@@ -286,11 +288,22 @@ public final class MainActivity extends Activity {
     private void search(){
         searchPage(0);
     }
+    private void startVoiceSearch(){
+        if(songSearch==null||catalog==null){catalogStatus.setText("곡 목록을 준비하고 있습니다. 잠시 후 다시 눌러 주세요.");return;}
+        if(songSearch.isVoicePending())return;
+        cancelSearch();final int generation=searchGeneration;final String original=query.getText().toString();
+        catalogStatus.setText("음성 인식을 여는 중입니다. 노래 제목이나 가수를 말씀해 주세요.");
+        songSearch.startVoice((texts,error)->{
+            if(destroyed||generation!=searchGeneration||!original.equals(query.getText().toString()))return;
+            if(!error.isEmpty()||texts.isEmpty()){catalogStatus.setText(error.isEmpty()?"말소리를 듣지 못했습니다. 다시 시도해 주세요.":error);return;}
+            query.setText(texts.get(0));search();
+        });
+    }
     private void cancelSearch(){searchGeneration++;if(pendingSearch!=null)pendingSearch.cancel(true);pendingSearch=null;}
     private void newSearch(){
         cancelSearch();activeQuery="";pageOffset=0;query.setText("");number.setText("");results.removeAllViews();
         previousPage.setVisibility(View.GONE);nextPage.setVisibility(View.GONE);
-        catalogStatus.setText("새로 찾을 노래 제목·가수 또는 곡번호를 입력하세요.");
+        catalogStatus.setText("새로 찾을 제목·가수·초성 또는 곡번호를 입력하세요.");
         query.requestFocus();scrollTo(query);
         ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(query,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
     }
@@ -299,7 +312,7 @@ public final class MainActivity extends Activity {
         String q=query.getText().toString().trim();if(!q.equals(activeQuery))offset=0;
         activeQuery=q;cancelSearch();final int generation=searchGeneration,requestedOffset=offset;
         results.removeAllViews();previousPage.setVisibility(View.GONE);nextPage.setVisibility(View.GONE);
-        if(q.isEmpty()){catalogStatus.setText("제목·가수 또는 곡번호를 입력해 주세요.");return;}
+        if(q.isEmpty()){catalogStatus.setText("제목·가수·초성 또는 곡번호를 입력해 주세요.");return;}
         catalogStatus.setText("노래를 찾고 있습니다…");
         ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(query.getWindowToken(),0);
         pendingSearch=searchWorker.submit(()->{

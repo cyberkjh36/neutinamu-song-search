@@ -19,9 +19,11 @@ final class SongSearchView {
     static final int MAX_CSV=16*1024*1024;
     private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
     interface Host { void connection();void play(int number);void cancel();void refresh(); }
+    interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
     private final Activity activity;private final Host host;private final ExecutorService files=Executors.newSingleThreadExecutor();
     private volatile boolean closed;private boolean voicePending,filePending;private String exportText;
+    private VoiceResult pendingVoiceResult;
     SongSearchView(Activity activity,Host host){this.activity=activity;this.host=host;view=new WebView(activity);configure();}
     @SuppressLint("SetJavaScriptEnabled") private void configure(){
         view.setTag("songSearchWeb");view.setBackgroundColor(0xff081522);
@@ -85,13 +87,19 @@ final class SongSearchView {
             }
         }catch(JSONException|NumberFormatException ignored){host.refresh();}
     }
-    private void startVoice(){
-        if(voicePending)return;voicePending=true;
+    private void startVoice(){startVoice(this::voice);}
+    boolean isVoicePending(){return voicePending;}
+    void startVoice(VoiceResult result){
+        if(closed||voicePending)return;voicePending=true;pendingVoiceResult=result;
         Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"ko-KR");intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5);
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"노래 제목이나 가수를 말씀해 주세요");
-        try{activity.startActivityForResult(intent,VOICE);}catch(ActivityNotFoundException|SecurityException e){voicePending=false;voice(new ArrayList<>(),"휴대폰의 음성 인식을 열 수 없습니다. 검색칸의 키보드 마이크를 이용해 주세요.");}
+        try{activity.startActivityForResult(intent,VOICE);}catch(ActivityNotFoundException|SecurityException e){finishVoice(new ArrayList<>(),"휴대폰의 음성 인식을 열 수 없습니다. 검색칸의 키보드 마이크를 이용해 주세요.");}
+    }
+    private void finishVoice(List<String> texts,String error){
+        VoiceResult result=pendingVoiceResult;voicePending=false;pendingVoiceResult=null;
+        if(!closed&&result!=null)result.received(texts,error);
     }
     private void pickCsv(){
         if(filePending)return;filePending=true;
@@ -107,10 +115,10 @@ final class SongSearchView {
         try{activity.startActivityForResult(intent,EXPORT);}catch(ActivityNotFoundException e){filePending=false;exportText=null;fileMessage("파일 저장 화면을 열 수 없습니다.");}
     }
     boolean result(int request,int result,Intent data){
-        if(request==VOICE){boolean expected=voicePending;voicePending=false;if(!expected)return true;
+        if(request==VOICE){if(!voicePending)return true;
             ArrayList<String> texts=result==Activity.RESULT_OK&&data!=null?data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS):null;
             List<String> safe=new ArrayList<>();if(texts!=null)for(String s:texts){if(s!=null&&!s.trim().isEmpty()&&s.length()<=200)safe.add(s);if(safe.size()==5)break;}
-            voice(safe,safe.isEmpty()?(result==Activity.RESULT_CANCELED?"음성 검색을 취소했습니다.":"말소리를 듣지 못했습니다. 다시 시도해 주세요."):"");return true;
+            finishVoice(safe,safe.isEmpty()?(result==Activity.RESULT_CANCELED?"음성 검색을 취소했습니다.":"말소리를 듣지 못했습니다. 다시 시도해 주세요."):"");return true;
         }
         if(request!=IMPORT&&request!=EXPORT)return false;
         boolean expected=filePending;filePending=false;String text=exportText;exportText=null;if(!expected)return true;
@@ -134,5 +142,5 @@ final class SongSearchView {
     }
     private void js(String function,JSONArray arguments){if(!closed)view.evaluateJavascript("window."+function+"&&window."+function+".apply(null,"+arguments.toString().replace("\u2028","\\u2028").replace("\u2029","\\u2029")+")",null);}
     private void ui(Runnable action){activity.runOnUiThread(()->{if(!closed)action.run();});}
-    void close(){if(closed)return;closed=true;voicePending=false;exportText=null;files.shutdownNow();view.removeJavascriptInterface("NeutiP2");view.destroy();}
+    void close(){if(closed)return;closed=true;voicePending=false;pendingVoiceResult=null;exportText=null;files.shutdownNow();view.removeJavascriptInterface("NeutiP2");view.destroy();}
 }

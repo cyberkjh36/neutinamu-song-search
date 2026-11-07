@@ -32,7 +32,7 @@ public class MainActivityLayoutTest {
             assertEquals(View.GONE,details.getVisibility());
             Bitmap bitmap=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);decor.draw(new Canvas(bitmap));
             File folder=new File("build/reports/p2-ui");assertTrue(folder.isDirectory()||folder.mkdirs());
-            try(OutputStream out=new FileOutputStream(new File(folder,"P2_0.8.1_connection.png"))){assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG,100,out));}bitmap.recycle();
+            try(OutputStream out=new FileOutputStream(new File(folder,"P2_0.8.2_connection.png"))){assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG,100,out));}bitmap.recycle();
         }finally{controller.pause().stop().destroy();}
     }
 }

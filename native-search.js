@@ -9,7 +9,7 @@
     document.querySelector('h1').textContent='느티나무 노래검색';
     var credit=document.createElement('p');credit.className='hint';credit.textContent='made by cyberkjh';
     credit.style.margin='0 0 12px';document.querySelector('h1').after(credit);
-    document.querySelector('.lead').textContent='말하거나 글자로 검색하고, 선택한 곡을 P2에서 시작하세요.';
+    document.querySelector('.lead').textContent='음성 또는 제목·가수·초성으로 검색하고, 선택한 곡을 P2에서 시작하세요.';
     var panel=document.createElement('section');panel.className='panel native-connection';
     panel.innerHTML='<div id="nativeState" role="status">○ P2 연결 전</div><button id="nativeConnect" type="button">P2 연결 · 설정</button><p id="nativeStatus" class="hint" role="status">검색은 연결 전에도 사용할 수 있습니다.</p>';
     $('query').closest('section').before(panel);
@@ -27,7 +27,7 @@
       window.P2Remote.setSong(null);setMessage('새 노래 제목·가수 또는 초성을 입력해 주세요.');$('query').focus();
     };
     $('fileInput').addEventListener('click',e=>{e.preventDefault();send('import');});
-    document.querySelector('.footer').textContent='음성·키보드·초성 검색 + P2 직접연결 · 0.8.1\n음성 인식은 휴대폰의 음성 서비스와 인터넷 연결이 필요할 수 있습니다.\n공식 TJ 앱이 아닙니다. 수록곡은 반주기 업데이트 상태에 따라 다를 수 있습니다.';
+    document.querySelector('.footer').textContent='음성·키보드·초성 검색 + P2 직접연결 · 0.8.2\n음성 인식은 휴대폰의 음성 서비스와 인터넷 연결이 필요할 수 있습니다.\n공식 TJ 앱이 아닙니다. 수록곡은 반주기 업데이트 상태에 따라 다를 수 있습니다.';
     document.querySelector('.footer').style.whiteSpace='pre-line';
     send('status');
   });

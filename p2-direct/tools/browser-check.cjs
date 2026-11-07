@@ -20,6 +20,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled);
   assert.equal(await page.locator('#p2Room').count(),0,'Native app must not ask for PC relay code');
   assert.equal(await page.locator('#nativeConnect').isVisible(),true);
+  assert.match(await page.locator('#voiceBtn').textContent(),/음성으로 노래 찾기/);
+  assert.match(await page.locator('main').textContent(),/ㅅㄹ → 사랑/);
   assert.equal(await page.locator('#installCTA').isVisible(),false);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const dir=process.env.CHECK_OUTPUT||path.join(root,'p2-direct/app/build/reports/p2-ui');fs.mkdirSync(dir,{recursive:true});
