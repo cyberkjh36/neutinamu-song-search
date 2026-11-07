@@ -75,7 +75,9 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
         button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"통합판 0.8 · P2 연결 설정",15,false);
+        text(root,"통합판 0.8.1 · P2 연결 설정",15,false);
+        TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
+        credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         connectionBanner=text(root,"○ P2 연결 전",20,true);connectionBanner.setTag("connectionBanner");
         connectionBanner.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
