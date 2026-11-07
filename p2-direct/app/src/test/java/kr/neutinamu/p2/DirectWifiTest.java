@@ -16,11 +16,11 @@ public class DirectWifiTest {
     static final DirectWifi.Peer PEER=new DirectWifi.Peer("Test P2","02:11:22:33:44:55");
     static final DirectWifi.Link UP=new DirectWifi.Link(true,false,PEER.address,"192.168.49.1","p2p0");
     static class Fake implements DirectWifi.Backend {
-        DirectWifi.Peer selectedPeer;boolean denied,available=true;int joined,closed;Runnable lost;Consumer<Boolean> discovery,join;
+        DirectWifi.Peer selectedPeer;boolean denied,available=true;int joined,closed,peerRequests;Runnable lost;Consumer<Boolean> discovery,join;
         Consumer<List<DirectWifi.Peer>> peers;List<Consumer<DirectWifi.Link>> links=new ArrayList<>();
         public boolean open(Runnable lost){this.lost=lost;return available;}
         public void discover(Consumer<Boolean> done){if(denied)throw new SecurityException();discovery=done;}
-        public void peers(Consumer<List<DirectWifi.Peer>> done){peers=done;}
+        public void peers(Consumer<List<DirectWifi.Peer>> done){peerRequests++;peers=done;}
         public void link(Consumer<DirectWifi.Link> done){links.add(done);}
         public void join(DirectWifi.Peer peer,Consumer<Boolean> done){joined++;selectedPeer=peer;join=done;}
         public void close(){closed++;}
@@ -84,6 +84,34 @@ public class DirectWifiTest {
         client.find("Target P2");backend.discovery.accept(true);client.stopFinding();
         client.find();backend.discovery.accept(true);backend.peers.accept(Collections.singletonList(PEER));
         assertEquals(1,visible.size());assertEquals(0,backend.joined);
+    }
+
+    @Test public void qrFindsDelayedPeerWithoutAnyAndroidBroadcast(){
+        client.find("Test P2");backend.discovery.accept(true);backend.peers.accept(Collections.emptyList());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3));assertEquals(4,backend.peerRequests);
+        backend.peers.accept(Collections.singletonList(PEER));backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertEquals(1,backend.joined);assertSame(PEER,backend.selectedPeer);
+        int requests=backend.peerRequests;shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3));assertEquals(requests,backend.peerRequests);
+    }
+    @Test public void lateOlderSnapshotCannotConnectAfterNewerEmptySnapshot(){
+        client.find("Test P2");backend.discovery.accept(true);Consumer<List<DirectWifi.Peer>> old=backend.peers;
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));backend.peers.accept(Collections.emptyList());
+        old.accept(Collections.singletonList(PEER));assertFalse(client.joining());assertEquals(0,backend.joined);
+    }
+    @Test public void pollingStopsOnTimeoutCancelAndCloseAndCannotLeakIntoNextSearch(){
+        client.find("Test P2");backend.discovery.accept(true);Consumer<List<DirectWifi.Peer>> old=backend.peers;
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20));int ended=backend.peerRequests;
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(4));assertEquals(ended,backend.peerRequests);assertTrue(codes.contains("W21"));
+        client.find("Different P2");backend.discovery.accept(true);old.accept(Collections.singletonList(PEER));assertFalse(client.joining());
+        client.stopFinding();ended=backend.peerRequests;shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));assertEquals(ended,backend.peerRequests);
+        client.find();backend.discovery.accept(true);client.close();ended=backend.peerRequests;shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));assertEquals(ended,backend.peerRequests);
+    }
+    @Test public void manualPickerStopsPollingUntilUserSelectsOrCancels(){
+        client.find();backend.discovery.accept(true);backend.peers.accept(Collections.emptyList());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));backend.peers.accept(Collections.singletonList(PEER));
+        int requests=backend.peerRequests;shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(30));
+        assertEquals(requests,backend.peerRequests);assertFalse(codes.contains("W21"));assertEquals(0,backend.joined);
+        client.select(visible.get(0));backend.reply(UP);assertEquals(1,hosts.size());
     }
 
 }

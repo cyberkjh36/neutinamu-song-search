@@ -43,4 +43,13 @@ public class AndroidDirectWifiBackendTest {
         assertEquals("01",sorted.get(0).address);assertEquals("08",sorted.get(1).address);
         assertEquals("미등록 반주기",rooms.label(new DirectWifi.Peer("PRIVATE_DEVICE_ID","99")));
     }
+    @Test public void diagnosticsDistinguishNoPeersFromUnmappedP2WithoutNamesOrAddresses()throws Exception{
+        Diagnostics diagnostics=new Diagnostics();AndroidDirectWifiBackend backend=new AndroidDirectWifiBackend(RuntimeEnvironment.getApplication(),rooms(),diagnostics);
+        backend.recordPeers(Collections.emptyList(),0);
+        List<WifiP2pDevice> peers=Arrays.asList(peer("TJ_P2_PRIVATE_SERIAL_7_B","secret-mac",null),peer(null,"secret-2","8-0050F204-5"));
+        backend.recordPeers(peers,0);backend.recordPeers(peers,0);
+        String report=diagnostics.report();assertTrue(report.contains("SCAN_TOTAL 0 ROOMS 0"));assertTrue(report.contains("SCAN_TOTAL 2 ROOMS 0 P2_UNKNOWN 2 UNNAMED 1"));
+        assertEquals(report.indexOf("SCAN_TOTAL 2"),report.lastIndexOf("SCAN_TOTAL 2"));
+        assertFalse(report.contains("PRIVATE_SERIAL"));assertFalse(report.contains("secret"));
+    }
 }

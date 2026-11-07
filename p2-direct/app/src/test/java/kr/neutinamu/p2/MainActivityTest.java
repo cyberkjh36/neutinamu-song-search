@@ -19,7 +19,11 @@ import static org.robolectric.Shadows.shadowOf;
 @Config(sdk={28,29,35})
 public class MainActivityTest {
     private ActivityController<MainActivity> controller;private MainActivity app;
-    @Before public void open(){controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();}
+    @Before public void open(){
+        controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();
+        ((android.net.wifi.WifiManager)app.getSystemService(android.content.Context.WIFI_SERVICE)).setWifiEnabled(true);
+        shadowOf((android.location.LocationManager)app.getSystemService(android.content.Context.LOCATION_SERVICE)).setLocationEnabled(true);
+    }
     @After public void close(){AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();if(dialog!=null)dialog.dismiss();controller.pause().stop().destroy();shadowOf(Looper.getMainLooper()).idle();}
     private <T extends View>T view(String tag){
         T main=app.getWindow().getDecorView().findViewWithTag(tag);if(main!=null)return main;
@@ -41,6 +45,26 @@ public class MainActivityTest {
         DirectWifi old=(DirectWifi)field("directWifi");Field listener=DirectWifi.class.getDeclaredField("listener");listener.setAccessible(true);
         DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));
         old.close();set("directWifi",replacement);return backend;
+    }
+    @Test public void qrRoomIsPreservedWhenWifiSettingsBlocksDiscoveryAndResumesAfterReturn()throws Exception{
+        finishWorker();set("rooms",RoomDirectory.read(new java.io.StringReader("8번 TJ_P2_TEST_EIGHT_7_B\n")));DirectWifiTest.Fake backend=fakeDiscovery();
+        shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        android.net.wifi.WifiManager wifi=(android.net.wifi.WifiManager)app.getSystemService(android.content.Context.WIFI_SERVICE);wifi.setWifiEnabled(false);
+        app.onNewIntent(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room=8")));
+        assertTrue(message().contains("[W30]"));assertNull(backend.discovery);assertEquals("8",field("roomRequest"));
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(android.provider.Settings.ACTION_WIFI_SETTINGS,shadowOf(app).getNextStartedActivity().getAction());
+        controller.pause();wifi.setWifiEnabled(true);controller.resume();
+        assertNotNull(backend.discovery);assertEquals("8",field("roomRequest"));assertNull(field("session"));assertEquals(0,backend.joined);
+    }
+    @Test @Config(sdk={28,29}) public void locationOffExplainsSettingsAndReturningWithoutChangeDoesNotScanOrLoop()throws Exception{
+        finishWorker();DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        android.location.LocationManager location=(android.location.LocationManager)app.getSystemService(android.content.Context.LOCATION_SERVICE);shadowOf(location).setLocationEnabled(false);
+        view("connect").performClick();assertTrue(message().contains("[W31]"));assertNull(backend.discovery);
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS,shadowOf(app).getNextStartedActivity().getAction());
+        controller.pause().resume();assertNull(backend.discovery);assertFalse(ShadowAlertDialog.getLatestAlertDialog().isShowing());
+        shadowOf(location).setLocationEnabled(true);view("connect").performClick();assertNotNull(backend.discovery);
     }
     @Test public void integratedButtonsUseExistingAuthenticatedSessionAndDoNotDoubleSend()throws Exception{
         finishWorker();java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
@@ -228,7 +252,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.11.1"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.11.2"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));

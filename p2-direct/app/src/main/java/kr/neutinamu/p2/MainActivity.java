@@ -50,7 +50,8 @@ public final class MainActivity extends Activity {
     private DirectWifi directWifi;private String directHost,directInterface;private boolean findAfterPermission,directMode;
     private AlertDialog peerDialog;
     private RoomDirectory rooms=new RoomDirectory();private String roomRequest,activeRoom;private boolean roomPending;
-    private boolean receiverRegistered,tjSettingsVisited;
+    private boolean receiverRegistered,tjSettingsVisited,retryAfterWifiSettings;
+    private AlertDialog wifiSetupDialog;
     private final BroadcastReceiver wifiReceiver=new BroadcastReceiver(){
         @Override public void onReceive(Context context,Intent intent){
             if(destroyed)return;
@@ -71,7 +72,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.1 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.2 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -108,7 +109,7 @@ public final class MainActivity extends Activity {
         text(connectionDetails,"진단에는 개인정보와 인증값을 넣지 않습니다. 공식 TJ 앱이 아니며 아이폰 직접 제어는 지원하지 않습니다.",13,false);
         wifiRegistration=new P2pRegistration(new AndroidP2pBackend(this),new Handler(getMainLooper()),
             ()->profile==null?null:profile.host,this::showWifiState,diagnostics);
-        directWifi=new DirectWifi(new AndroidDirectWifiBackend(this,rooms),new Handler(getMainLooper()),new DirectWifi.Listener(){
+        directWifi=new DirectWifi(new AndroidDirectWifiBackend(this,rooms,diagnostics),new Handler(getMainLooper()),new DirectWifi.Listener(){
             public void status(String code,String message){diagnostics.event(code);if(directMode){connectionMessage="["+code+"] "+message;wifiStatus.setText(connectionMessage);show(connectionMessage);}paint();}
             public void peers(List<DirectWifi.Peer> peers){
                 if(destroyed||!directMode||(peerDialog!=null&&peerDialog.isShowing()))return;
@@ -209,6 +210,7 @@ public final class MainActivity extends Activity {
                 "이 안드로이드 버전에서는 직접 Wi-Fi 연결 확인에 위치 권한이 필요합니다. 위치를 수집하거나 저장하지 않습니다.");
             show(wifiStatus.getText().toString());diagnostics.event("P2P_PERMISSION_REQUESTED");requestPermissions(wifiPermissions(),P2P_PERMISSION);return;
         }
+        if(!checkWifiReadiness(true))return;
         if(!receiverRegistered){
             IntentFilter filter=new IntentFilter(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
             filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
@@ -220,6 +222,22 @@ public final class MainActivity extends Activity {
         }
         wifiRegistration.prepare();
         if(findAfterPermission){findAfterPermission=false;directWifi.find(roomRequest==null?null:rooms.device(roomRequest));}
+    }
+    private boolean checkWifiReadiness(boolean prompt){
+        WifiReadiness.State state=WifiReadiness.read(this);diagnostics.event("WIFI_SETUP_"+state.name());
+        if(state==WifiReadiness.State.READY||state==WifiReadiness.State.UNKNOWN)return true;
+        boolean wifiOff=state==WifiReadiness.State.WIFI_OFF;
+        String message=wifiOff?"[W30] 휴대폰 Wi-Fi가 꺼져 있습니다. Wi-Fi를 켜고 이 앱으로 돌아오세요.":
+            "[W31] 휴대폰의 위치 기능이 꺼져 있습니다. 이 안드로이드 버전에서는 반주기를 찾으려면 ‘위치’를 켜야 합니다. 위치를 켜고 이 앱으로 돌아오세요. 위치 정보는 수집하지 않습니다.";
+        connectionMessage=message;wifiStatus.setText(message);show(message);
+        if(prompt&&(wifiSetupDialog==null||!wifiSetupDialog.isShowing())){
+            wifiSetupDialog=new AlertDialog.Builder(this).setTitle(wifiOff?"Wi-Fi 켜기":"위치 기능 켜기").setMessage(message)
+                .setPositiveButton(wifiOff?"Wi-Fi 설정 열기":"위치 설정 열기",(dialog,which)->{
+                    try{retryAfterWifiSettings=true;startActivity(new Intent(wifiOff?Settings.ACTION_WIFI_SETTINGS:Settings.ACTION_LOCATION_SOURCE_SETTINGS));}
+                    catch(ActivityNotFoundException|SecurityException e){retryAfterWifiSettings=false;feedback("휴대폰 설정에서 Wi-Fi와 위치를 켠 뒤 ‘P2 연결’을 다시 눌러 주세요.");}
+                }).setNegativeButton("나중에",null).create();wifiSetupDialog.show();
+        }
+        return false;
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
         super.onRequestPermissionsResult(request,permissions,results);
@@ -264,6 +282,10 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onResume(){
         super.onResume();
+        if(retryAfterWifiSettings){
+            retryAfterWifiSettings=false;
+            if(!destroyed&&!connecting&&session==null&&checkWifiReadiness(false))prepareWifi();
+        }
         if(directWifi!=null)directWifi.changed();
         if(wifiRegistration!=null&&wifiRegistration.registered()){
             diagnostics.event("APP_RESUMED_WITH_P2P");wifiRegistration.refresh(null);
@@ -515,6 +537,7 @@ public final class MainActivity extends Activity {
     private void ui(Runnable action){runOnUiThread(()->{if(!destroyed)action.run();});}
     @Override protected void onDestroy(){
         destroyed=true;
+        retryAfterWifiSettings=false;if(wifiSetupDialog!=null)wifiSetupDialog.dismiss();
         if(toolsDialog!=null)toolsDialog.dismiss();
         if(songSearch!=null)songSearch.close();
         if(peerDialog!=null)peerDialog.dismiss();

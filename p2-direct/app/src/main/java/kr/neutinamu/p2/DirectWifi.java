@@ -30,11 +30,18 @@ final class DirectWifi implements AutoCloseable {
     }
     private final Backend backend;private final Handler handler;private final Listener listener;
     private boolean opened,closed,joining,searching;private int generation;private List<Peer> peers=Collections.emptyList();
-    private Peer selected;private String targetName;private Runnable timeout,poll;
+    private Peer selected;private String targetName;private Runnable timeout,poll,discoveryPoll;
+    private int peerSequence,appliedPeerSequence;
     DirectWifi(Backend backend,Handler handler,Listener listener){this.backend=backend;this.handler=handler;this.listener=listener;}
     boolean joining(){return joining;}
     boolean searching(){return searching;}
-    private void invalidate(){generation++;if(timeout!=null)handler.removeCallbacks(timeout);if(poll!=null)handler.removeCallbacks(poll);timeout=null;poll=null;}
+    private void invalidate(){generation++;if(timeout!=null)handler.removeCallbacks(timeout);if(poll!=null)handler.removeCallbacks(poll);stopPeerPolling();timeout=null;poll=null;peerSequence=0;appliedPeerSequence=0;}
+    private void stopPeerPolling(){if(discoveryPoll!=null)handler.removeCallbacks(discoveryPoll);discoveryPoll=null;}
+    private void pollPeers(int request){
+        if(!current(request)||!searching||joining||timeout==null)return;
+        stopPeerPolling();discoveryPoll=()->{if(!current(request)||!searching||joining)return;changed();pollPeers(request);};
+        handler.postDelayed(discoveryPoll,1000);
+    }
     private boolean current(int request){return !closed&&generation==request;}
     private void fail(String code,String message){invalidate();joining=false;searching=false;selected=null;listener.status(code,message);}
     void find(){find(null);}
@@ -46,7 +53,7 @@ final class DirectWifi implements AutoCloseable {
             listener.status("W20","주변 반주기를 찾는 중입니다…");
             timeout=()->{if(current(request))fail("W21","반주기를 찾지 못했습니다. Wi-Fi와 위치 기능을 켜고 P2의 연결 대기 상태를 확인해 주세요.");};
             handler.postDelayed(timeout,20000);
-            backend.discover(ok->{if(!current(request))return;if(ok)changed();else fail("W21","기기 검색을 시작하지 못했습니다. Wi-Fi·위치 기능과 권한을 확인해 주세요.");});
+            backend.discover(ok->{if(!current(request))return;if(ok){changed();if(timeout!=null)pollPeers(request);}else fail("W21","기기 검색을 시작하지 못했습니다. Wi-Fi·위치 기능과 권한을 확인해 주세요.");});
         }catch(SecurityException e){fail("W23","Wi-Fi Direct 권한을 허용해 주세요.");}
         catch(RuntimeException e){fail("W26","Wi-Fi Direct 검색을 시작하지 못했습니다.");}
     }
@@ -54,8 +61,11 @@ final class DirectWifi implements AutoCloseable {
         if(closed||!opened)return;int request=generation;
         if(joining){check(request,false);return;}
         if(!searching)return;
+        int sequence=++peerSequence;
         try{backend.peers(list->{
-            if(!current(request)||!searching||joining||list==null||list.isEmpty())return;
+            if(!current(request)||!searching||joining||sequence<appliedPeerSequence)return;
+            appliedPeerSequence=sequence;
+            if(list==null||list.isEmpty())return;
             LinkedHashMap<String,Peer> unique=new LinkedHashMap<>();
             for(Peer peer:list)if(peer!=null&&peer.address!=null&&!peer.address.isEmpty())unique.put(peer.address,peer);
             if(unique.isEmpty())return;
@@ -71,6 +81,7 @@ final class DirectWifi implements AutoCloseable {
                 return;
             }
             if(timeout!=null)handler.removeCallbacks(timeout);timeout=null;
+            stopPeerPolling();
             listener.peers(Collections.unmodifiableList(peers));
         });}catch(SecurityException e){fail("W23","주변 기기를 확인할 권한이 없습니다.");}
         catch(RuntimeException e){fail("W26","주변 기기를 확인하지 못했습니다.");}
@@ -102,5 +113,5 @@ final class DirectWifi implements AutoCloseable {
         catch(RuntimeException e){fail("W26","직접 연결 상태를 확인하지 못했습니다.");}
     }
     private void schedule(int request){if(!current(request))return;if(poll!=null)handler.removeCallbacks(poll);poll=()->check(request,false);handler.postDelayed(poll,1000);}
-    @Override public void close(){if(closed)return;closed=true;invalidate();joining=false;if(opened)backend.close();opened=false;}
+    @Override public void close(){if(closed)return;closed=true;invalidate();joining=false;searching=false;if(opened)backend.close();opened=false;}
 }
