@@ -3,7 +3,9 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium,webkit}=require('playwright');
 const root=path.resolve(__dirname,'..'),prefix='/neutinamu-song-search/';
 const output=path.join(root,'browser-report');fs.mkdirSync(output,{recursive:true});
+let networkUnavailable=false;
 const server=http.createServer((req,res)=>{
+ if(networkUnavailable){req.socket.destroy();return;}
  const url=new URL(req.url,'http://localhost');
  if(!url.pathname.startsWith(prefix)){res.writeHead(404).end();return;}
  const relative=decodeURIComponent(url.pathname.slice(prefix.length))||'index.html';
@@ -58,15 +60,19 @@ async function check(name,type,ua){
   assert.equal(await page.locator('#voiceBtn').isEnabled(),true);
   // The real service worker and stored catalog must work with all networking disabled.
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-  await context.setOffline(true);await page.reload();await ready();
+  // WebKit's automation offline toggle can fail navigation with an internal
+  // error before the worker runs. Refuse every origin request instead, so its
+  // real service worker still has to serve the cached page and assets.
+  if(name==='iphone-webkit')networkUnavailable=true;else await context.setOffline(true);
+  await page.reload();await ready();
   await page.locator('#query').fill('ㄱㄹㅅㄱㄴㅇㄹㅅㅁ');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroTitle').textContent==='가로수 그늘 아래 서면');
-  await context.setOffline(false);
+  networkUnavailable=false;await context.setOffline(false);
   await page.addInitScript(()=>Object.defineProperty(navigator,'standalone',{get:()=>true}));
   await page.goto(url);await ready();assert.equal(await page.locator('#installCTA').isVisible(),false);
   assert.deepEqual(errors,[]);
   console.log('PASS '+name+': initials, IME, voice result/cancel, icon guide, manifest/icons, offline catalog, standalone launch, no overflow.');
- }finally{await context.close();await browser.close();}
+ }finally{networkUnavailable=false;await context.close();await browser.close();}
 }
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
