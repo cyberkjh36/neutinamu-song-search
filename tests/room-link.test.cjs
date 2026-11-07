@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const code=fs.readFileSync(require('node:path').join(__dirname,'../room-connect.js'),'utf8');
 function run(query,ua='Android',hash=''){
- const nodes={};const context={URLSearchParams,location:{search:query,hash},navigator:{userAgent:ua},document:{getElementById(id){return nodes[id]||(nodes[id]={hidden:id==='connectRoom',addEventListener(event,fn){this[event]=fn}})}};
+ const nodes={};const context={URLSearchParams,location:{search:query,hash},navigator:{userAgent:ua},document:{getElementById(id){return nodes[id]||(nodes[id]={hidden:id==='connectRoom',addEventListener(event,fn){this[event]=fn}})}}};
  vm.runInNewContext(code,context);return nodes;
 }
 test('all seven room QR links target only the installed direct app and correct room',()=>{
