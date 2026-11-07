@@ -82,6 +82,7 @@ test('older IndexedDB without getAll loads songs using a cursor',async()=>{
 test('Hangul initials search titles, singers, mixed queries and exact tense consonants',()=>{
  const {run}=app();
  for(const [q,code] of [['ㄱㄹㅅㄱㄴㅇㄹㅅㅁ','3'],['이ㅁㅅ ㄱㄹㅅ','3'],['ㅈㅇㅍ 꿈','693'],['ᄌᄋᄑ 꿈','693']])assert.ok(run(`findSongs(cachedSongs,${JSON.stringify(q)}).some(x=>x.s.code===${JSON.stringify(code)})`),q);
+ for(const q of ['ㅈㅇㅍ 꿈','꿈 ㅈㅇㅍ','ㅈㅇㅍ꿈','ㅈㅇㅍ ㄲ'])assert.equal(run(`findSongs(cachedSongs,${JSON.stringify(q)})[0].s.code`),'693',q);
  assert.ok(run("findSongs(cachedSongs,'ㄲ').some(x=>x.s.code==='693')"));
  assert.ok(!run("findSongs(cachedSongs,'ㄱ').some(x=>x.s.code==='693')"));
  assert.equal(run("findSongs(cachedSongs,'ㄱㄹㅅ nonexistentartistzzzz').length"),0);
