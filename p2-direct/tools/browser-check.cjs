@@ -25,7 +25,14 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.locator('#installCTA').isVisible(),false);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const dir=process.env.CHECK_OUTPUT||path.join(root,'p2-direct/app/build/reports/p2-ui');fs.mkdirSync(dir,{recursive:true});
-  await page.screenshot({path:dir+'/search-home.png'});
+  await page.locator('#nativeConnect').click();await page.evaluate(()=>document.getElementById('nativeConnect').click());
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='connect').length),1);
+  assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='connection')),false,'Connect must not navigate to settings');
+  await page.locator('#query').fill('검색 중인 글자');
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'8번방에 연결되었습니다. 아래에서 노래를 찾아 주세요.',busy:false,connected:true}));
+  assert.equal(await page.locator('#query').inputValue(),'검색 중인 글자');assert.equal(await page.locator('#nativeConnect').textContent(),'연결 해제');
+  assert.equal(await page.locator('#query').count(),1);assert.equal(await page.locator('#voiceBtn').count(),1);
+  await page.locator('#query').fill('');await page.screenshot({path:dir+'/search-home.png'});
   await page.locator('#query').fill('ㄱㄹㅅㄱㄴㅇㄹㅅㅁ');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroTitle').textContent==='가로수 그늘 아래 서면');
   assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='play')),false);
@@ -40,7 +47,11 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.evaluate(()=>commands.find(x=>x.command==='reserve').number),'3');
   assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1,'Reservation must not start a song');
   await page.evaluate(()=>onP2NativeState({label:'● 1번방 연결됨',message:'예약 요청 응답을 받았습니다.',busy:false,connected:true}));
-  await page.screenshot({path:dir+'/search-result.png',fullPage:true});
+  await page.locator('#nativePause').click();await page.evaluate(()=>document.getElementById('nativePause').click());
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='pause').length),1);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1);
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'일시정지·계속 요청의 응답을 받았습니다.',busy:false,connected:true}));
+  await page.locator('#hero').scrollIntoViewIfNeeded();await page.screenshot({path:dir+'/search-result.png'});
   await page.locator('#nativeQueue').click();assert.equal(await page.locator('#nativeQueuePanel').isVisible(),true);
   assert.equal(await page.evaluate(()=>commands.at(-1).command),'queue');
   await page.evaluate(()=>{onP2NativeState({label:'● 1번방 연결됨',message:'예약곡을 받았습니다.',busy:false,connected:true});onP2NativeQueue({songs:[47050,914,47050],message:'P2 예약곡 3곡 · 반주기에서 받은 순서입니다.',valid:true});});
@@ -64,6 +75,10 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.setViewportSize({width:360,height:740});
   await page.locator('#nativeNew').click();assert.equal(await page.locator('#query').inputValue(),'');
   assert.equal(await page.locator('#hero').isVisible(),false);assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),0);
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'연결되었습니다.',busy:false,connected:true}));
+  assert.equal(await page.locator('#nativePauseIdle').isVisible(),true);
+  await page.locator('#nativePauseIdle').click();assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='pause').length),2);
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'응답을 받았습니다.',busy:false,connected:true}));
   await page.locator('#nativeStop').click();assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),1);
   await page.locator('#voiceBtn').click();assert.equal(await page.evaluate(()=>commands.at(-1).command),'voice');
   await page.evaluate(()=>onP2NativeVoice(['no such song zzz','조용필 꿈'],''));
@@ -74,6 +89,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.locator('#voiceBtn').click();await page.evaluate(()=>onP2NativeVoice([],'음성 검색을 취소했습니다.'));
   assert.equal(await page.locator('#voiceBtn').isEnabled(),true);assert.match(await page.locator('#message').textContent(),/취소/);
   assert.equal(await page.locator('#exportBtn').isVisible(),false);await page.locator('#nativeMoreNav').click();
+  await page.locator('#nativeSettings').click();assert.equal(await page.evaluate(()=>commands.at(-1).command),'connection');
+  assert.equal(await page.locator('#query').count(),1);
   await page.locator('#exportBtn').click();await page.waitForFunction(()=>saved.length===1);assert.ok(await page.evaluate(()=>saved[0].bytes>3000000));
   await page.locator('#fileInput').dispatchEvent('click');assert.equal(await page.evaluate(()=>commands.at(-1).command),'import');
   await page.evaluate(()=>onP2NativeImport('곡번호,곡제목,가수\n777777,한글테스트,가수\n777778,<img src=x onerror=alert(1)>,가수',''));
@@ -82,7 +99,14 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.locator('#query').fill('777778');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='777778');assert.equal(await page.locator('#heroTitle img').count(),0);
   assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1);
+  await page.evaluate(()=>onP2NativeImport('곡번호,곡제목,가수\n'+Array.from({length:65},(_,i)=>(800000+i)+',페이지검증 '+i+',테스트').join('\n'),''));
+  await page.locator('#query').fill('페이지검증');await page.locator('#searchBtn').click();
+  await page.waitForFunction(()=>document.querySelectorAll('#results .result').length===30);
+  await page.locator('#nativeMoreResults').click();assert.equal(await page.locator('#results .result').count(),60);
+  await page.locator('#nativeMoreResults').click();assert.equal(await page.locator('#results .result').count(),65);
+  await page.locator('#results .result').last().click();assert.equal(await page.locator('#heroNumber').textContent(),'800064');
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1);
   assert.deepEqual(errors,[]);
-  console.log('PASS: bundled catalog, initials, voice alternatives/cancel/stale results, selection/play/cancel, duplicate tap guard, CSV import/export, literal titles, compact layout.');
+  console.log('PASS: bundled catalog, initials, voice alternatives/cancel/stale results, single-screen connect/search, selection/play/reserve/pause/cancel, duplicate tap guard, CSV import/export, literal titles, compact layout.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

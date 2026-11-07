@@ -21,8 +21,12 @@ public class MainActivityTest {
     private ActivityController<MainActivity> controller;private MainActivity app;
     @Before public void open(){controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();}
     @After public void close(){AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();if(dialog!=null)dialog.dismiss();controller.pause().stop().destroy();shadowOf(Looper.getMainLooper()).idle();}
-    private <T extends View>T view(String tag){return app.getWindow().getDecorView().findViewWithTag(tag);}
-    private String message(){return ((TextView)view("actionStatus")).getText().toString();}
+    private <T extends View>T view(String tag){
+        T main=app.getWindow().getDecorView().findViewWithTag(tag);if(main!=null)return main;
+        try{return ((View)field("scroll")).findViewWithTag(tag);}catch(Exception e){throw new AssertionError(e);}
+    }
+    private void command(String command)throws Exception{((SongSearchView)field("songSearch")).handle("{\"command\":\""+command+"\"}");}
+    private String message(){return ((TextView)view("connectionStatus")).getText().toString();}
     private Object field(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(app);}
     private void set(String name,Object value)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);f.set(app,value);}
     private void call(String name)throws Exception{Method method=MainActivity.class.getDeclaredMethod(name);method.setAccessible(true);method.invoke(app);}
@@ -33,20 +37,10 @@ public class MainActivityTest {
         ((java.util.concurrent.ExecutorService)field("worker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
         shadowOf(Looper.getMainLooper()).idle();
     }
-    private void finishSearch()throws Exception{
-        shadowOf(Looper.getMainLooper()).idle();
-        ((java.util.concurrent.ExecutorService)field("searchWorker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
-        shadowOf(Looper.getMainLooper()).idle();
-    }
     private DirectWifiTest.Fake fakeDiscovery()throws Exception{
         DirectWifi old=(DirectWifi)field("directWifi");Field listener=DirectWifi.class.getDeclaredField("listener");listener.setAccessible(true);
         DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));
         old.close();set("directWifi",replacement);return backend;
-    }
-    private void installCatalog()throws Exception{
-        finishWorker();SongCatalog catalog=new SongCatalog();StringBuilder csv=new StringBuilder();
-        for(int i=1;i<=65;i++)csv.append(i).append(",사랑 ").append(i).append(",가수\n");
-        catalog.load(new java.io.StringReader(csv.toString()));set("catalog",catalog);call("paint");
     }
     @Test public void integratedButtonsUseExistingAuthenticatedSessionAndDoNotDoubleSend()throws Exception{
         finishWorker();java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
@@ -65,10 +59,10 @@ public class MainActivityTest {
     }
     @Test public void integratedSearchAndConnectionShareOneSessionAndPlaybackGuard()throws Exception{
         SongSearchView web=(SongSearchView)field("songSearch");assertEquals(View.VISIBLE,web.view.getVisibility());
-        web.handle("{\"command\":\"connection\"}");assertEquals(View.GONE,web.view.getVisibility());
+        web.handle("{\"command\":\"connection\"}");assertEquals(View.VISIBLE,web.view.getVisibility());assertTrue(((AlertDialog)field("toolsDialog")).isShowing());
         view("showSongSearch").performClick();assertEquals(View.VISIBLE,web.view.getVisibility());
         web.handle("{\"command\":\"play\",\"number\":\"10909\"}");
-        assertEquals("10909",((EditText)view("songNumber")).getText().toString());assertTrue(message().contains("[C00]"));assertNull(field("session"));
+        assertTrue(message().contains("[C00]"));assertNull(field("session"));
         assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
         web.handle("{\"command\":\"connection\"}");app.onBackPressed();assertEquals(View.VISIBLE,web.view.getVisibility());
     }
@@ -87,63 +81,46 @@ public class MainActivityTest {
     @Test public void disconnectedReservationIsNotSentAndPreviousRoomListIsCleared()throws Exception{
         finishWorker();set("queueSongs",java.util.Arrays.asList(47050,914));set("queueValid",true);call("paint");
         assertFalse((Boolean)field("queueValid"));assertTrue(((java.util.List<?>)field("queueSongs")).isEmpty());
-        ((EditText)view("songNumber")).setText("47050");view("reserve").performClick();
+        ((SongSearchView)field("songSearch")).handle("{\"command\":\"reserve\",\"number\":\"47050\"}");
         assertTrue(message().contains("[C00]"));assertFalse(((Diagnostics)field("diagnostics")).report().contains("RESERVE_TAPPED"));
     }
-    @Test public void resultsBeyondThirtyAreReachableAndSelectionNeverStartsSong()throws Exception{
-        installCatalog();EditText query=view("query");query.setText("사랑");assertEquals(0,((LinearLayout)view("results")).getChildCount());
-        view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(30,list.getChildCount());
-        assertTrue(((TextView)view("catalogStatus")).getText().toString().contains("65"));
-        view("nextPage").performClick();finishSearch();assertTrue(((Button)list.getChildAt(0)).getText().toString().startsWith("31  "));
-        view("nextPage").performClick();finishSearch();assertEquals(5,list.getChildCount());assertEquals(View.GONE,view("nextPage").getVisibility());
-        list.getChildAt(4).performClick();assertEquals("65",((EditText)view("songNumber")).getText().toString());
-        assertTrue(((TextView)view("selection")).getText().toString().contains("사랑 65"));assertNull(field("session"));
-        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
-        view("previousPage").performClick();finishSearch();assertEquals(30,list.getChildCount());
+    @Test public void onlyOneSearchSurfaceAndToolsNeverReplaceIt()throws Exception{
+        SongSearchView web=(SongSearchView)field("songSearch");
+        assertEquals(1,((FrameLayout)field("screens")).getChildCount());
+        assertNull(view("query"));assertNull(view("songNumber"));assertNull(view("voiceSearch"));
+        command("connection");assertTrue(((AlertDialog)field("toolsDialog")).isShowing());
+        assertEquals(View.VISIBLE,web.view.getVisibility());
+        view("settingsToggle").performClick();assertEquals(View.VISIBLE,view("connectionDetails").getVisibility());
+        app.onBackPressed();assertFalse(((AlertDialog)field("toolsDialog")).isShowing());assertSame(web,field("songSearch"));
+        command("connection");view("showSongSearch").performClick();assertFalse(((AlertDialog)field("toolsDialog")).isShowing());
     }
-    @Test public void connectionVoiceSearchFindsSongsWithoutPlayingAndIgnoresDoubleTap()throws Exception{
-        installCatalog();view("voiceSearch").performClick();
-        assertEquals(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH,shadowOf(app).getNextStartedActivity().getAction());
-        view("voiceSearch").performClick();assertNull(shadowOf(app).getNextStartedActivity());
-        Intent data=new Intent().putStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS,new java.util.ArrayList<>(java.util.Arrays.asList("사랑")));
-        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_OK,data);finishSearch();
-        assertEquals("사랑",((EditText)view("query")).getText().toString());assertEquals(30,((LinearLayout)view("results")).getChildCount());
-        assertEquals("",((EditText)view("songNumber")).getText().toString());assertNull(field("session"));
-        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+    @Test public void mainConnectionButtonStartsDiscoveryWithoutOpeningAnotherScreen()throws Exception{
+        DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        command("connect");assertNotNull(backend.discovery);assertNull(field("toolsDialog"));
+        assertEquals(View.VISIBLE,((SongSearchView)field("songSearch")).view.getVisibility());
+        Object first=backend.discovery;command("connect");assertSame(first,backend.discovery);
     }
-    @Test public void cancelledAndStaleVoiceResultsDoNotReplaceManualSearch()throws Exception{
-        installCatalog();((EditText)view("query")).setText("기존 검색");view("voiceSearch").performClick();shadowOf(app).getNextStartedActivity();
-        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_CANCELED,null);
-        assertEquals("기존 검색",((EditText)view("query")).getText().toString());assertTrue(((TextView)view("catalogStatus")).getText().toString().contains("취소"));
-        view("voiceSearch").performClick();assertNotNull(shadowOf(app).getNextStartedActivity());view("newSearch").performClick();
-        Intent data=new Intent().putStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS,new java.util.ArrayList<>(java.util.Arrays.asList("사랑")));
-        app.onActivityResult(SongSearchView.VOICE,android.app.Activity.RESULT_OK,data);finishSearch();
-        assertEquals("",((EditText)view("query")).getText().toString());assertEquals(0,((LinearLayout)view("results")).getChildCount());
+    @Test public void pauseUsesAuthenticatedSessionOnceAndKeepsConnectionBanner()throws Exception{
+        java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
+        Session session=new Session(new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}},ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{
+            command("pause");command("pause");finishWorker();
+            assertArrayEquals(ProfileStoreTest.sample().packet(Wire.pause()),sent.toByteArray());assertEquals(Session.State.PAUSE,session.state());
+            assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
+            assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+        }finally{session.close();set("session",null);}
     }
-    @Test public void connectionSearchAcceptsTitleAndArtistInitialsOnlyAfterSearchTap()throws Exception{
-        finishWorker();SongCatalog catalog=new SongCatalog();catalog.load(new java.io.StringReader("1,사랑해,김범수\n2,사랑아,홍길동\n3,꿈,조용필\n"));set("catalog",catalog);
-        ((EditText)view("query")).setText("ㄱㅂㅅ ㅅㄹ");assertEquals(0,((LinearLayout)view("results")).getChildCount());
-        view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(1,list.getChildCount());
-        assertTrue(((Button)list.getChildAt(0)).getText().toString().contains("사랑해"));
-        assertEquals("",((EditText)view("songNumber")).getText().toString());assertNull(field("session"));
+    @Test public void pauseBeforeConnectionNeverSendsCommand()throws Exception{
+        command("pause");assertTrue(message().contains("[C00]"));assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PAUSE_TAPPED"));
     }
-    @Test public void manualNumberChangeCannotLeavePreviouslySelectedTitle()throws Exception{
-        installCatalog();EditText number=view("songNumber");number.setText("1");assertTrue(((TextView)view("selection")).getText().toString().contains("사랑 1"));
-        number.setText("2");String title=((TextView)view("selection")).getText().toString();assertTrue(title.contains("사랑 2"));assertFalse(title.contains("사랑 1"));
-        number.setText("10909");assertTrue(((TextView)view("selection")).getText().toString().contains("제목 정보 없음"));
-        number.setText("");assertTrue(((TextView)view("selection")).getText().toString().contains("곡을 선택"));
-    }
-    @Test public void newSearchClearsSelectionAndRejectsLateResultsWithoutSendingCancel()throws Exception{
-        installCatalog();((EditText)view("query")).setText("사랑");((EditText)view("songNumber")).setText("1");view("search").performClick();
-        view("newSearch").performClick();finishSearch();assertEquals(0,((LinearLayout)view("results")).getChildCount());
-        assertEquals("",((EditText)view("query")).getText().toString());assertEquals("",((EditText)view("songNumber")).getText().toString());
-        assertFalse(((Diagnostics)field("diagnostics")).report().contains("CANCEL_TAPPED"));assertNull(field("session"));
-    }
-    @Test public void settingsToggleKeepsQueryAndSelectedNumber()throws Exception{
-        ((EditText)view("query")).setText("꿈");((EditText)view("songNumber")).setText("10909");
-        assertEquals(View.GONE,view("connectionDetails").getVisibility());view("settingsToggle").performClick();assertEquals(View.VISIBLE,view("connectionDetails").getVisibility());
-        view("settingsToggle").performClick();assertEquals(View.GONE,view("connectionDetails").getVisibility());
-        assertEquals("꿈",((EditText)view("query")).getText().toString());assertEquals("10909",((EditText)view("songNumber")).getText().toString());
+    @Test public void disconnectFromMainSurfaceClearsRoomQueue()throws Exception{
+        Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        set("queueSongs",java.util.Arrays.asList(10909));set("queueValid",true);
+        command("connect");assertEquals(Session.State.CLOSED,session.state());assertNull(field("session"));
+        assertFalse((Boolean)field("queueValid"));assertNull(field("toolsDialog"));
     }
     @Test public void bannerRequiresProtocolReadinessNotJustSavedProfile()throws Exception{
         set("profile",ProfileStoreTest.sample());call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결 전"));
@@ -177,13 +154,12 @@ public class MainActivityTest {
         }finally{store.clear();}
     }
     @Test public void startBeforeConnectionIsClickableAndExplained()throws Exception{
-        ((EditText)view("songNumber")).setText("10909");
-        Button button=view("play");assertTrue(button.isEnabled());assertTrue(button.performClick());
+        ((SongSearchView)field("songSearch")).handle("{\"command\":\"play\",\"number\":\"10909\"}");
         assertTrue(message().contains("[C00]"));assertTrue(message().contains("명령을 보내지 않았습니다"));
         assertTrue(ShadowAlertDialog.getLatestAlertDialog().isShowing());assertNull(field("session"));
     }
-    @Test public void cancelBeforeConnectionExplainsMissingConnection(){
-        assertTrue(view("cancel").isEnabled());view("cancel").performClick();assertTrue(message().contains("[C00]"));
+    @Test public void cancelBeforeConnectionExplainsMissingConnection()throws Exception{
+        command("cancel");assertTrue(message().contains("[C00]"));
     }
     @Test public void connectionWithoutProfileStartsDiscoveryWithoutFilePicker(){
         assertTrue(view("connect").isEnabled());view("connect").performClick();
@@ -220,7 +196,7 @@ public class MainActivityTest {
     }
     @Test public void missingConnectionDialogAlsoDiscoversInsteadOfUsingSavedAddress()throws Exception{
         finishWorker();set("profile",ProfileStoreTest.sample());DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
-        ((EditText)view("songNumber")).setText("10909");view("play").performClick();
+        ((SongSearchView)field("songSearch")).handle("{\"command\":\"play\",\"number\":\"10909\"}");
         ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();shadowOf(Looper.getMainLooper()).idle();
         assertNotNull(backend.discovery);assertNull(field("session"));assertNull(field("connectingSocket"));
         assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
@@ -242,7 +218,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.10.1"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.11.0"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));
@@ -276,6 +252,7 @@ public class MainActivityTest {
         DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));old.close();set("directWifi",replacement);
         shadowOf(app).denyPermissions(MainActivity.wifiPermission());
         app.onNewIntent(RoomDirectoryTest.link("room=5"));
+        assertEquals(View.VISIBLE,((SongSearchView)field("songSearch")).view.getVisibility());assertNull(field("toolsDialog"));
         assertEquals("5",field("roomRequest"));assertEquals(false,field("roomPending"));assertNull(field("profile"));assertNull(backend.discovery);
         assertEquals("android.content.pm.action.REQUEST_PERMISSIONS",shadowOf(app).getNextStartedActivity().getAction());assertNull(field("session"));
         shadowOf(app).grantPermissions(MainActivity.wifiPermission());

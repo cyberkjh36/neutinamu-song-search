@@ -8,7 +8,7 @@ import java.util.Collections;
 
 /** One live connection; never retries a play/cancel command automatically. */
 public final class Session implements Closeable {
-    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, RESERVE, QUEUE, CLOSED }
+    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, PAUSE, RESERVE, QUEUE, CLOSED }
     public interface Listener {
         void changed(State state,String message);
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
@@ -53,6 +53,7 @@ public final class Session implements Closeable {
                             String message=state==State.RESERVE?"[R11] 예약 응답을 받지 못했습니다. 중복 예약을 피하려면 예약 목록을 먼저 확인하세요. 자동 재전송하지 않습니다.":"[Q11] 예약 목록 응답을 받지 못했습니다. 새로고침을 눌러 다시 확인하세요.";
                             reservedSong=0;listener.queue(Collections.emptyList(),message,false);change(State.READY,message);continue;
                         }
+                        if(state==State.PAUSE){change(State.READY,"[S11] 일시정지·계속 응답을 받지 못했습니다. 반주기 화면을 확인하세요. 자동 재전송하지 않습니다.");continue;}
                         String code=state==State.CANCEL?"C11":playReply?"P11":"P12";
                         String detail=state==State.CANCEL?"취소 응답이 없습니다.":playReply?"시작 요청 응답은 받았지만 곡 재생 확인은 받지 못했습니다.":"시작 요청에 대한 응답이 없습니다.";
                         change(State.READY,"["+code+"] 응답 시간 초과: "+detail+" 반주기 화면을 확인하세요. 자동 재전송하지 않습니다.");
@@ -81,6 +82,13 @@ public final class Session implements Closeable {
             change(State.READY,"[READY] P2 연결 응답 확인 · 곡을 선택한 뒤 시작을 누르세요.");return;
         }
         if(state==State.AUTH||state==State.IDENTIFY)return;
+        if(state==State.PAUSE&&f.code==4100){
+            if(f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(25)))
+                change(State.READY,"일시정지·계속 요청의 응답을 받았습니다. 다시 누르면 상태가 바뀝니다. 반주기 화면과 소리를 확인해 주세요.");
+            else if(f.bodyType()==3||f.bodyType()==9)
+                change(State.READY,"[S13] 반주기가 일시정지·계속 요청을 승인하지 않았습니다. 반주기 화면을 확인하세요. 자동 재전송하지 않습니다.");
+            return;
+        }
         if(f.code==4200||f.code==4220){
             try{
                 List<Integer> songs=Wire.queueSongs(f);
@@ -128,6 +136,11 @@ public final class Session implements Closeable {
         reservedSong=0;
         change(State.CANCEL,"현재 곡 취소 요청 중…");
         try{write(Wire.cancel());}catch(IOException e){fail("취소 결과를 확인하지 못했습니다.");throw e;}
+    }
+    public synchronized void pause()throws IOException {
+        if(state!=State.READY)throw new IOException("연결 준비 또는 이전 명령 처리를 기다려 주세요.");
+        change(State.PAUSE,"일시정지·계속 요청 중…");
+        try{write(Wire.pause());}catch(IOException e){fail("일시정지·계속 전송 결과를 확인하지 못했습니다. 자동 재전송하지 않습니다.");throw e;}
     }
     public synchronized void reserve(int song)throws IOException {
         if(state!=State.READY)throw new IOException("연결 준비 또는 이전 명령 처리를 기다려 주세요.");

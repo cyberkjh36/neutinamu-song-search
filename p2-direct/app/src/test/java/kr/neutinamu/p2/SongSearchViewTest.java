@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("connect");}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
+        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void pause(){calls.add("pause");}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -30,6 +30,10 @@ public class SongSearchViewTest {
         assertFalse(calls.stream().anyMatch(s->s.startsWith("play:")));
         search.handle("{\"command\":\"socket\",\"url\":\"https://example.com\"}");search.handle("not json");
         assertFalse(calls.contains("connect"));
+    }
+    @Test public void explicitConnectionAndPauseActionsStaySeparateFromSettings(){
+        for(String action:new String[]{"connect","find","pause","connection"})search.handle("{\"command\":\""+action+"\"}");
+        assertEquals(Arrays.asList("connect","find","pause","settings"),calls);
     }
     @Test public void assetsCannotReadProfilesOrLoadRemoteCode()throws Exception{
         assertEquals("song-search/index.html",SongSearchView.assetPath(Uri.parse(SongSearchView.HOME)));
