@@ -30,14 +30,15 @@ final class DirectWifi implements AutoCloseable {
     }
     private final Backend backend;private final Handler handler;private final Listener listener;
     private boolean opened,closed,joining,searching;private int generation;private List<Peer> peers=Collections.emptyList();
-    private Peer selected;private Runnable timeout,poll;
+    private Peer selected;private String targetName;private Runnable timeout,poll;
     DirectWifi(Backend backend,Handler handler,Listener listener){this.backend=backend;this.handler=handler;this.listener=listener;}
     boolean joining(){return joining;}
     private void invalidate(){generation++;if(timeout!=null)handler.removeCallbacks(timeout);if(poll!=null)handler.removeCallbacks(poll);timeout=null;poll=null;}
     private boolean current(int request){return !closed&&generation==request;}
     private void fail(String code,String message){invalidate();joining=false;searching=false;selected=null;listener.status(code,message);}
-    void find(){
-        if(closed||joining)return;invalidate();searching=true;peers=Collections.emptyList();selected=null;int request=generation;
+    void find(){find(null);}
+    void find(String target){
+        if(closed||joining)return;targetName=target==null?null:RoomDirectory.normalize(target);invalidate();searching=true;peers=Collections.emptyList();selected=null;int request=generation;
         try{
             if(!opened){opened=backend.open(()->{opened=false;if(!closed)fail("W26","Wi-Fi Direct 사용 등록이 끊겼습니다. 다시 찾아 주세요.");});}
             if(!opened){fail("W26","Wi-Fi Direct를 사용할 수 없습니다.");return;}
@@ -57,8 +58,19 @@ final class DirectWifi implements AutoCloseable {
             LinkedHashMap<String,Peer> unique=new LinkedHashMap<>();
             for(Peer peer:list)if(peer!=null&&peer.address!=null&&!peer.address.isEmpty())unique.put(peer.address,peer);
             if(unique.isEmpty())return;
+            peers=new ArrayList<>(unique.values());
+            if(targetName!=null){
+                Peer match=null;
+                for(Peer peer:peers)if(targetName.equals(RoomDirectory.normalize(peer.name))){
+                    if(match!=null){fail("W28","같은 방 이름의 반주기가 여러 대 발견되어 연결하지 않았습니다. 직원에게 확인해 주세요.");return;}
+                    match=peer;
+                }
+                // Unrelated devices must not cancel the deadline or open the room picker.
+                if(match!=null)select(match);
+                return;
+            }
             if(timeout!=null)handler.removeCallbacks(timeout);timeout=null;
-            peers=new ArrayList<>(unique.values());listener.peers(Collections.unmodifiableList(peers));
+            listener.peers(Collections.unmodifiableList(peers));
         });}catch(SecurityException e){fail("W23","주변 기기를 확인할 권한이 없습니다.");}
         catch(RuntimeException e){fail("W26","주변 기기를 확인하지 못했습니다.");}
     }

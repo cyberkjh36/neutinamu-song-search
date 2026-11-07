@@ -150,7 +150,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.7"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.8"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));
@@ -178,4 +178,32 @@ public class MainActivityTest {
         // Recreate only so the common teardown still owns a live Activity.
         controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();
     }
+    @Test public void roomQrWaitsForProfileAndDoesNotOpenPcapPickerOrSendSong()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());
+        app.onNewIntent(RoomDirectoryTest.link("room=5"));
+        assertEquals("5",field("roomRequest"));assertEquals(true,field("roomPending"));
+        assertTrue(message().contains("5번방"));assertTrue(message().contains("최초 연결 설정"));assertNull(field("session"));
+        assertNull(shadowOf(app).getNextStartedActivityForResult());
+    }
+    @Test public void invalidRoomQrCannotReplaceCurrentTarget()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("roomRequest","1");
+        app.onNewIntent(RoomDirectoryTest.link("room=5&song=10909"));assertEquals("1",field("roomRequest"));assertNull(field("session"));
+    }
+    @Test public void roomQrWaitsForAsyncRestoreThenFindsOnlyAssignedDevice()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("importing",true);
+        app.onNewIntent(RoomDirectoryTest.link("room=5"));assertEquals(true,field("roomPending"));
+        DirectWifi old=(DirectWifi)field("directWifi");Field listener=DirectWifi.class.getDeclaredField("listener");listener.setAccessible(true);
+        DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));old.close();set("directWifi",replacement);
+        shadowOf(app).grantPermissions(MainActivity.wifiPermission());set("profile",ProfileStoreTest.sample());set("importing",false);call("attemptRoomRequest");
+        backend.discovery.accept(true);DirectWifi.Peer five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");
+        backend.peers.accept(java.util.Arrays.asList(new DirectWifi.Peer("TJ_P2_TEST_A_1_B","01"),five));backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertSame(five,backend.selectedPeer);assertEquals("5",field("activeRoom"));assertEquals(false,field("roomPending"));assertNull(field("session"));
+    }
+    @Test public void anotherRoomQrNeverInterruptsExistingAuthenticatedSession()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("activeRoom","1");set("roomRequest","1");
+        Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});set("session",session);
+        try{app.onNewIntent(RoomDirectoryTest.link("room=5"));assertSame(session,field("session"));assertEquals("1",field("roomRequest"));assertTrue(message().contains("현재 연결을 먼저 해제"));}
+        finally{session.close();set("session",null);}
+    }
+
 }

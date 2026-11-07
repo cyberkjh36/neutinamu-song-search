@@ -16,13 +16,13 @@ public class DirectWifiTest {
     static final DirectWifi.Peer PEER=new DirectWifi.Peer("Test P2","02:11:22:33:44:55");
     static final DirectWifi.Link UP=new DirectWifi.Link(true,false,PEER.address,"192.168.49.1","p2p0");
     static class Fake implements DirectWifi.Backend {
-        boolean denied,available=true;int joined,closed;Runnable lost;Consumer<Boolean> discovery,join;
+        DirectWifi.Peer selectedPeer;boolean denied,available=true;int joined,closed;Runnable lost;Consumer<Boolean> discovery,join;
         Consumer<List<DirectWifi.Peer>> peers;List<Consumer<DirectWifi.Link>> links=new ArrayList<>();
         public boolean open(Runnable lost){this.lost=lost;return available;}
         public void discover(Consumer<Boolean> done){if(denied)throw new SecurityException();discovery=done;}
         public void peers(Consumer<List<DirectWifi.Peer>> done){peers=done;}
         public void link(Consumer<DirectWifi.Link> done){links.add(done);}
-        public void join(DirectWifi.Peer peer,Consumer<Boolean> done){joined++;join=done;}
+        public void join(DirectWifi.Peer peer,Consumer<Boolean> done){joined++;selectedPeer=peer;join=done;}
         public void close(){closed++;}
         void reply(DirectWifi.Link link){links.get(links.size()-1).accept(link);}
     }
@@ -64,4 +64,26 @@ public class DirectWifiTest {
         found();client.select(PEER);backend.lost.run();backend.reply(UP);assertTrue(hosts.isEmpty());assertTrue(codes.contains("W26"));
         found();client.select(PEER);client.close();backend.reply(UP);assertTrue(hosts.isEmpty());
     }
+    @Test public void qrSelectsOnlyExactTargetAndUsesItsAddress(){
+        client.find("Test P2");backend.discovery.accept(true);
+        backend.peers.accept(Arrays.asList(new DirectWifi.Peer("Different P2","11:22"),PEER));
+        assertNull(visible);backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertSame(PEER,backend.selectedPeer);assertEquals(1,backend.joined);
+    }
+    @Test public void unrelatedPeersDoNotDisableQrDeadlineOrOpenPicker(){
+        client.find("Target P2");backend.discovery.accept(true);backend.peers.accept(Collections.singletonList(PEER));
+        assertNull(visible);assertEquals(0,backend.joined);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(20));assertTrue(codes.contains("W21"));
+        backend.peers.accept(Collections.singletonList(new DirectWifi.Peer("Target P2","99:99")));assertEquals(0,backend.joined);
+    }
+    @Test public void duplicateQrTargetNamesNeverChooseArbitrarily(){
+        client.find("Test P2");backend.discovery.accept(true);backend.peers.accept(Arrays.asList(PEER,new DirectWifi.Peer("Test P2","99:99")));
+        assertTrue(codes.contains("W28"));assertEquals(0,backend.joined);assertTrue(hosts.isEmpty());
+    }
+    @Test public void cancellingQrAndStartingManualDiscoveryClearsTarget(){
+        client.find("Target P2");backend.discovery.accept(true);client.stopFinding();
+        client.find();backend.discovery.accept(true);backend.peers.accept(Collections.singletonList(PEER));
+        assertEquals(1,visible.size());assertEquals(0,backend.joined);
+    }
+
 }

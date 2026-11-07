@@ -53,6 +53,7 @@ public final class MainActivity extends Activity {
     private P2pRegistration wifiRegistration;
     private DirectWifi directWifi;private String directHost,directInterface;private boolean findAfterPermission,directMode;
     private AlertDialog peerDialog;
+    private RoomDirectory rooms=new RoomDirectory();private String roomRequest,activeRoom;private boolean roomPending;
     private boolean receiverRegistered,tjSettingsVisited;
     private final BroadcastReceiver wifiReceiver=new BroadcastReceiver(){
         @Override public void onReceive(Context context,Intent intent){
@@ -66,13 +67,15 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         profileStore=new ProfileStore(this);
+        try(Reader in=new InputStreamReader(getAssets().open("p2-rooms.txt"),"UTF-8")){rooms=RoomDirectory.read(in);}
+        catch(IOException e){diagnostics.event("ROOM_DIRECTORY_UNAVAILABLE");}
         scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(bg);
         LinearLayout root=new LinearLayout(this);contentRoot=root;root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(22),dp(24),dp(22),dp(30));scroll.addView(root);
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
         screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
         button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"통합판 0.7 · P2 연결 설정",15,false);
+        text(root,"통합판 0.8 · P2 연결 설정",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         connectionBanner=text(root,"○ P2 연결 전",20,true);connectionBanner.setTag("connectionBanner");
         connectionBanner.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -93,7 +96,7 @@ public final class MainActivity extends Activity {
         button(connectionDetails,"저장된 연결 정보 지우기",this::askForgetProfile).setTag("forgetProfile");
         button(connectionDetails,"기존 직접 연결 확인",()->{
             if(connecting||session!=null||directWifi.joining()){feedback("현재 연결을 해제하거나 연결 준비가 끝난 뒤 확인해 주세요.");return;}
-            directMode=false;directHost=null;directInterface=null;prepareWifi();
+            roomRequest=null;activeRoom=null;roomPending=false;directMode=false;directHost=null;directInterface=null;prepareWifi();
         }).setTag("prepareWifi");
         wifiStatus=text(connectionDetails,"이미 P2에 연결되어 있다면 ‘기존 직접 연결 확인’을 누르세요.",15,false);wifiStatus.setTag("wifiStatus");
         button(connectionDetails,"TJ매니저 설정 (필요할 때)",this::openTjSettings).setTag("tjSettings");
@@ -142,9 +145,16 @@ public final class MainActivity extends Activity {
             public void status(String code,String message){diagnostics.event(code);if(directMode){wifiStatus.setText("["+code+"] "+message);show("["+code+"] "+message);}paint();}
             public void peers(List<DirectWifi.Peer> peers){
                 if(destroyed||!directMode||(peerDialog!=null&&peerDialog.isShowing()))return;
-                String[] names=new String[peers.size()];for(int i=0;i<names.length;i++)names[i]=peers.get(i).name;
-                peerDialog=new AlertDialog.Builder(MainActivity.this).setTitle("연결할 P2를 선택하세요")
-                    .setItems(names,(d,index)->{directHost=null;directWifi.select(peers.get(index));})
+                List<DirectWifi.Peer> ordered=rooms.sorted(peers);
+                String[] names=new String[ordered.size()];for(int i=0;i<names.length;i++)names[i]=rooms.label(ordered.get(i));
+                peerDialog=new AlertDialog.Builder(MainActivity.this).setTitle("연결할 방을 선택하세요")
+                    .setItems(names,(d,index)->{
+                        DirectWifi.Peer selected=ordered.get(index);String room=rooms.room(selected);
+                        if(room!=null&&ordered.stream().filter(p->room.equals(rooms.room(p))).count()>1){
+                            directWifi.stopFinding();feedback("같은 방의 반주기가 여러 대 발견되어 연결하지 않았습니다. 직원에게 확인해 주세요.");return;
+                        }
+                        activeRoom=room;roomRequest=room;roomPending=false;directHost=null;directWifi.select(selected);
+                    })
                     .setNegativeButton("닫기",(d,w)->directWifi.stopFinding()).create();peerDialog.setOnCancelListener(d->directWifi.stopFinding());peerDialog.show();
             }
             public void connected(DirectWifi.Link link){
@@ -163,6 +173,7 @@ public final class MainActivity extends Activity {
         songSearch.view.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(0,insets.getSystemWindowInsetTop(),0,insets.getSystemWindowInsetBottom());return insets;});
         showSongSearch();
         restoreProfile();
+        handleRoomIntent(getIntent());
         paint();
         worker.execute(()->{
             SongCatalog loaded=new SongCatalog();
@@ -178,8 +189,29 @@ public final class MainActivity extends Activity {
         new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION}:new String[]{wifiPermission()};}
     private void findP2(){
         if(connecting||importing||session!=null||directWifi.joining()){feedback("연결 준비 또는 실행 연결 중입니다. 현재 연결을 해제한 뒤 찾아 주세요.");return;}
+        roomRequest=null;activeRoom=null;roomPending=false;stopDiscovery();
         if(profile==null){chooseCapture();return;}
         directMode=true;directHost=null;directInterface=null;findAfterPermission=true;prepareWifi();
+    }
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);handleRoomIntent(intent);}
+    private void handleRoomIntent(Intent intent){
+        if(intent==null||intent.getData()==null)return;
+        String room=rooms.fromIntent(intent);
+        if(room==null){showConnection();feedback("이 QR의 방정보를 확인할 수 없습니다. 직원에게 확인하거나 ‘주변 P2 찾기’를 눌러 주세요.");return;}
+        if(session!=null||connecting||directWifi.joining()||commandQueued){
+            showConnection();
+            feedback(room.equals(activeRoom)?room+"번방에 연결되어 있거나 연결 중입니다.":"현재 연결을 먼저 해제한 뒤 "+room+"번방 QR을 다시 스캔해 주세요. 다른 방으로 명령을 보내지 않았습니다.");return;
+        }
+        stopDiscovery();roomRequest=room;activeRoom=null;roomPending=true;directHost=null;directInterface=null;
+        showConnection();attemptRoomRequest();
+    }
+    private void attemptRoomRequest(){
+        if(!roomPending||roomRequest==null||destroyed)return;
+        if(importing){show(roomRequest+"번방 · 저장된 연결 정보를 확인하고 있습니다…");return;}
+        if(profile==null){setSettingsExpanded(true);show(roomRequest+"번방 · 이 휴대폰의 최초 연결 설정이 필요합니다. 직원에게 연결 기록 설정을 요청해 주세요.");return;}
+        if(connecting||session!=null||directWifi.joining())return;
+        roomPending=false;activeRoom=roomRequest;directMode=true;directHost=null;directInterface=null;
+        findAfterPermission=true;show(roomRequest+"번방 반주기를 찾습니다. 다른 방에는 연결하지 않습니다.");prepareWifi();
     }
     private void prepareWifi(){
         if(importing){feedback("연결 정보를 준비 중입니다. 잠시 기다려 주세요.");return;}
@@ -199,7 +231,7 @@ public final class MainActivity extends Activity {
             receiverRegistered=true;
         }
         wifiRegistration.prepare();
-        if(findAfterPermission){findAfterPermission=false;directWifi.find();}
+        if(findAfterPermission){findAfterPermission=false;directWifi.find(roomRequest==null?null:rooms.device(roomRequest));}
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
         super.onRequestPermissionsResult(request,permissions,results);
@@ -312,9 +344,9 @@ public final class MainActivity extends Activity {
                 CaptureProfile saved=profileStore.load();
                 ui(()->{importing=false;profile=saved;
                     if(saved!=null){diagnostics.event("PROFILE_RESTORED");profileStatus.setText("저장된 연결 정보를 불러왔습니다. PCAP 파일을 다시 선택하지 않아도 됩니다.");connectionMessage="[C01] ‘주변 P2 찾기’에서 반주기를 선택해 주세요. 이미 연결되어 있다면 ‘기존 직접 연결 확인’으로 확인할 수 있습니다.";show(connectionMessage);}
-                    paint();});
+                    paint();attemptRoomRequest();});
             }catch(IOException|java.security.GeneralSecurityException|RuntimeException e){ui(()->{
-                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");setSettingsExpanded(true);paint();
+                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");setSettingsExpanded(true);paint();attemptRoomRequest();
             });}
         });
     }
@@ -334,7 +366,7 @@ public final class MainActivity extends Activity {
         if(!canForgetProfile())return;stopDiscovery();importing=true;
         worker.execute(()->{
             try{profileStore.clear();ui(()->{
-                profile=null;directHost=null;directInterface=null;directMode=false;importing=false;
+                profile=null;directHost=null;directInterface=null;directMode=false;importing=false;roomRequest=null;activeRoom=null;roomPending=false;
                 diagnostics.event("PROFILE_FORGOTTEN");profileStatus.setText("저장된 연결 정보를 지웠습니다. 연결하려면 PCAP 파일을 선택해 주세요.");
                 connectionMessage="[C00] PCAP 연결 기록을 먼저 선택해 주세요.";show(connectionMessage);wifiStatus.setText(connectionMessage);paint();
             });}catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_DELETE_FAILED");feedback("연결 정보를 지우지 못했습니다. 다시 시도해 주세요.");paint();});}
@@ -355,11 +387,12 @@ public final class MainActivity extends Activity {
                 ui(()->{profile=loaded;directHost=null;directInterface=null;importing=false;diagnostics.event("PROFILE_IMPORT_OK");diagnostics.event(saved?"PROFILE_SAVED":"PROFILE_SAVE_FAILED");
                     profileStatus.setText(saved?"연결 정보를 암호화해 저장했습니다. 다음부터 자동으로 불러옵니다.":"자동 저장하지 못했습니다. 이번에는 사용할 수 있으나, 다음 실행 때 PCAP을 다시 선택하세요. 이전 저장 정보가 있다면 그대로 유지됩니다.");
                     setSettingsExpanded(!saved);
-                    connectionMessage="[C01] 연결 기록을 읽었습니다. ‘주변 P2 찾기’에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();});
+                    connectionMessage="[C01] 연결 기록을 읽었습니다. ‘주변 P2 찾기’에서 반주기를 선택해 주세요.";show(connectionMessage);if(wifiRegistration.registered())wifiRegistration.refresh(null);paint();attemptRoomRequest();});
             }catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_IMPORT_FAILED");show("[C02] 초기 NFC 연결부터 기록한 PCAP 파일인지 확인해 주세요.");paint();});}
         });
     }
     private void beginConnect(){
+        if(roomRequest!=null&&directHost==null){roomPending=true;attemptRoomRequest();return;}
         if(profile==null){feedback("[C00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
         if(importing||connecting||session!=null||(directWifi!=null&&directWifi.joining()))return;
         diagnostics.event("CONNECT_STARTED");
@@ -377,7 +410,7 @@ public final class MainActivity extends Activity {
                 Session opened=new Session(socket,live,new Session.Listener(){
                     @Override public void changed(Session.State state,String message){
                         diagnostics.event("STATE_"+state.name());diagnostics.status(message);
-                        ui(()->{if(session!=holder[0])return;if(state==Session.State.CLOSED)session=null;connectionMessage=message;show(message);paint();});
+                        ui(()->{if(session!=holder[0])return;if(state==Session.State.CLOSED)session=null;connectionMessage=message;show(message);paint();if(roomRequest!=null&&state==Session.State.READY)showSongSearch();});
                     }
                     @Override public void frame(boolean outgoing,int command,int length,Long scalar){diagnostics.frame(outgoing,command,length,scalar);}
                 });
@@ -469,7 +502,7 @@ public final class MainActivity extends Activity {
         if(play==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
         boolean busy=connecting||importing||(directWifi!=null&&directWifi.joining());
         boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL;
-        connectionBanner.setText(linked?"● P2 연결됨":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ 연결 준비 중…":"○ P2 연결 전");
+        connectionBanner.setText(linked?"● "+(activeRoom==null?"P2":activeRoom+"번방")+" 연결됨":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ 연결 준비 중…":"○ P2 연결 전");
         connectionBanner.setTextColor(linked?accent:fg);
         connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"P2 연결");
         // Clickable guards explain missing connection; a disabled button would look unresponsive.
