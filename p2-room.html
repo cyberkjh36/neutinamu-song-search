@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102e32"><meta name="referrer" content="no-referrer"><title>방별 반주기 연결 · 느티나무</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6ef;color:#123338;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;line-height:1.65}main{max-width:540px;margin:auto;padding:34px 22px 50px}.brand{font-size:14px;font-weight:700;letter-spacing:.08em}.badge{margin:30px 0 16px;display:inline-block;background:#173e42;color:white;border-radius:22px;padding:6px 17px;font-weight:700}h1{font-size:34px;line-height:1.3;margin:0 0 20px;word-break:keep-all}.lead{font-size:18px;margin:0 0 26px}.connect{display:block;text-align:center;background:#c4e88f;color:#123338;border-radius:18px;padding:21px 12px;font-size:23px;font-weight:800;text-decoration:none;margin:24px 0}section{background:white;border:1px solid #dae1d4;border-radius:20px;padding:20px;margin:22px 0}h2{font-size:19px;margin:0 0 12px}ol{padding-left:24px;margin:0}li{margin:9px 0}.note{font-size:15px;color:#456367}.status{border-left:4px solid #7b9c46;padding-left:14px}a{color:#244e50}footer{margin-top:30px;border-top:1px solid #d7dfd1;padding-top:20px;font-size:14px}[hidden]{display:none!important}
+</style><script src="./room-connect.js" defer></script></head>
+<body><main>
+<div class="brand">느티나무 노래방</div><div class="badge" id="roomBadge">방별 QR</div>
+<h1 id="roomTitle">반주기 연결</h1>
+<p class="lead" id="roomIntro">QR의 방번호를 확인하고 있습니다.</p>
+<a class="connect" id="connectRoom" hidden>반주기 연결하기</a>
+<p class="status" id="roomStatus" role="status"></p>
+<section><h2>연결 후 노래를 시작하세요</h2><ol>
+<li>앱 열기 또는 Wi-Fi 연결 확인 창이 나오면 허용해 주세요.</li>
+<li>앱에 <strong id="connectedLabel">방번호와 ‘연결됨’</strong>이 표시될 때까지 기다려 주세요.</li>
+<li>음성·키보드·한글 초성으로 노래를 찾고, 곡을 선택한 뒤 <strong>곡 시작</strong>을 누르세요.</li>
+</ol></section>
+<p class="note">안드로이드 직접연결 앱 0.8 이상과 해당 반주기의 최초 연결 설정이 필요합니다. 처음 사용하는 휴대폰은 직원에게 문의해 주세요. QR을 스캔하는 것만으로 설치나 최초 설정이 완료되지는 않습니다.</p>
+<p class="note">아이폰과 일반 웹 화면의 P2 직접 제어는 현재 지원하지 않습니다.</p>
+<footer><a href="./">노래 제목·번호 검색 화면</a><p>QR은 연결할 방을 선택합니다. 노래는 ‘곡 시작’을 눌렀을 때 실행됩니다.</p></footer>
+</main></body></html>

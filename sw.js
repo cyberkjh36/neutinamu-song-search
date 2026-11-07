@@ -1,6 +1,6 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v15-20261107-web-shortcut';
-var ASSETS=['./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./p2-client.mjs','./p2-ui.mjs','./p2.css'];
+var CACHE='neutinamu-p2-v16-20261107-no-pc-relay';
+var ASSETS=['./p2-room.html','./room-connect.js','./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
 });
@@ -17,11 +17,14 @@ self.addEventListener('fetch',function(event){
  if(url.pathname.indexOf(new URL('./wk/',self.location).pathname)===0)return;
  if(url.pathname.slice(-13)==='/refresh.html'){event.respondWith(fetch(req,{cache:'no-store'}));return}
  if(req.mode==='navigate'){
+  var relative=url.pathname.slice(new URL('./',self.location).pathname.length);
+  var pageKey=relative==='p2-room.html'?'./p2-room.html':(relative===''||relative==='index.html'?'./index.html':null);
+  if(!pageKey)return;
   event.respondWith(caches.open(CACHE).then(function(cache){
    return fetch(req,{cache:'no-cache'}).then(function(response){
     if(!response.ok)throw Error('Offline');
-    return cache.put('./index.html',response.clone()).then(function(){return response},function(){return response});
-   }).catch(function(error){return cache.match('./index.html').then(function(saved){if(saved)return saved;throw error})});
+    return cache.put(pageKey,response.clone()).then(function(){return response},function(){return response});
+   }).catch(function(error){return cache.match(pageKey).then(function(saved){if(saved)return saved;throw error})});
   }));return;
  }
  event.respondWith(caches.open(CACHE).then(function(cache){
