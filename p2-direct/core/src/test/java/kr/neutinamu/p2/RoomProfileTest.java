@@ -13,7 +13,7 @@ public class RoomProfileTest {
     private static CaptureProfile room()throws Exception{return CaptureProfile.forRoom("192.168.49.1",DEVICE,MAC);}
     @Test public void freshPhoneCreatesAnonymousRegistrationAndCurrentAddress()throws Exception{
         CaptureProfile profile=room();byte[] packet=profile.registration();
-        assertEquals(3000,Wire.u32(packet,0));assertEquals(47,Wire.u32(packet,12));assertEquals(0,Wire.u32(packet,5));assertEquals(4,packet[9]);
+        assertEquals(3000,Wire.u32(packet,0));assertEquals(47,Wire.u32(packet,12));assertEquals(0,Wire.u32(packet,5));assertEquals(2,packet[9]);
         assertEquals("TJAA",new String(packet,16,4,StandardCharsets.US_ASCII));
         assertEquals("0000000000",new String(packet,28,10,StandardCharsets.US_ASCII));
         assertEquals(MAC,new String(packet,43,17,StandardCharsets.US_ASCII));
@@ -44,6 +44,21 @@ public class RoomProfileTest {
         CaptureProfile saved=CaptureProfile.read(new ByteArrayInputStream(capture));
         assertTrue(saved.matchesDevice(DEVICE));assertFalse(saved.matchesDevice("TJ_P2_P0201000002_2_B"));
         assertTrue(CaptureProfile.fromStorage(saved.storageBytes()).matchesDevice(DEVICE));
+    }
+    @Test public void guestUsesOnlyMatchingRoomPasswordAndLeavesStaffProfileUnchanged()throws Exception{
+        byte[] registration=ProtocolTest.login();Wire.put32(registration,5,73129);
+        System.arraycopy("PRIVATE_TEST".getBytes(StandardCharsets.US_ASCII),0,registration,28,12);
+        byte[] capture=ProtocolTest.capture(ProtocolTest.packet(registration,true,100),ProtocolTest.packet(ProtocolTest.server(3100,identity("P0201000001")),false,400));
+        CaptureProfile saved=CaptureProfile.read(new ByteArrayInputStream(capture));
+        CaptureProfile guest=CaptureProfile.forRoom("192.168.49.1",DEVICE,MAC,saved);
+        assertEquals(73129,Wire.u32(guest.registration(),5));assertEquals(2,guest.registration()[9]);
+        assertEquals("0000000000",new String(guest.registration(),28,10,StandardCharsets.US_ASCII));
+        assertArrayEquals(registration,saved.registration());
+        assertEquals(0,Wire.u32(CaptureProfile.forRoom("192.168.49.1","TJ_P2_P0201000002_2_B",MAC,saved).registration(),5));
+        for(byte[] frame:new byte[][]{Wire.info(),Wire.heartbeat(),Wire.play(10909),Wire.reserve(10909),Wire.pause(),Wire.cancel(),Wire.queue()}){
+            byte[] outgoing=guest.packet(frame);assertEquals(2,outgoing[9]);assertEquals(73129,Wire.u32(outgoing,5));
+            assertEquals(frame[4],outgoing[4]);assertArrayEquals(Arrays.copyOfRange(frame,10,frame.length),Arrays.copyOfRange(outgoing,10,outgoing.length));
+        }
     }
     private static List<Session.State> run(String serial,ByteArrayOutputStream sent)throws Exception{
         byte[] replies=ProtocolTest.cat(ProtocolTest.server(3000,new byte[]{3}),ProtocolTest.server(3100,identity(serial)));

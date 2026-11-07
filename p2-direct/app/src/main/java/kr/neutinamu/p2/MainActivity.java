@@ -72,7 +72,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.4 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.5 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -376,13 +376,15 @@ public final class MainActivity extends Activity {
                 socket.connect(new InetSocketAddress(target,7070),5000);
                 diagnostics.event("TCP_CONNECTED");
                 String mac=currentMac(socket);
-                CaptureProfile live=device==null?selected.forConnection(target,mac):
-                    selected!=null&&selected.matchesDevice(device)?selected.forConnection(target,mac):CaptureProfile.forRoom(target,device,mac);
-                diagnostics.event(device!=null?"ROOM_REGISTRATION_READY":"SAVED_REGISTRATION_READY");
+                CaptureProfile live=connectionProfile(target,device,mac,selected);
+                diagnostics.event(device!=null?"GUEST_ROOM_REGISTRATION_READY":"SAVED_STAFF_REGISTRATION_READY");
+                if(device!=null)diagnostics.event(selected!=null&&selected.matchesDevice(device)?"ROOM_KNOWN_PASSWORD":"ROOM_DEFAULT_PASSWORD");
                 diagnostics.event("CURRENT_WIFI_ADDRESS_APPLIED");
                 final Session[] holder=new Session[1];
+                final boolean[] verified=new boolean[1];
                 Session opened=new Session(socket,live,new Session.Listener(){
                     @Override public void changed(Session.State state,String message){
+                        if(state==Session.State.READY&&!verified[0]){verified[0]=true;diagnostics.event("CONNECTION_VERIFIED");}
                         diagnostics.event("STATE_"+state.name());diagnostics.status(message);
                         ui(()->{if(session!=holder[0])return;if(state==Session.State.CLOSED)session=null;connectionMessage=message;show(message);paint();});
                     }
@@ -405,6 +407,11 @@ public final class MainActivity extends Activity {
             }
             finally{connectingSocket=null;connecting=false;ui(this::paint);}
         });
+    }
+    static CaptureProfile connectionProfile(String target,String device,String mac,CaptureProfile saved)throws IOException {
+        if(device!=null)return CaptureProfile.forRoom(target,device,mac,saved);
+        if(saved==null)throw new IOException("No saved connection profile");
+        return saved.forConnection(target,mac);
     }
     private static final class CurrentAddressException extends IOException { }
     private static String currentMac(Socket socket)throws IOException {

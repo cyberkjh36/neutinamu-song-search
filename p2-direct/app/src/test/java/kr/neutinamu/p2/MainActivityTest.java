@@ -46,6 +46,15 @@ public class MainActivityTest {
         DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));
         old.close();set("directWifi",replacement);return backend;
     }
+    @Test public void roomQrAndExplicitStaffConnectionUseSeparateRegistrationModes()throws Exception{
+        CaptureProfile saved=ProfileStoreTest.sample();byte[] original=saved.registration();
+        String mac="02:11:22:33:44:55";
+        CaptureProfile guest=MainActivity.connectionProfile("192.168.49.1","TJ_P2_P0207654321_7_B",mac,saved);
+        assertEquals(2,guest.registration()[9]);assertEquals("0000000000",new String(guest.registration(),28,10,"US-ASCII"));
+        CaptureProfile staff=MainActivity.connectionProfile("192.168.49.1",null,mac,saved);
+        assertEquals(4,staff.registration()[9]);assertEquals("SYNTHETIC",new String(staff.registration(),28,9,"US-ASCII"));
+        assertArrayEquals(original,saved.registration());
+    }
     @Test public void qrRoomIsPreservedWhenWifiSettingsBlocksDiscoveryAndResumesAfterReturn()throws Exception{
         finishWorker();set("rooms",RoomDirectory.read(new java.io.StringReader("8번 TJ_P2_TEST_EIGHT_7_B\n")));DirectWifiTest.Fake backend=fakeDiscovery();
         shadowOf(app).grantPermissions(MainActivity.wifiPermission());
@@ -252,7 +261,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("느티나무노래방 전용 리모컨 0.11.4"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("느티나무노래방 전용 리모컨 0.11.5"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));

@@ -16,15 +16,21 @@ public final class CaptureProfile {
         this.host=host;this.registration=registration.clone();this.identity=identity.clone();
         this.roomSerial=roomSerial;
     }
-    /** Room connection for the zero-password configuration observed on the owner's P2.
-     * Uses the legacy client's anonymous phone-field value; no captured phone/MAC is shipped.
-     * Other passwords are never guessed or retried. Readiness still requires exact serial match. */
+    /** Guest room registration, using the consumer client's marker and anonymous phone field.
+     * No captured phone/MAC is shipped. Readiness still requires exact serial match. */
     public static CaptureProfile forRoom(String host,String deviceName,String currentMac)throws IOException {
+        return forRoom(host,deviceName,currentMac,null);
+    }
+    /** A saved profile may supply a known password only for this exact room. It does not
+     * turn a room QR into the staff/owner protocol or copy the staff phone/account field. */
+    public static CaptureProfile forRoom(String host,String deviceName,String currentMac,CaptureProfile saved)throws IOException {
         validateHost(host);String serial=serialFromDevice(deviceName);
         byte[] body=new byte[47];body[0]='T';body[1]='J';body[2]='A';body[3]='A';
         byte[] anonymous="0000000000".getBytes(StandardCharsets.US_ASCII);
         System.arraycopy(anonymous,0,body,12,anonymous.length);
-        CaptureProfile result=new CaptureProfile(host,Wire.encode(3000,new byte[]{1,0,0,0,0,4,0,1},body),new byte[0],serial);
+        byte[] registration=Wire.encode(3000,new byte[]{1,0,0,0,0,2,0,1},body);
+        if(saved!=null&&saved.matchesDevice(deviceName))System.arraycopy(saved.registration,5,registration,5,4);
+        CaptureProfile result=new CaptureProfile(host,registration,new byte[0],serial);
         return result.forConnection(host,currentMac);
     }
     private static String serialFromDevice(String deviceName)throws IOException {

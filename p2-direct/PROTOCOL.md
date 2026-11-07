@@ -1,5 +1,13 @@
 # P2 legacy interoperability findings
 
+## 0.11.5 guest registration correction
+
+The 0.11.4 physical diagnostic excerpt reaches the selected P2 interface and TCP/7070, sends registration, then receives command 3000 / length 4 / value 3003 and closes with A01. The user subsequently confirmed the official app can connect and start a song on the same phone and room. The excerpt does not establish the cause of an earlier disconnection; 3003's detailed meaning remains unknown.
+
+Static inspection of the supplied consumer client (`mf.a` / `mf.k`) assigns header marker **2** from its NFC connection setup; `oi.j.getDevicePhoneNumber` permits the anonymous ten-zero field. The owner's captured working session used marker **4**. The QR factory incorrectly combined the owner marker with the consumer anonymous field. QR/selected-room registrations now consistently use guest marker 2. An exact-room saved profile may supply its known password, but never its account field or owner marker. Explicit staff connections preserve the original imported profile. No modes/passwords are guessed or retried after a rejection. The protocol marker is propagated to info, heartbeat and all control requests.
+
+Synthetic local TCP tests cover guest registration, exact identity, keepalive, one explicit song request, remote close, and a new connection with a fresh address and no replayed song. These tests do not establish physical P2 approval. A01/3003 remains a hard failure, never a successful-login signal. Cumulative connection verification and first/latest failure codes survive the bounded event ring without recording packet contents.
+
 Evidence: one user-authorized P2 capture with confirmed song **10909** followed by Cancel, physical diagnostics from 0.2/0.3, and static inspection of the user's uploaded **마이 티제이 2.0.0 / versionCode 98** (`kr.tj.tjsmartplay_B`). The latter is a consumer client, distinct from the owner client used for the capture. Vendor APK/code and private captures are not included in this repository.
 
 ## Frame fields and corrections in 0.4

@@ -197,7 +197,15 @@ public class ProtocolTest {
         assertFalse(d.report().contains("value="));assertFalse(d.report().contains("123456789"));
         try{d.event("private.example.com");fail();}catch(IllegalArgumentException expected){}
         for(int i=0;i<70;i++)d.event("EVENT_"+i);
-        assertFalse(d.report().contains("cmd=3000"));assertEquals(53,d.report().split("\n").length);
+        assertFalse(d.report().contains("cmd=3000"));assertEquals(54,d.report().split("\n").length);
+    }
+
+    @Test public void connectionEvidenceSurvivesRepeatedRadioEventsWithoutPrivateData(){
+        Diagnostics d=new Diagnostics();d.event("CONNECT_STARTED");d.event("CONNECTION_VERIFIED");
+        d.status("[N02] private address");d.event("CONNECT_STARTED");d.status("[A01] private credentials");
+        for(int i=0;i<100;i++)d.event("P2P_CHECKING");
+        String report=d.report();assertTrue(report.contains("CONNECTION_ATTEMPTS=2 VERIFIED=1 FIRST_FAILURE=N02 LAST_FAILURE=A01"));
+        assertFalse(report.contains("private"));assertFalse(report.contains("credentials"));assertTrue(report.length()<2000);
     }
 
     @Test public void idleHeartbeatsDoNotEraseStartAndCancelEvidence(){
