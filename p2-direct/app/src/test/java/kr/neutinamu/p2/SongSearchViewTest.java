@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("connect");}public void play(int n){calls.add("play:"+n);}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
+        public void connection(){calls.add("connect");}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -40,6 +40,13 @@ public class SongSearchViewTest {
         assertEquals(200,search.resource(Uri.parse(SongSearchView.HOME)).getStatusCode());
         WebSettings s=search.view.getSettings();assertFalse(s.getAllowFileAccess());assertFalse(s.getAllowContentAccess());assertFalse(s.getAllowUniversalAccessFromFileURLs());
         assertEquals(WebSettings.MIXED_CONTENT_NEVER_ALLOW,s.getMixedContentMode());
+    }
+    @Test public void reservationBridgeValidatesNumbersAndOnlyExplicitQueueRequest(){
+        search.handle("{\"command\":\"reserve\",\"number\":\"10909\"}");search.handle("{\"command\":\"queue\"}");
+        assertEquals(Arrays.asList("reserve:10909","queue"),calls);calls.clear();
+        for(String n:new String[]{"0","-1","0010909","10909x","999999999","1.5","1e4"})search.handle("{\"command\":\"reserve\",\"number\":\""+n+"\"}");
+        assertFalse(calls.stream().anyMatch(s->s.startsWith("reserve:")));
+        search.handle("{\"command\":\"deleteQueue\"}");assertFalse(calls.contains("queue"));
     }
     @Test public void microphoneOpensAndroidSpeechActivityOnlyOnceAndCanRetryAfterCancel(){
         search.handle("{\"command\":\"voice\"}");Intent started=shadowOf(activity).getNextStartedActivity();

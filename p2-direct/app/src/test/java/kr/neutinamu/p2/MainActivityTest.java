@@ -67,6 +67,24 @@ public class MainActivityTest {
         assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
         web.handle("{\"command\":\"connection\"}");app.onBackPressed();assertEquals(View.VISIBLE,web.view.getVisibility());
     }
+    @Test public void reservationAndQueueUseLiveSessionAndRejectDuplicateTap()throws Exception{
+        finishWorker();java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
+        java.net.Socket socket=new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}};
+        CaptureProfile profile=ProfileStoreTest.sample();Session session=new Session(socket,profile,(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{
+            SongSearchView web=(SongSearchView)field("songSearch");web.handle("{\"command\":\"reserve\",\"number\":\"47050\"}");web.handle("{\"command\":\"reserve\",\"number\":\"47050\"}");finishWorker();
+            assertArrayEquals(profile.packet(Wire.reserve(47050)),sent.toByteArray());assertEquals(Session.State.RESERVE,session.state());assertFalse((Boolean)field("queueValid"));
+            sent.reset();state.set(session,Session.State.READY);web.handle("{\"command\":\"queue\"}");finishWorker();
+            assertArrayEquals(profile.packet(Wire.queue()),sent.toByteArray());assertEquals(Session.State.QUEUE,session.state());
+        }finally{session.close();set("session",null);}
+    }
+    @Test public void disconnectedReservationIsNotSentAndPreviousRoomListIsCleared()throws Exception{
+        finishWorker();set("queueSongs",java.util.Arrays.asList(47050,914));set("queueValid",true);call("paint");
+        assertFalse((Boolean)field("queueValid"));assertTrue(((java.util.List<?>)field("queueSongs")).isEmpty());
+        ((EditText)view("songNumber")).setText("47050");view("reserve").performClick();
+        assertTrue(message().contains("[C00]"));assertFalse(((Diagnostics)field("diagnostics")).report().contains("RESERVE_TAPPED"));
+    }
     @Test public void resultsBeyondThirtyAreReachableAndSelectionNeverStartsSong()throws Exception{
         installCatalog();EditText query=view("query");query.setText("사랑");assertEquals(0,((LinearLayout)view("results")).getChildCount());
         view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(30,list.getChildCount());

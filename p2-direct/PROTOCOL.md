@@ -68,3 +68,16 @@ Diagnostic 1000 frames are aggregated into RX/TX counters and last-seen elapsed 
 No changes to Wire, Session, CaptureProfile, ProfileStore, or Wi-Fi backends. The Android application ID and release signing key remain the same as 0.5, preserving app-private encrypted data on an in-place update. The status banner uses live protocol state, not profile presence, to show connection readiness.
 
 Song search runs on a separate cancellable executor with a generation check for late UI results. Paging exposes all catalog matches, exact song numbers rank ahead of title matches, and title/artist tokens may appear in either order. A direct number edit refreshes the selected title or explicitly reports an unknown title. Selecting a search result and clearing a search do not send playback commands. Connection setup and diagnostics remain reachable in the collapsible setup panel.
+
+
+## 0.10.0 reservation and queue
+
+Interoperability facts below were checked against the user-provided Android client. This is an independently implemented subset, not copied client source. Reservation has not yet been verified on physical P2 hardware in this release.
+
+- Normal reserve uses command 4000, version 2, a 9-byte body: LE u32 key 1100, LE u32 song number, zero option count. Start remains key 1200. Priority reservation (1110) is not exposed.
+- Queue request is command 4200, no body, same header kind as the existing device-info request. Connection context is applied by the existing profile packet writer.
+- Data response 4200 is one unsigned count byte followed by exactly count * 9 bytes. Each entry starts with an LE u32 song number, then a one-byte field and four-byte short code. The latter fields are not used as titles or commands.
+- Update 4220 has seven bytes of metadata before the same count/list layout. Only a validated, identified live session may publish it.
+- 4000 data scalar 2 or message scalar 100 triggers a read-only queue request after a reservation. It never implies that playback began. The UI shows only the returned list and never appends optimistically.
+- Malformed counts, truncated/trailing data, invalid song numbers, and non-data responses do not become an empty or partial successful list. Queue failures leave the session available for explicit retry. Reservation timeouts never replay the mutation.
+- Queue responses cannot complete a pending play/cancel operation. Cancel may interrupt a queue read. Disconnect/room changes clear the displayed list.

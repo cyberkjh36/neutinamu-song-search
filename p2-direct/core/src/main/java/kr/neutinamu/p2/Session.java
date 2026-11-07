@@ -3,18 +3,21 @@ package kr.neutinamu.p2;
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Collections;
 
 /** One live connection; never retries a play/cancel command automatically. */
 public final class Session implements Closeable {
-    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, CLOSED }
+    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, RESERVE, QUEUE, CLOSED }
     public interface Listener {
         void changed(State state,String message);
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
+        default void queue(List<Integer> songs,String message,boolean valid) {}
     }
     private final Socket socket;private final CaptureProfile profile;private final Listener listener;
     private State state=State.AUTH;private long deadline,lastReceived;private int wanted;
     private final int commandTimeoutMs,idleTimeoutMs;
-    private boolean playReply;
+    private boolean playReply;private int reservedSong;
     public Session(Socket socket,CaptureProfile profile,Listener listener)throws IOException {
         this(socket,profile,listener,10000,30000);
     }
@@ -46,6 +49,10 @@ public final class Session implements Closeable {
                     if(state!=State.READY&&t>deadline) {
                         if(state==State.AUTH){fail("[A02] P2에 접속했지만 초기 연결 응답이 없습니다.");break;}
                         if(state==State.IDENTIFY){fail("[I02] 초기 응답은 받았지만 반주기 확인 응답이 없습니다.");break;}
+                        if(state==State.RESERVE||state==State.QUEUE){
+                            String message=state==State.RESERVE?"[R11] 예약 응답을 받지 못했습니다. 중복 예약을 피하려면 예약 목록을 먼저 확인하세요. 자동 재전송하지 않습니다.":"[Q11] 예약 목록 응답을 받지 못했습니다. 새로고침을 눌러 다시 확인하세요.";
+                            reservedSong=0;listener.queue(Collections.emptyList(),message,false);change(State.READY,message);continue;
+                        }
                         String code=state==State.CANCEL?"C11":playReply?"P11":"P12";
                         String detail=state==State.CANCEL?"취소 응답이 없습니다.":playReply?"시작 요청 응답은 받았지만 곡 재생 확인은 받지 못했습니다.":"시작 요청에 대한 응답이 없습니다.";
                         change(State.READY,"["+code+"] 응답 시간 초과: "+detail+" 반주기 화면을 확인하세요. 자동 재전송하지 않습니다.");
@@ -73,6 +80,30 @@ public final class Session implements Closeable {
             if(f.bodyType()!=1||!profile.matchesIdentity(f.body)){fail("[I01] 기록과 반주기 식별정보가 다릅니다. 곡 시작 명령은 보내지 않았습니다.");return;}
             change(State.READY,"[READY] P2 연결 응답 확인 · 곡을 선택한 뒤 시작을 누르세요.");return;
         }
+        if(state==State.AUTH||state==State.IDENTIFY)return;
+        if(f.code==4200||f.code==4220){
+            try{
+                List<Integer> songs=Wire.queueSongs(f);
+                String message="P2 예약곡 "+songs.size()+"곡 · 반주기에서 받은 순서입니다.";
+                if(state==State.QUEUE&&reservedSong>0&&songs.contains(reservedSong))message=reservedSong+"번이 P2 예약 목록에 있습니다. · 총 "+songs.size()+"곡";
+                listener.queue(songs,message,true);
+                if(state==State.QUEUE){reservedSong=0;change(State.READY,message);}
+            }catch(IOException invalid){
+                String message="[Q12] 예약 목록을 확인하지 못했습니다. 새로고침을 눌러 주세요.";
+                listener.queue(Collections.emptyList(),message,false);
+                if(state==State.QUEUE){reservedSong=0;change(State.READY,message);}
+            }
+            return;
+        }
+        if(state==State.RESERVE&&f.code==4000){
+            if((f.bodyType()==1&&scalar!=null&&scalar==2)||(f.bodyType()==9&&scalar!=null&&scalar==100)){
+                change(State.QUEUE,"예약 요청 응답을 받았습니다. P2 예약 목록을 확인합니다…");write(Wire.queue());
+            }else{
+                reservedSong=0;String message="[R13] 반주기가 예약 요청을 승인하지 않았거나 응답 형식을 확인할 수 없습니다. 예약 목록을 확인하세요. 자동 재전송하지 않습니다.";
+                listener.queue(Collections.emptyList(),message,false);change(State.READY,message);
+            }
+            return;
+        }
         // 4000/2 is only observed acceptance; never display playback success for it.
         if(state==State.PLAY&&f.code==4000){
             if(f.bodyType()==3||(f.bodyType()==9&&(scalar==null||scalar!=100))){
@@ -93,9 +124,20 @@ public final class Session implements Closeable {
         try{write(packet);}catch(IOException e){fail("전송 결과를 확인하지 못했습니다. 자동 재전송하지 않습니다.");throw e;}
     }
     public synchronized void cancel()throws IOException {
-        if(state!=State.READY&&state!=State.PLAY)throw new IOException("P2 연결 상태를 확인해 주세요.");
+        if(state!=State.READY&&state!=State.PLAY&&state!=State.QUEUE)throw new IOException("P2 연결 상태를 확인해 주세요.");
+        reservedSong=0;
         change(State.CANCEL,"현재 곡 취소 요청 중…");
         try{write(Wire.cancel());}catch(IOException e){fail("취소 결과를 확인하지 못했습니다.");throw e;}
+    }
+    public synchronized void reserve(int song)throws IOException {
+        if(state!=State.READY)throw new IOException("연결 준비 또는 이전 명령 처리를 기다려 주세요.");
+        byte[] packet=Wire.reserve(song);reservedSong=song;change(State.RESERVE,song+"번 예약 요청 중…");
+        try{write(packet);}catch(IOException e){fail("예약 전송 결과를 확인하지 못했습니다. 자동 재전송하지 않습니다.");throw e;}
+    }
+    public synchronized void requestQueue()throws IOException {
+        if(state!=State.READY)throw new IOException("이전 명령의 응답을 기다려 주세요.");
+        reservedSong=0;change(State.QUEUE,"P2 예약 목록을 불러오는 중…");
+        try{write(Wire.queue());}catch(IOException e){fail("예약 목록 요청을 보내지 못했습니다.");throw e;}
     }
     private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
     @Override public void close(){fail("연결을 해제했습니다.");}

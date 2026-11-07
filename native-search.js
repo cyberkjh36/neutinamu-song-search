@@ -1,57 +1,46 @@
 (function(){
-  'use strict';
-  if(!window.NeutiP2)return;
-  var native=window.NeutiP2,selected=null,busy=false,voiceRevision=null;
-  var $=id=>document.getElementById(id);
-  function send(command,number){native.command(JSON.stringify({command:command,number:number||''}));}
-  document.documentElement.classList.add('p2-native');
-  document.addEventListener('DOMContentLoaded',()=>{
-    document.querySelector('h1').textContent='느티나무 노래검색';
-    var credit=document.createElement('p');credit.className='hint';credit.textContent='made by cyberkjh';
-    credit.style.margin='0 0 12px';document.querySelector('h1').after(credit);
-    document.querySelector('.lead').textContent='음성 또는 제목·가수·초성으로 검색하고, 선택한 곡을 P2에서 시작하세요.';
-    var panel=document.createElement('section');panel.className='panel native-connection';
-    panel.innerHTML='<div id="nativeState" role="status">○ P2 연결 전</div><button id="nativeConnect" type="button">P2 연결 · 설정</button><p id="nativeStatus" class="hint" role="status">검색은 연결 전에도 사용할 수 있습니다.</p>';
-    $('query').closest('section').before(panel);
-    $('nativeConnect').onclick=()=>send('connection');
-    var controls=document.createElement('div');controls.className='native-controls';
-    controls.innerHTML='<button id="nativePlay" type="button" disabled>▶ 이 곡 시작</button><button id="nativeCancel" type="button">■ 곡 취소</button><p id="nativeAction" class="hint" role="status"></p>';
-    $('hero').append(controls);
-    // Cancel remains reachable even after the user starts a new search.
-    var stop=document.createElement('button');stop.type='button';stop.id='nativeStop';stop.textContent='■ 현재 곡 취소';panel.append(stop);
-    stop.onclick=$('nativeCancel').onclick=()=>send('cancel');
-    $('nativePlay').onclick=()=>{if(selected&&!busy){busy=true;$('nativePlay').disabled=true;send('play',selected.code);}};
-    var clear=document.createElement('button');clear.id='nativeNew';clear.textContent='새 검색';clear.type='button';
-    $('searchBtn').after(clear);clear.onclick=()=>{
-      ++searchRevision;voiceRevision=null;resetVoiceButton();$('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');
-      window.P2Remote.setSong(null);setMessage('새 노래 제목·가수 또는 초성을 입력해 주세요.');$('query').focus();
-    };
-    $('fileInput').addEventListener('click',e=>{e.preventDefault();send('import');});
-    document.querySelector('.footer').textContent='음성·키보드·초성 검색 + P2 직접연결 · 0.9.0\n음성 인식은 휴대폰의 음성 서비스와 인터넷 연결이 필요할 수 있습니다.\n공식 TJ 앱이 아닙니다. 수록곡은 반주기 업데이트 상태에 따라 다를 수 있습니다.';
-    document.querySelector('.footer').style.whiteSpace='pre-line';
-    send('status');
-  });
-  window.P2Remote={setSong(song){selected=song&&/^[1-9][0-9]{0,7}$/.test(String(song.code))?song:null;
-    if($('nativePlay'))$('nativePlay').disabled=!selected||busy;
-  }};
-  window.onP2NativeState=function(state){
-    busy=!!state.busy;
-    if($('nativeState'))$('nativeState').textContent=state.label;
-    if($('nativeStatus'))$('nativeStatus').textContent=state.message;
-    if($('nativeAction'))$('nativeAction').textContent=state.message;
-    if($('nativePlay'))$('nativePlay').disabled=!selected||busy;
-  };
-  window.Android={startVoice(){voiceRevision=searchRevision;$('voiceBtn').disabled=true;$('voiceBtn').textContent='마이크를 여는 중…';send('voice');}};
-  window.onP2NativeVoice=function(texts,error){
-    var revision=voiceRevision;voiceRevision=null;resetVoiceButton();
-    if(revision===null||revision!==searchRevision)return;
-    if(error){setMessage(error,true);return;}
-    useSpeechAlternatives(texts,revision);
-  };
-  window.onP2NativeImport=async function(text,error){
-    if(error){setMessage(error,true);return;}
-    try{var n=await importCSVText(text);renderCount(await countSongs());setMessage(n.toLocaleString()+'곡을 불러왔습니다.');}
-    catch(e){setMessage('곡 데이터 파일을 읽지 못했습니다. CSV 형식을 확인해 주세요.',true);}
-  };
-  window.onP2NativeFile=function(message){setMessage(message);};
+'use strict';if(!window.NeutiP2)return;
+var native=window.NeutiP2,selected=null,busy=false,connected=false,voiceRevision=null;
+var queueOpen=false,queueRevision=0,queueKey='',queueData={songs:[],message:'먼저 P2에 연결해 주세요.',valid:false};
+var $=id=>document.getElementById(id);
+function send(command,number){native.command(JSON.stringify({command:command,number:number||''}));}
+function icon(name){var paths={list:'<path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/>',plus:'<path d="M12 5v14M5 12h14"/>',play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',stop:'<rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'};return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+paths[name]+'</svg>';}
+function friendly(message){if(/^\[A01\]/.test(message))return '[A01] 반주기가 연결을 승인하지 않았습니다. 연결 설정에서 확인해 주세요.';if(/^\[C00\]/.test(message))return '먼저 P2에 연결해 주세요. 곡 시작·예약 명령은 보내지 않았습니다.';return message||'';}
+function buttons(){['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!selected||busy;});if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;}
+function requestQueue(){if(busy)return;busy=true;buttons();send('queue');}
+function toggleQueue(open){queueOpen=typeof open==='boolean'?open:!queueOpen;$('nativeQueuePanel').hidden=!queueOpen;['nativeQueue','nativeQueueNav'].forEach(id=>$(id).setAttribute('aria-expanded',String(queueOpen)));$('nativeQueueNav').classList.toggle('active',queueOpen);$('nativeSearchNav').classList.toggle('active',!queueOpen);document.body.classList.toggle('queue-open',queueOpen);if(queueOpen){$('nativeQueueClose').focus();requestQueue();}else $('nativeQueueNav').focus();}
+async function renderQueue(){
+ var revision=++queueRevision,data=queueData,list=$('nativeQueueList');if(!list)return;list.replaceChildren();$('nativeQueueMessage').textContent=data.message;
+ var valid=connected&&data.valid;document.querySelectorAll('.queue-count').forEach(el=>el.textContent=valid?String(data.songs.length):'—');
+ if(!valid){$('nativeQueueEmpty').textContent=connected?'목록을 확인한 뒤 예약 순서를 표시합니다.':'연결된 방의 예약곡을 여기에서 확인할 수 있습니다.';$('nativeQueueEmpty').hidden=false;return;}
+ $('nativeQueueEmpty').hidden=data.songs.length>0;$('nativeQueueEmpty').textContent='아직 예약곡이 없습니다. 노래를 찾아 ‘예약’을 눌러 주세요.';
+ var songs=[];try{songs=await allSongs();}catch(e){}if(revision!==queueRevision||!connected||!queueData.valid)return;
+ var catalog=new Map(songs.map(s=>[String(s.code),s]));data.songs.forEach((number,index)=>{var song=catalog.get(String(number)),row=document.createElement('li'),order=document.createElement('span'),meta=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('span');order.className='queue-order';order.textContent=index+1;title.textContent=song?song.title:'제목 정보 없음';detail.textContent=number+' · '+(song&&song.artist?song.artist:'가수 정보 없음');meta.append(title,detail);row.append(order,meta);list.append(row);});
+}
+document.documentElement.classList.add('p2-native');
+document.addEventListener('DOMContentLoaded',()=>{
+ document.querySelector('h1').textContent='느티나무 노래방';document.querySelector('.brand').textContent='내 손안의 P2 리모컨';document.querySelector('.lead').textContent='노래를 찾고, 시작하거나 예약하세요.';
+ var searchPanel=$('query').closest('section');searchPanel.id='nativeSearchPanel';var dataPanel=$('fileInput').closest('section');
+ var tools=document.createElement('details');tools.id='nativeTools';tools.className='panel native-tools';var summary=document.createElement('summary');summary.textContent='더보기 · 연결 설정 / 곡 데이터';tools.append(summary);
+ var setting=document.createElement('button');setting.type='button';setting.textContent='P2 연결 설정 · 진단';setting.onclick=()=>send('connection');tools.append(setting);
+ var help=document.createElement('p');help.className='hint';help.textContent='방 QR을 스캔하면 해당 방의 연결을 시작합니다. 연결이 안 되면 직원에게 문의해 주세요.';tools.append(help,$('dbCount'));while(dataPanel.firstChild)tools.append(dataPanel.firstChild);dataPanel.replaceWith(tools);
+ var panel=document.createElement('section');panel.className='panel native-connection';panel.innerHTML='<div><span class="connection-caption">연결된 반주기</span><strong id="nativeState" role="status">○ P2 연결 전</strong></div><button id="nativeConnect" type="button">연결 설정</button><p id="nativeStatus" class="hint" role="status">방 QR을 스캔하거나 연결 설정에서 방을 선택하세요.</p>';searchPanel.before(panel);$('nativeConnect').onclick=()=>send('connection');
+ var title=document.createElement('h2');title.className='native-section-title';title.textContent='어떤 노래를 부를까요?';searchPanel.prepend(title);searchPanel.insertBefore($('voiceBtn'),searchPanel.querySelector('.searchrow'));$('query').setAttribute('aria-label','노래 제목, 가수, 초성 또는 곡번호');$('query').placeholder='제목 · 가수 · 초성 · 곡번호';
+ var controls=document.createElement('div');controls.className='native-controls';controls.innerHTML='<button id="nativePlay" type="button" disabled>'+icon('play')+'이 곡 시작</button><button id="nativeReserve" type="button" disabled>'+icon('plus')+'예약</button><button id="nativeCancel" type="button">'+icon('stop')+'곡 취소</button><button id="nativeQueue" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 목록</button><p id="nativeAction" class="hint" role="status"></p>';$('hero').append(controls);$('hero').querySelector('.matchlabel').textContent='선택한 곡 · 가수를 확인하세요';
+ ['Play','Reserve'].forEach(kind=>{$('native'+kind).onclick=()=>{if(selected&&!busy){busy=true;buttons();send(kind==='Play'?'play':'reserve',selected.code);}};});$('nativeCancel').onclick=()=>send('cancel');$('nativeQueue').onclick=()=>toggleQueue();
+ var stop=document.createElement('button');stop.type='button';stop.id='nativeStop';stop.innerHTML=icon('stop')+'현재 곡 취소';stop.onclick=()=>send('cancel');searchPanel.append(stop);
+ var clear=document.createElement('button');clear.id='nativeNew';clear.textContent='새 검색';clear.type='button';$('searchBtn').after(clear);clear.onclick=()=>{++searchRevision;voiceRevision=null;resetVoiceButton();$('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');window.P2Remote.setSong(null);setMessage('새 노래 제목·가수 또는 초성을 입력해 주세요.');$('query').focus();};
+ var queue=document.createElement('section');queue.id='nativeQueuePanel';queue.hidden=true;queue.setAttribute('role','dialog');queue.setAttribute('aria-modal','true');queue.setAttribute('aria-labelledby','nativeQueueTitle');queue.innerHTML='<div class="queue-sheet"><div class="queue-heading"><div><span class="connection-caption">반주기의 재생 순서</span><h2 id="nativeQueueTitle">예약곡 <span class="queue-count">—</span></h2></div><button id="nativeQueueClose" type="button">닫기</button></div><p id="nativeQueueRoom" class="hint"></p><div class="queue-toolbar"><p id="nativeQueueMessage" role="status"></p><button id="nativeQueueRefresh" type="button">↻ 새로고침</button></div><p id="nativeQueueEmpty" class="queue-empty"></p><ol id="nativeQueueList"></ol><p class="hint">다른 휴대폰이나 리모컨으로 예약한 곡도 반주기 목록에 함께 표시됩니다. 새로고침하면 최신 순서를 확인할 수 있습니다.</p></div>';document.body.append(queue);$('nativeQueueClose').onclick=()=>toggleQueue(false);$('nativeQueueRefresh').onclick=requestQueue;
+ queue.onclick=e=>{if(e.target===queue)toggleQueue(false);};queue.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();toggleQueue(false);}if(e.key==='Tab'){var controls=[...queue.querySelectorAll('button:not(:disabled)')],first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
+ var nav=document.createElement('nav');nav.className='native-nav';nav.setAttribute('aria-label','주요 메뉴');nav.innerHTML='<button id="nativeSearchNav" class="active" type="button">'+icon('search')+'노래 찾기</button><button id="nativeQueueNav" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 <span class="queue-count">—</span></button><button id="nativeMoreNav" type="button">'+icon('more')+'더보기</button>';document.body.append(nav);$('nativeQueueNav').onclick=()=>toggleQueue();$('nativeSearchNav').onclick=()=>{if(queueOpen)toggleQueue(false);searchPanel.scrollIntoView({behavior:'smooth',block:'start'});};$('nativeMoreNav').onclick=()=>{if(queueOpen)toggleQueue(false);tools.open=!tools.open;if(tools.open)tools.scrollIntoView({behavior:'smooth',block:'start'});};
+ $('fileInput').addEventListener('click',e=>{e.preventDefault();send('import');});document.querySelector('.footer').textContent='made by cyberkjh · 0.10.0\n공식 TJ 앱이 아닙니다. 음성 인식은 인터넷 연결이 필요할 수 있습니다.';document.querySelector('.footer').style.whiteSpace='pre-line';renderQueue();send('status');
+});
+window.P2Remote={setSong(song){selected=song&&/^[1-9][0-9]{0,7}$/.test(String(song.code))?song:null;buttons();}};
+window.onP2NativeState=function(state){busy=!!state.busy;var wasConnected=connected;connected=!!state.connected;if($('nativeState'))$('nativeState').textContent=state.label;if($('nativeStatus'))$('nativeStatus').textContent=friendly(state.message);if($('nativeAction'))$('nativeAction').textContent=friendly(state.message);if($('nativeQueueRoom'))$('nativeQueueRoom').textContent=state.label;if(!connected&&wasConnected){queueKey='';queueData={songs:[],valid:false,message:'연결이 끊겼습니다. P2에 다시 연결해 주세요.'};renderQueue();}buttons();};
+window.onP2NativeQueue=function(data){var valid=!!data.valid&&Array.isArray(data.songs)&&data.songs.length<=255&&data.songs.every(n=>Number.isInteger(n)&&n>0&&n<=99999999);var next={songs:valid?data.songs:[],message:String(data.message||''),valid:valid};var key=JSON.stringify(next);if(key===queueKey)return;queueKey=key;queueData=next;renderQueue();};
+window.onP2NativeQueueOpen=function(){toggleQueue(true);};
+window.Android={startVoice(){voiceRevision=searchRevision;$('voiceBtn').disabled=true;$('voiceBtn').textContent='마이크를 여는 중…';send('voice');}};
+window.onP2NativeVoice=function(texts,error){var revision=voiceRevision;voiceRevision=null;resetVoiceButton();if(revision===null||revision!==searchRevision)return;if(error){setMessage(error,true);return;}useSpeechAlternatives(texts,revision);};
+window.onP2NativeImport=async function(text,error){if(error){setMessage(error,true);return;}try{var n=await importCSVText(text);renderCount(await countSongs());setMessage(n.toLocaleString()+'곡을 불러왔습니다.');renderQueue();}catch(e){setMessage('곡 데이터 파일을 읽지 못했습니다. CSV 형식을 확인해 주세요.',true);}};
+window.onP2NativeFile=function(message){setMessage(message);};
 })();

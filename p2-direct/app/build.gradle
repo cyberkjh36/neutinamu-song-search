@@ -6,8 +6,8 @@ android {
         applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 11
-        versionName '0.9.0-room-qr'
+        versionCode 12
+        versionName '0.10.0-reservation'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.

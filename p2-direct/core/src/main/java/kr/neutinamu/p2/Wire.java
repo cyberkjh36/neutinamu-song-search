@@ -26,9 +26,29 @@ public final class Wire {
     public static byte[] info() { return encode(3100,INFO,new byte[0]); }
     public static byte[] heartbeat() { return encode(1000,KEEP,integer(100)); }
     public static byte[] play(int song) {
+        return songCommand(1200,song);
+    }
+    /** Normal reservation (1100), never priority reservation (1110) or start (1200). */
+    public static byte[] reserve(int song) { return songCommand(1100,song); }
+    private static byte[] songCommand(int key,int song) {
         // Range is a UI constraint, not a discovered protocol limit.
         if(song<1||song>99999999) throw new IllegalArgumentException("Invalid song number");
-        byte[] b=new byte[9];put32(b,0,1200);put32(b,4,song);return encode(4000,PLAY,b);
+        byte[] b=new byte[9];put32(b,0,key);put32(b,4,song);return encode(4000,PLAY,b);
+    }
+    public static byte[] queue() { return encode(4200,INFO,new byte[0]); }
+    /** 4200: count + 9-byte entries; 4220: 7-byte update metadata, then the same list. */
+    public static List<Integer> queueSongs(Frame frame)throws IOException {
+        int offset=frame.code==4200?0:frame.code==4220?7:-1;
+        if(offset<0||frame.bodyType()!=1||frame.body.length<=offset)throw new IOException("Invalid queue response");
+        int count=frame.body[offset]&255;
+        if(frame.body.length!=offset+1+count*9)throw new IOException("Invalid queue size");
+        List<Integer> songs=new ArrayList<>();
+        for(int i=0;i<count;i++){
+            long song=u32(frame.body,offset+1+i*9);
+            if(song<1||song>99999999)throw new IOException("Invalid queue song");
+            songs.add((int)song);
+        }
+        return java.util.Collections.unmodifiableList(songs);
     }
     public static byte[] cancel() { return encode(4100,NORMAL,integer(12)); }
     public static final class Frame {

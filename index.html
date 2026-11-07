@@ -87,6 +87,40 @@
     .native-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.native-controls button{flex:1;min-height:58px;font-size:19px}
     .native-controls p{width:100%;text-align:left}.native-controls #nativePlay{background:var(--green);color:var(--bg)}
     button:disabled{opacity:.5}.p2-native .searchrow{display:flex;flex-wrap:wrap}.p2-native .searchrow input{flex:1 1 100%}
+    /* Native Android controls only; the public browser search keeps its existing layout. */
+    .p2-native body{background:#0a1824}.p2-native main{max-width:600px;padding:20px 16px 108px}
+    .p2-native header{margin-bottom:8px}.p2-native .brand{font-size:12px;letter-spacing:.04em;color:#94c7cb}
+    .p2-native h1{font-size:27px;line-height:1.3;margin:0 0 6px}.p2-native .lead{font-size:14px;margin-bottom:20px}
+    .p2-native .panel{background:#12283a;box-shadow:none;border:1px solid #294353;border-radius:20px;padding:16px}
+    .p2-native .native-connection{background:#133633;border-color:#31635a;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+    .connection-caption{display:block;font-size:12px;color:#b3c9c6;letter-spacing:.02em;margin-bottom:5px}
+    #nativeState{display:block;font-size:22px;color:#b7f0ca;overflow-wrap:anywhere}#nativeConnect{font-size:13px;padding:10px;min-height:48px;background:transparent;border-color:#609184}
+    #nativeStatus{font-size:13px;line-height:1.55}.native-section-title{font-size:20px;margin:0 0 14px}
+    .p2-native #nativeSearchPanel>.status{display:none}.p2-native .voice{margin:0 0 14px;padding:20px 12px;border-radius:16px;background:#a9f0c0;color:#0a2923;font-size:20px}
+    .p2-native .searchrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.p2-native .searchrow input{grid-column:1/-1;width:100%;font-size:17px;min-height:54px}
+    .p2-native #searchBtn{background:#24566a}.p2-native #nativeNew{background:transparent}.p2-native .searchrow button{min-height:48px}
+    .p2-native .hint{line-height:1.65}.p2-native .hero{border-top:1px solid #365160;margin-top:18px;padding-top:18px}
+    .p2-native .hero .number{font-size:clamp(48px,18vw,76px)!important;letter-spacing:0;text-shadow:none;white-space:normal;overflow-wrap:anywhere}
+    .p2-native .hero .title{font-size:24px;line-height:1.4;overflow-wrap:anywhere}.p2-native .hero .artist{font-size:16px}
+    .p2-native .native-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+    .p2-native .native-controls button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:60px;padding:12px 6px;font-size:17px;border-radius:14px}
+    .native-controls svg,#nativeStop svg{width:23px;height:23px;flex-shrink:0}.native-controls #nativeReserve{background:#ffd677;color:#33260a;border-color:#ffd677}
+    .native-controls #nativeCancel{background:transparent;color:#e5c1c1}.native-controls #nativeQueue{background:#1d4053}
+    .p2-native .native-controls p{grid-column:1/-1;margin:5px 0 0;font-size:13px;overflow-wrap:anywhere}
+    .p2-native .result .songartist{display:block;margin-top:4px}.p2-native .result{gap:10px;min-height:70px}.p2-native .result .num{min-width:60px;font-size:22px}
+    #nativeStop{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;background:transparent;color:#dfbcbc;font-size:14px;min-height:48px}
+    .p2-native .native-tools{margin-top:20px}.native-tools summary{font-size:15px}.native-tools>button,.native-tools>.small{margin-top:14px}.native-tools>strong{display:block;margin-top:18px}
+    .native-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:60;width:100%;max-width:600px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:#102633;border-top:1px solid #395560;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+    .native-nav button{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;min-height:58px;padding:10px 4px;font-size:13px;border:0;background:transparent;color:#a7bdca;border-radius:12px}.native-nav button.active{color:#b7f0ca;background:#204238}.native-nav svg{width:22px;height:22px}
+    .queue-count{display:inline-block;padding:2px 7px;border-radius:8px;background:#2b4b55;color:#e1f5f3;font-size:13px}
+    #nativeQueuePanel{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:#000a;padding:22px 10px calc(82px + env(safe-area-inset-bottom))}
+    .queue-sheet{width:100%;max-width:580px;max-height:100%;overflow:auto;background:#12283a;border:1px solid #456476;border-radius:22px;padding:20px}.queue-open{overflow:hidden}
+    .queue-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.queue-heading h2{font-size:26px;margin:0}.queue-heading button{min-height:48px;font-size:14px;padding:10px 16px}
+    .queue-toolbar{display:flex;align-items:center;gap:12px;margin-top:12px}.queue-toolbar p{flex:1;font-size:13px;line-height:1.6;color:#b7d2d7}.queue-toolbar button{flex-shrink:0;font-size:13px;min-height:48px;padding:10px}
+    #nativeQueueList{list-style:none;padding:0;margin:14px 0}#nativeQueueList li{display:flex;gap:12px;align-items:center;border-top:1px solid #345064;padding:15px 0}.queue-order{display:grid;place-items:center;width:30px;height:30px;flex-shrink:0;background:#254c50;color:#b7f0ca;border-radius:10px;font-weight:800}
+    #nativeQueueList li>div{min-width:0}#nativeQueueList strong{display:block;font-size:18px;line-height:1.5;overflow-wrap:anywhere}#nativeQueueList li div>span{display:block;font-size:13px;color:#a5bfcb;margin-top:4px}.queue-empty{padding:32px 12px;text-align:center;color:#bfd2d9;line-height:1.8}
+    .p2-native button:focus-visible,.p2-native summary:focus-visible{outline:3px solid #a9f0c0;outline-offset:3px}
+    @media(max-width:340px){.p2-native main{padding-left:10px;padding-right:10px}.p2-native .panel{padding:12px}.native-controls svg{width:19px}.p2-native .native-controls button{font-size:15px}.native-nav button{font-size:12px}}
   </style>
   <link rel="stylesheet" href="p2.css">
   <script src="chosung.js"></script>

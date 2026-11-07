@@ -40,6 +40,8 @@ public final class MainActivity extends Activity {
     private volatile Session session;private volatile Socket connectingSocket;
     private volatile boolean destroyed=false,connecting=false;
     private boolean importing=false,commandQueued=false;
+    private List<Integer> queueSongs=Collections.emptyList();private boolean queueValid;
+    private String queueMessage="예약 목록을 열면 반주기의 예약 순서를 확인합니다.";
     private final Diagnostics diagnostics=new Diagnostics();
     private String connectionMessage="방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.";
     private CaptureProfile profile;private ProfileStore profileStore;private SongCatalog catalog;
@@ -75,7 +77,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
         button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"통합판 0.9.0 · P2 연결 설정",15,false);
+        text(root,"통합판 0.10.0 · P2 연결 설정",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -135,6 +137,12 @@ public final class MainActivity extends Activity {
             dispatch(true,song);
         });play.setTag("play");
         cancel=button(playbackRow,"■ 곡 취소",()->{if(ensureControlReady(false))dispatch(false,0);});cancel.setTag("cancel");equalButtons(playbackRow);
+        LinearLayout reservationRow=row(selectionPanel);
+        button(reservationRow,"＋ 예약",()->{
+            final int song;try{song=Integer.parseInt(number.getText().toString().trim());Wire.reserve(song);}catch(IllegalArgumentException e){feedback("올바른 곡번호를 선택해 주세요.");return;}
+            queueCommand(true,song);
+        }).setTag("reserve");
+        button(reservationRow,"☷ 예약곡 목록",()->{showSongSearch();songSearch.openQueue();}).setTag("queue");equalButtons(reservationRow);
         actionStatus=text(selectionPanel,"P2에 연결한 뒤 ‘곡 시작’을 눌러 주세요.",15,false);actionStatus.setTag("actionStatus");actionStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         resultsPanel=column(root);resultsPanel.setTag("resultsPanel");
         results=column(resultsPanel);results.setTag("results");
@@ -171,6 +179,8 @@ public final class MainActivity extends Activity {
         songSearch=new SongSearchView(this,new SongSearchView.Host(){
             public void connection(){showConnection();}
             public void play(int song){number.setText(String.valueOf(song));if(ensureControlReady(true))dispatch(true,song);paint();}
+            public void reserve(int song){number.setText(String.valueOf(song));queueCommand(true,song);}
+            public void queue(){queueCommand(false,0);}
             public void cancel(){if(ensureControlReady(false))dispatch(false,0);paint();}
             public void refresh(){paint();}
         });
@@ -433,6 +443,9 @@ public final class MainActivity extends Activity {
                         ui(()->{if(session!=holder[0])return;if(state==Session.State.CLOSED)session=null;connectionMessage=message;show(message);paint();if(roomRequest!=null&&state==Session.State.READY)showSongSearch();});
                     }
                     @Override public void frame(boolean outgoing,int command,int length,Long scalar){diagnostics.frame(outgoing,command,length,scalar);}
+                    @Override public void queue(List<Integer> songs,String message,boolean valid){ui(()->{
+                        if(session!=holder[0])return;queueSongs=songs;queueMessage=message;queueValid=valid;paint();
+                    });}
                 });
                 holder[0]=opened;
                 if(destroyed){opened.close();return;}
@@ -498,12 +511,12 @@ public final class MainActivity extends Activity {
         Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
         if(s==Session.State.CLOSED){
             diagnostics.event("CONTROL_BLOCKED_NOT_CONNECTED");
-            feedback("[C00] P2 연결이 완료되지 않아 곡 실행·취소 명령을 보내지 않았습니다.\n"+connectionMessage);
+            feedback("[C00] P2 연결이 완료되지 않아 곡 시작·예약·취소 명령을 보내지 않았습니다.\n"+connectionMessage);
             new AlertDialog.Builder(this).setTitle("P2 연결이 필요합니다").setMessage(connectionMessage)
                 .setPositiveButton("P2 연결",(d,w)->beginConnect())
                 .setNegativeButton("닫기",null).show();return false;
         }
-        if(s!=Session.State.READY&&!(s==Session.State.PLAY&&!start)){
+        if(s!=Session.State.READY&&!((s==Session.State.PLAY||s==Session.State.QUEUE)&&!start)){
             diagnostics.event("CONTROL_BLOCKED_BUSY");feedback("[WAIT] 이전 명령의 응답 또는 초기 연결 확인을 기다리고 있습니다.\n"+connectionMessage);return false;
         }
         return true;
@@ -518,10 +531,26 @@ public final class MainActivity extends Activity {
             finally{ui(()->{commandQueued=false;paint();});}
         });
     }
+    private void queueCommand(boolean reserve,int song){
+        if(!ensureControlReady(true)){paint();return;}
+        Session active=session;if(active==null||commandQueued)return;
+        commandQueued=true;diagnostics.event(reserve?"RESERVE_TAPPED":"QUEUE_REQUESTED");
+        queueValid=false;queueSongs=Collections.emptyList();queueMessage=reserve?"예약 요청의 응답을 기다립니다…":"P2 예약 목록을 불러오는 중…";
+        // Never keep a previous room's list or optimistically append an unconfirmed reservation.
+        show(queueMessage);
+        worker.execute(()->{
+            try{if(reserve)active.reserve(song);else active.requestQueue();}
+            catch(IOException|RuntimeException e){diagnostics.event("QUEUE_COMMAND_FAILED");ui(()->{
+                if(session!=active)return;queueValid=false;queueMessage="예약 요청 또는 목록을 확인하지 못했습니다. 연결 상태를 확인하세요.";show(queueMessage);
+            });}
+            finally{ui(()->{commandQueued=false;paint();});}
+        });
+    }
     private void paint(){
         if(play==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
         boolean busy=connecting||importing||(directWifi!=null&&directWifi.joining());
-        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL;
+        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL||s==Session.State.RESERVE||s==Session.State.QUEUE;
+        if(!linked){queueValid=false;queueSongs=Collections.emptyList();queueMessage="먼저 P2에 연결해 주세요.";}
         connectionBanner.setText(linked?"● "+(activeRoom==null?"P2":activeRoom+"번방")+" 연결됨":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ 연결 준비 중…":"○ P2 연결 전");
         connectionBanner.setTextColor(linked?accent:fg);
         connect.setEnabled(true);connect.setText(active!=null?"연결 해제":"P2 연결");
@@ -529,7 +558,10 @@ public final class MainActivity extends Activity {
         importButton.setEnabled(true);play.setEnabled(true);cancel.setEnabled(true);
         play.setText(s==Session.State.PLAY?"시작 확인 중…":"▶ 곡 시작");
         search.setEnabled(catalog!=null);
-        if(songSearch!=null)songSearch.state(connectionBanner.getText().toString(),status.getText().toString(),busy||commandQueued||s==Session.State.AUTH||s==Session.State.IDENTIFY||s==Session.State.PLAY||s==Session.State.CANCEL);
+        if(songSearch!=null){
+            songSearch.state(connectionBanner.getText().toString(),status.getText().toString(),busy||commandQueued||(s!=Session.State.READY&&s!=Session.State.CLOSED),linked);
+            songSearch.queue(queueSongs,queueMessage,queueValid);
+        }
     }
     private void show(String text){status.setText(text);if(actionStatus!=null)actionStatus.setText(text);paint();}
     private void showSongSearch(){if(songSearch==null)return;scroll.setVisibility(View.GONE);songSearch.view.setVisibility(View.VISIBLE);paint();}
