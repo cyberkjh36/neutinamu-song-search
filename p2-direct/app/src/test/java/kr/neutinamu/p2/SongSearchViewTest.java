@@ -21,7 +21,7 @@ public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
         public void connection(){calls.add("connect");}public void play(int n){calls.add("play:"+n);}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
-    );calls.clear();}
+    });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
         search.handle("{\"command\":\"play\",\"number\":\"10909\"}");search.handle("{\"command\":\"cancel\"}");

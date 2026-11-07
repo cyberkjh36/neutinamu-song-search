@@ -43,6 +43,21 @@ public class MainActivityTest {
         for(int i=1;i<=65;i++)csv.append(i).append(",사랑 ").append(i).append(",가수\n");
         catalog.load(new java.io.StringReader(csv.toString()));set("catalog",catalog);call("paint");
     }
+    @Test public void integratedButtonsUseExistingAuthenticatedSessionAndDoNotDoubleSend()throws Exception{
+        finishWorker();java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
+        java.net.Socket socket=new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}};
+        CaptureProfile profile=ProfileStoreTest.sample();Session session=new Session(socket,profile,(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{
+            SongSearchView web=(SongSearchView)field("songSearch");web.handle("{\"command\":\"connection\"}");view("showSongSearch").performClick();assertSame(session,field("session"));
+            web.handle("{\"command\":\"play\",\"number\":\"10909\"}");
+            web.handle("{\"command\":\"play\",\"number\":\"10909\"}");finishWorker();
+            assertArrayEquals(profile.packet(Wire.play(10909)),sent.toByteArray());assertEquals(Session.State.PLAY,session.state());
+            web.handle("{\"command\":\"cancel\"}");finishWorker();
+            java.io.ByteArrayOutputStream expected=new java.io.ByteArrayOutputStream();expected.write(profile.packet(Wire.play(10909)));expected.write(profile.packet(Wire.cancel()));
+            assertArrayEquals(expected.toByteArray(),sent.toByteArray());assertEquals(Session.State.CANCEL,session.state());
+        }finally{session.close();set("session",null);}
+    }
     @Test public void integratedSearchAndConnectionShareOneSessionAndPlaybackGuard()throws Exception{
         SongSearchView web=(SongSearchView)field("songSearch");assertEquals(View.VISIBLE,web.view.getVisibility());
         web.handle("{\"command\":\"connection\"}");assertEquals(View.GONE,web.view.getVisibility());
