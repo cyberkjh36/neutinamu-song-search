@@ -1,0 +1,8 @@
+.gradle/
+**/build/
+local.properties
+*.pcap
+*.pcapng
+*.p2profile
+*.jks
+*.keystore
