@@ -38,6 +38,11 @@ public class MainActivityTest {
         ((java.util.concurrent.ExecutorService)field("searchWorker")).submit(()->{}).get(10,java.util.concurrent.TimeUnit.SECONDS);
         shadowOf(Looper.getMainLooper()).idle();
     }
+    private DirectWifiTest.Fake fakeDiscovery()throws Exception{
+        DirectWifi old=(DirectWifi)field("directWifi");Field listener=DirectWifi.class.getDeclaredField("listener");listener.setAccessible(true);
+        DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));
+        old.close();set("directWifi",replacement);return backend;
+    }
     private void installCatalog()throws Exception{
         finishWorker();SongCatalog catalog=new SongCatalog();StringBuilder csv=new StringBuilder();
         for(int i=1;i<=65;i++)csv.append(i).append(",사랑 ").append(i).append(",가수\n");
@@ -184,6 +189,49 @@ public class MainActivityTest {
         assertTrue(view("connect").isEnabled());view("connect").performClick();
         assertEquals("android.content.pm.action.REQUEST_PERMISSIONS",shadowOf(app).getNextStartedActivity().getAction());
     }
+    @Test public void savedProfileAloneCannotSkipWirelessDiscovery()throws Exception{
+        finishWorker();CaptureProfile saved=ProfileStoreTest.sample();set("profile",saved);
+        DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        view("connect").performClick();
+        assertNotNull(backend.discovery);assertSame(saved,field("profile"));assertNull(field("connectingSocket"));assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("CONNECT_STARTED"));
+        assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("찾는 중"));
+        assertNull(shadowOf(app).getNextStartedActivity());
+    }
+    @Test public void retryClearsStaleRouteAndOnlyRediscoversQrRoom()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("profile",ProfileStoreTest.sample());set("roomRequest","5");set("activeRoom","5");
+        set("directHost","192.0.2.55");set("directInterface","old-p2p");set("directMode",true);
+        DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        view("connect").performClick();assertNull(field("directHost"));assertNull(field("directInterface"));assertEquals("5",field("roomRequest"));
+        assertEquals("5번방 연결",((Button)view("connect")).getText().toString());assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("5번방 찾는 중"));
+        Object first=backend.discovery;view("connect").performClick();assertSame(first,backend.discovery);
+        backend.discovery.accept(true);backend.peers.accept(java.util.Collections.singletonList(new DirectWifi.Peer("TJ_P2_TEST_A_1_B","01")));assertEquals(0,backend.joined);
+        DirectWifi.Peer five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");backend.peers.accept(java.util.Collections.singletonList(five));backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertSame(five,backend.selectedPeer);assertEquals(1,backend.joined);assertNull(field("session"));assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+    }
+    @Test public void httpsRoomEightRetainsTargetAfterPermissionDenialAndRetry()throws Exception{
+        finishWorker();set("rooms",RoomDirectory.read(new java.io.StringReader("8번 TJ_P2_TEST_EIGHT_7_B\n")));DirectWifiTest.Fake backend=fakeDiscovery();
+        shadowOf(app).denyPermissions(MainActivity.wifiPermission());
+        app.onNewIntent(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room=8")));
+        assertEquals("8",field("roomRequest"));assertEquals("8번방 연결",((Button)view("connect")).getText().toString());assertNull(backend.discovery);
+        app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_DENIED});assertTrue(message().contains("[W03]"));
+        shadowOf(app).grantPermissions(MainActivity.wifiPermission());view("connect").performClick();
+        assertNotNull(backend.discovery);assertEquals("8",field("roomRequest"));assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("8번방 찾는 중"));assertNull(field("session"));
+    }
+    @Test public void missingConnectionDialogAlsoDiscoversInsteadOfUsingSavedAddress()throws Exception{
+        finishWorker();set("profile",ProfileStoreTest.sample());DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        ((EditText)view("songNumber")).setText("10909");view("play").performClick();
+        ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();shadowOf(Looper.getMainLooper()).idle();
+        assertNotNull(backend.discovery);assertNull(field("session"));assertNull(field("connectingSocket"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+    }
+    @Test public void discoveryTimeoutReleasesBusyStateAndAllowsSameRoomRetry()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("roomRequest","5");DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        view("connect").performClick();Object first=backend.discovery;backend.discovery.accept(true);
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(20));assertTrue(message().contains("[W21]"));assertFalse(((DirectWifi)field("directWifi")).searching());
+        assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("5번방 연결 전"));
+        view("connect").performClick();assertNotSame(first,backend.discovery);assertEquals("5",field("roomRequest"));assertNull(field("session"));
+    }
     @Test public void diagnosisShownAtBothConnectionAndPlayControls()throws Exception{
         Method show=MainActivity.class.getDeclaredMethod("show",String.class);show.setAccessible(true);
         String text="[A01] 초기 응답 길이=1바이트, 응답값=1";show.invoke(app,text);
@@ -194,7 +242,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.10.0"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.10.1"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));

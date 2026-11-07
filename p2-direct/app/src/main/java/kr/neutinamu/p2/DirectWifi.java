@@ -33,6 +33,7 @@ final class DirectWifi implements AutoCloseable {
     private Peer selected;private String targetName;private Runnable timeout,poll;
     DirectWifi(Backend backend,Handler handler,Listener listener){this.backend=backend;this.handler=handler;this.listener=listener;}
     boolean joining(){return joining;}
+    boolean searching(){return searching;}
     private void invalidate(){generation++;if(timeout!=null)handler.removeCallbacks(timeout);if(poll!=null)handler.removeCallbacks(poll);timeout=null;poll=null;}
     private boolean current(int request){return !closed&&generation==request;}
     private void fail(String code,String message){invalidate();joining=false;searching=false;selected=null;listener.status(code,message);}
