@@ -1,0 +1,34 @@
+#pragma once
+#include <Arduino.h>
+static const char SETUP_PAGE[] PROGMEM=R"P2HTML(<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>느티나무 P2 · 장치 설정</title>
+<style>
+[hidden]{display:none!important}
+:root{font-family:system-ui,sans-serif;color:#eef7f5;background:#102327;color-scheme:dark}body{max-width:760px;margin:0 auto;padding:22px}h1{font-size:27px}h2{font-size:20px}p{line-height:1.7}section{padding:20px;margin:18px 0;background:#1c3539;border:1px solid #426063;border-radius:18px}input,button,select,a.open{font:inherit;min-height:48px;border-radius:10px;padding:10px;box-sizing:border-box}input,select{background:#102327;border:1px solid #8bafac;color:white;width:100%;margin:8px 0}button,a.open{background:#c2e58f;color:#132b25;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.4;cursor:default}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}label{display:block;margin-top:12px}.tag{font-size:13px;background:#f5d3a1;color:#332410;border-radius:30px;padding:5px 10px}.key{display:grid;grid-template-columns:1fr auto auto auto;gap:7px;align-items:center;padding:10px 0;border-bottom:1px solid #426063}.key button{font-size:14px;padding:8px;min-width:55px}.small{color:#c0d2d2;font-size:14px}#room{font-size:38px;letter-spacing:5px;font-weight:800}#notice{white-space:pre-wrap;min-height:3em}#result{position:sticky;bottom:12px;background:#d2e9bd;color:#102327;padding:16px;border-radius:10px;display:none}a.open{display:inline-block;text-decoration:none}hr{border:0;border-top:1px solid #426063}button.secondary{background:#315456;color:white}@media(max-width:420px){body{padding:12px}.key{grid-template-columns:1fr auto auto auto}.key button{min-width:48px;padding:6px}section{padding:14px}}
+</style>
+<h1>느티나무 P2 <span class="tag">현장 시험용</span></h1>
+<p>이 화면은 소형 리모컨 장치의 설정 화면입니다. <b>P2와 TIR-1090에서 실제 시험한 뒤 사용하세요.</b> 설정 중에는 손님 휴대폰의 리모컨이 잠시 중단됩니다.</p>
+<section><h2>1. 매장 와이파이</h2><p class="small">ESP32는 2.4GHz 와이파이를 사용합니다. 암호는 이 장치에만 저장됩니다.</p>
+<form id="wifi"><label>와이파이 이름<input id="ssid" maxlength="32" autocomplete="off" required></label><label>와이파이 암호<input id="password" type="password" minlength="8" maxlength="63" autocomplete="new-password" required></label><button>와이파이 연결</button></form></section>
+<section><h2>2. TIR-1090 버튼 학습</h2><p>① <b>학습</b>을 누르고 실제 리모컨의 같은 버튼을 짧게 두 번 누릅니다.<br>② <b>시험</b>을 누릅니다.<br>③ P2에서 정확히 한 번 동작한 것을 보고 <b>확인</b>을 누릅니다.</p>
+<p class="small">시험 전에 P2 숫자 입력칸을 비우세요. 학습 중 리모컨 신호가 P2에 직접 닿지 않도록 수신기만 향하게 하세요. 시작·취소·예약 시험은 실제 P2의 상태를 바꿉니다.</p>
+<p id="notice" role="status"></p><div id="keys"></div>
+<details><summary>기술자 설정 · 송신 주파수</summary><p class="small">기본 38kHz는 시험값이며, TIR-1090의 확정 규격이 아닙니다. 수신 모듈은 주파수를 직접 측정하지 못합니다. 주파수를 변경하면 모든 시험 확인을 다시 해야 합니다.</p><div class="row"><input id="frequency" type="number" min="30" max="60" value="38" aria-label="송신 주파수 kHz"><button id="setFrequency" class="secondary">주파수 변경</button></div></details></section>
+<section><h2>3. 곡번호 연속 예약 시험</h2><p>숫자 0~9와 예약 버튼을 모두 확인한 뒤, P2에 실제 수록된 곡번호를 넣으세요. <b>같은 숫자가 연속되는 곡번호도 시험하세요.</b></p><form id="sequence"><label>시험할 곡번호<input id="number" inputmode="numeric" pattern="[1-9][0-9]{0,4}" maxlength="5" required></label><button>이 곡번호로 예약 시험</button></form><p><button id="enable">해당 곡이 한 번 예약된 것을 확인했습니다</button></p><p id="ready" role="status"></p></section>
+<section><h2>4. 손님 휴대폰 연결</h2><p>아래 번호는 소형 장치에서 발급받습니다. P2 본체나 TIR-1090 리모컨에 표시되는 번호가 아닙니다. 장치를 다시 켜도 설정을 지우지 않으면 같은 번호를 사용합니다.</p><div id="room">연결 중</div><p><a id="guest" class="open" hidden target="_blank" rel="noopener">손님 검색 화면 열기</a></p><p class="small">번호를 적어 두고 ‘설정 종료’를 누르세요. 휴대폰을 매장 와이파이나 모바일 데이터로 되돌린 다음 손님 검색 화면에서 연결합니다. 설정용 P2-Setup 와이파이는 평소에 사용하지 않습니다.</p><button id="close">설정 종료 · 손님 사용 시작</button></section>
+<section id="recovery" hidden><h2>전송 결과 확인 필요</h2><p>전송 도중 전원이 꺼졌거나 결과를 확인하지 못했습니다. P2의 예약 목록과 숫자 입력칸을 확인하고, 잘못 입력된 숫자를 지운 뒤 재개하세요. 이전 명령은 자동으로 다시 보내지 않습니다.</p><button id="resume">P2 화면 확인 후 재개</button></section>
+<p class="small">처음 설치와 리모컨 학습이 끝나면 PC를 켜 둘 필요가 없습니다. 장치의 전원과 인터넷은 계속 연결돼 있어야 합니다. 신호 송출 기록은 P2의 실제 예약 완료 응답이 아닙니다.</p><div id="result" role="status"></div>
+<script>
+const token='__CSRF__';const $=id=>document.getElementById(id);let busy=false;
+const labels=['숫자 0','숫자 1','숫자 2','숫자 3','숫자 4','숫자 5','숫자 6','숫자 7','숫자 8','숫자 9','예약','시작','취소','일시정지','음정 +','음정 −'];
+const keyNames=Array.from({length:10},(_,i)=>'digit_'+i).concat(['reserve','start','cancel','pause','key_up','key_down']);
+for(let i=0;i<16;i++){const row=document.createElement('div');row.className='key';const label=document.createElement('span');label.id='label'+i;label.textContent=labels[i];row.append(label);for(const [action,text] of [['learn','학습'],['test','시험'],['confirm','확인']]){const b=document.createElement('button');b.textContent=text;b.className='secondary';b.onclick=()=>act({action,key:keyNames[i]});row.append(b)}$('keys').append(row)}
+function message(text){$('result').style.display='block';$('result').textContent=text;}
+async function act(data){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/json','X-P2-Setup':token},body:JSON.stringify(data)});const body=await r.json();message(body.message);if(data.action==='wifi')$('password').value='';if(data.action!=='close')await refresh();}catch{message('장치 연결을 확인하세요. 시험 명령은 자동으로 다시 보내지 않습니다.');}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+async function refresh(){try{const r=await fetch('/status',{cache:'no-store'});const s=await r.json();$('notice').textContent=s.notice;$('room').textContent=s.room||'연결 중';$('ready').textContent=s.ready?'시험 확인 완료 · 설정을 종료하면 사용할 수 있습니다.':'신호 학습과 현장 시험 확인이 필요합니다.';$('recovery').hidden=!s.halted;if(document.activeElement!==$('frequency'))$('frequency').value=s.frequency||38;s.keys.forEach((k,i)=>$('label'+i).textContent=labels[i]+(k.tested?' ✓':k.learned?' · 학습됨':''));if(/^[0-9]{8}$/.test(s.room)){$('guest').hidden=false;$('guest').href='https://cyberkjh36.github.io/neutinamu-song-search/?p2='+s.room;}}catch{}}
+$('wifi').onsubmit=e=>{e.preventDefault();act({action:'wifi',ssid:$('ssid').value,password:$('password').value})};
+$('sequence').onsubmit=e=>{e.preventDefault();if(confirm('P2 숫자 입력칸이 비어 있나요? 실제 예약 신호를 보냅니다.'))act({action:'test-number',number:$('number').value})};
+$('enable').onclick=()=>act({action:'enable'});$('setFrequency').onclick=()=>act({action:'frequency',value:Number($('frequency').value)});$('close').onclick=()=>act({action:'close'});$('resume').onclick=()=>{if(confirm('예약 목록과 숫자 입력칸을 확인했나요?'))act({action:'resume'})};
+refresh();setInterval(()=>{if(!busy)refresh()},3000);
+</script></html>)P2HTML";
