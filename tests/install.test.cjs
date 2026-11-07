@@ -66,3 +66,12 @@ test('cancelled and failed install prompts remain retryable; accepted is not cal
  const b=app();b.events.beforeinstallprompt({preventDefault(){},prompt(){throw Error('not available')}});
  b.get('installBtn').onclick();assert.equal(b.get('installBtn').disabled,false);assert.equal(b.get('installHelp').hidden,false);
 });
+
+test('no-APK shortcut mode gives iPhone and touch iPad Safari guidance, never Chrome steps',()=>{
+ for(const options of [{ios:true},{ipad:true}]){
+  const a=app({...options,shortcut:true});assert.equal(a.get('appManifest'),null);
+  assert.equal(a.get('installHelp').hidden,false);assert.equal(a.get('browserButtons').hidden,true);
+  const steps=a.get('installHelp').children[1].children.map(x=>x.textContent).join(' ');
+  assert.match(steps,/Safari/);assert.match(steps,/공유/);assert.match(steps,/홈 화면에 추가/);assert.doesNotMatch(steps,/크롬|삼성 인터넷/);
+ }
+});

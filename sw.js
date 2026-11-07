@@ -1,5 +1,5 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v16-20261107-no-pc-relay';
+var CACHE='neutinamu-p2-v17-20261107-shortcut-both-phones';
 var ASSETS=['./p2-room.html','./room-connect.js','./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));

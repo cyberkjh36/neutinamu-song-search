@@ -88,6 +88,18 @@ async function check(name,type,ua){
   await page.goto(url+'p2-room.html?room=5');assert.equal(await page.locator('#roomTitle').textContent(),'5번방 반주기 연결');
   await page.goto(url);await ready();assert.equal(await page.locator('#query').isVisible(),true);
   networkUnavailable=false;await context.setOffline(false);
+  const shortcutContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:ua});
+  const shortcutPage=await shortcutContext.newPage();
+  await shortcutPage.goto(url+'?shortcut=1');
+  await shortcutPage.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
+  assert.equal(await shortcutPage.locator('#appManifest').count(),0,'Shortcut does not request a WebAPK');
+  assert.equal(await shortcutPage.locator('#installHelp').isVisible(),true);
+  const shortcutGuide=await shortcutPage.locator('#installHelp').textContent();
+  if(name==='iphone-webkit'){assert.match(shortcutGuide,/Safari/);assert.doesNotMatch(shortcutGuide,/크롬|삼성 인터넷/);}
+  else assert.match(shortcutGuide,/바로가기/);
+  await shortcutPage.locator('#query').fill('ㅈㅇㅍ 꿈');await shortcutPage.locator('#searchBtn').click();
+  await shortcutPage.waitForFunction(()=>document.getElementById('heroNumber').textContent==='693');
+  await shortcutContext.close();
   assert.deepEqual(errors,[]);
   console.log('PASS '+name+': initials, IME, voice result/cancel, icon guide, manifest/icons, offline catalog, standalone launch, no overflow.');
  }finally{networkUnavailable=false;await context.close();await browser.close();}
