@@ -13,7 +13,7 @@ function app(){
   localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
   document:{getElementById:get,addEventListener:(name,callback)=>{if(name==='DOMContentLoaded')onReady=callback}},
   fetch:async url=>{requests.push(url);return {ok:true,text:async()=>fs.readFileSync(path.join(root,url),'utf8')}}};
- c.window=c;vm.createContext(c);vm.runInContext(source,c);
+ c.window=c;c.Chosung=require('../chosung.js');vm.createContext(c);vm.runInContext(source,c);
  return {c,storage,requests,get,run:code=>vm.runInContext(code,c),start:()=>onReady()};
 }
 
