@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-06T13:45:53.180Z",
+  "updatedAt": "2026-11-07T14:38:33.731Z",
   "countries": [
     "ko"
   ],
@@ -253,6 +253,14 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "iBs2ORAIMzQ",
+      "title": "오늘 자 오현규 2골 1어시 ㄷㄷㄷ #SPOTVUEL",
+      "url": "https://www.youtube.com/watch?v=iBs2ORAIMzQ",
+      "count": 1,
+      "lastPlayed": "2026-11-07T14:38:06.3049270Z"
     },
     {
       "country": "ko",
