@@ -164,7 +164,7 @@ public class MainActivityTest {
     }
     @Test public void connectionWithoutProfileStartsDiscoveryWithoutFilePicker(){
         assertTrue(view("connect").isEnabled());view("connect").performClick();
-        assertNull(shadowOf(app).getNextStartedActivity());
+        assertEquals("android.content.pm.action.REQUEST_PERMISSIONS",shadowOf(app).getNextStartedActivity().getAction());
     }
     @Test public void diagnosisShownAtBothConnectionAndPlayControls()throws Exception{
         Method show=MainActivity.class.getDeclaredMethod("show",String.class);show.setAccessible(true);
@@ -211,7 +211,7 @@ public class MainActivityTest {
         shadowOf(app).denyPermissions(MainActivity.wifiPermission());
         app.onNewIntent(RoomDirectoryTest.link("room=5"));
         assertEquals("5",field("roomRequest"));assertEquals(false,field("roomPending"));assertNull(field("profile"));assertNull(backend.discovery);
-        assertNull(shadowOf(app).getNextStartedActivityForResult());assertNull(field("session"));
+        assertEquals("android.content.pm.action.REQUEST_PERMISSIONS",shadowOf(app).getNextStartedActivity().getAction());assertNull(field("session"));
         shadowOf(app).grantPermissions(MainActivity.wifiPermission());
         app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_GRANTED});
         backend.discovery.accept(true);DirectWifi.Peer five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");
