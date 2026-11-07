@@ -1,5 +1,7 @@
 name: P2 direct Android trial
 on:
+  push:
+    branches: [codex/p2-direct-native-trial]
   pull_request:
     paths:
       - 'p2-direct/**'
