@@ -17,7 +17,7 @@ test('unknown or ambiguous rooms and injected commands never create a launch lin
  }
 });
 test('iPhone and desktop do not advertise unsupported direct connection',()=>{
- for(const ua of ['iPhone','Macintosh','Windows']){const nodes=run('?room=5',ua);assert.equal(nodes.connectRoom.hidden,true);assert.match(nodes.roomStatus.textContent,/안드로이드/);}
+ for(const ua of ['iPhone','Macintosh','Windows']){const nodes=run('?room=5',ua);assert.equal(nodes.connectRoom.hidden,true);assert.match(nodes.roomStatus.textContent,/안드로이드/);assert.doesNotMatch(nodes.roomIntro.textContent,/아래 버튼/);}
 });
 test('missing-app fallback gives setup guidance without automatic retry',()=>{
  const nodes=run('?room=7','Android','#app-required');assert.match(nodes.roomStatus.textContent,/앱을 열지 못했습니다/);assert.equal(nodes.connectRoom.hidden,false);

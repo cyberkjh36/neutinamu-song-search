@@ -12,6 +12,7 @@
  title.textContent=label+' 반주기 연결';document.getElementById('roomIntro').textContent='아래 버튼을 누르면 설치된 앱이 '+label+' 반주기를 찾아 직접 연결을 시작합니다.';
  document.getElementById('connectedLabel').textContent=label+' 연결됨';
  if(!/Android/i.test(navigator.userAgent)){
+  document.getElementById('roomIntro').textContent='선택한 방은 '+label+'입니다. 이 기기에서는 반주기 직접 연결을 시작할 수 없습니다.';
   status.textContent='이 직접 연결 기능은 현재 안드로이드 앱에서 사용할 수 있습니다. 아이폰 또는 PC에서는 직원에게 문의해 주세요.';return;
  }
  var fallback='https://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room='+room+'#app-required';
