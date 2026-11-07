@@ -71,7 +71,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.0 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.1 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -108,11 +108,12 @@ public final class MainActivity extends Activity {
         text(connectionDetails,"진단에는 개인정보와 인증값을 넣지 않습니다. 공식 TJ 앱이 아니며 아이폰 직접 제어는 지원하지 않습니다.",13,false);
         wifiRegistration=new P2pRegistration(new AndroidP2pBackend(this),new Handler(getMainLooper()),
             ()->profile==null?null:profile.host,this::showWifiState,diagnostics);
-        directWifi=new DirectWifi(new AndroidDirectWifiBackend(this),new Handler(getMainLooper()),new DirectWifi.Listener(){
+        directWifi=new DirectWifi(new AndroidDirectWifiBackend(this,rooms),new Handler(getMainLooper()),new DirectWifi.Listener(){
             public void status(String code,String message){diagnostics.event(code);if(directMode){connectionMessage="["+code+"] "+message;wifiStatus.setText(connectionMessage);show(connectionMessage);}paint();}
             public void peers(List<DirectWifi.Peer> peers){
                 if(destroyed||!directMode||(peerDialog!=null&&peerDialog.isShowing()))return;
-                List<DirectWifi.Peer> ordered=rooms.sorted(peers);
+                List<DirectWifi.Peer> ordered=rooms.registered(peers);
+                if(ordered.isEmpty())return;
                 String[] names=new String[ordered.size()];for(int i=0;i<names.length;i++)names[i]=rooms.label(ordered.get(i));
                 peerDialog=new AlertDialog.Builder(MainActivity.this).setTitle("연결할 방을 선택하세요")
                     .setItems(names,(d,index)->{

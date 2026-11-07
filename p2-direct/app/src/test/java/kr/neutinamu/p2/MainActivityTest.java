@@ -94,6 +94,16 @@ public class MainActivityTest {
         app.onBackPressed();assertFalse(((AlertDialog)field("toolsDialog")).isShowing());assertSame(web,field("songSearch"));
         command("connection");view("showSongSearch").performClick();assertFalse(((AlertDialog)field("toolsDialog")).isShowing());
     }
+    @Test public void roomPickerShowsOnlyNumberedRoomsAndKeepsSelectedPeer()throws Exception{
+        set("rooms",RoomDirectoryTest.sample());DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        command("find");backend.discovery.accept(true);
+        DirectWifi.Peer one=new DirectWifi.Peer("TJ_P2_TEST_A_1_B","01"),five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");
+        backend.peers.accept(java.util.Arrays.asList(five,new DirectWifi.Peer("PRIVATE_UNREGISTERED_ID","99"),one));
+        AlertDialog picker=ShadowAlertDialog.getLatestAlertDialog();android.widget.ListAdapter items=picker.getListView().getAdapter();
+        assertEquals(2,items.getCount());assertEquals("1번방",items.getItem(0));assertEquals("5번방",items.getItem(1));
+        picker.getListView().performItemClick(null,1,1);shadowOf(Looper.getMainLooper()).idle();
+        backend.reply(new DirectWifi.Link(false,false,null,null));assertSame(five,backend.selectedPeer);assertEquals("5",field("roomRequest"));
+    }
     @Test public void mainConnectionButtonStartsDiscoveryWithoutOpeningAnotherScreen()throws Exception{
         DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());
         command("connect");assertNotNull(backend.discovery);assertNull(field("toolsDialog"));
@@ -218,7 +228,7 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.11.0"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.11.1"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));

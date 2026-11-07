@@ -11,8 +11,8 @@ import java.util.function.Consumer;
 
 /** Public Android APIs only. No group removal, MAC spoofing, hidden APIs or NFC emulation. */
 final class AndroidDirectWifiBackend implements DirectWifi.Backend {
-    private final Context context;private WifiP2pManager manager;private WifiP2pManager.Channel channel;
-    AndroidDirectWifiBackend(Context context){this.context=context;}
+    private final Context context;private final RoomDirectory rooms;private WifiP2pManager manager;private WifiP2pManager.Channel channel;
+    AndroidDirectWifiBackend(Context context,RoomDirectory rooms){this.context=context;this.rooms=rooms;}
     public boolean open(Runnable lost){
         manager=(WifiP2pManager)context.getSystemService(Context.WIFI_P2P_SERVICE);
         if(manager==null)return false;
@@ -22,15 +22,17 @@ final class AndroidDirectWifiBackend implements DirectWifi.Backend {
     private WifiP2pManager.ActionListener result(Consumer<Boolean> done){return new WifiP2pManager.ActionListener(){public void onSuccess(){done.accept(true);}public void onFailure(int reason){done.accept(false);}};}
     @SuppressLint("MissingPermission") public void discover(Consumer<Boolean> done){permission();manager.discoverPeers(channel,result(done));}
     @SuppressLint("MissingPermission") public void peers(Consumer<List<DirectWifi.Peer>> done){
-        permission();manager.requestPeers(channel,list->{
-            List<DirectWifi.Peer> peers=new ArrayList<>();
-            if(list!=null)for(WifiP2pDevice d:list.getDeviceList()){
-                // The legacy client identifies karaoke peers with this WPS device category.
-                if("8-0050F204-5".equals(d.primaryDeviceType)||"00080050F2040005".equals(d.primaryDeviceType))
-                    peers.add(new DirectWifi.Peer(d.deviceName==null?"TJ 반주기":d.deviceName,d.deviceAddress));
-            }
-            done.accept(peers);
-        });
+        permission();manager.requestPeers(channel,list->done.accept(roomPeers(list==null?null:list.getDeviceList())));
+    }
+    List<DirectWifi.Peer> roomPeers(Collection<WifiP2pDevice> devices){
+        List<DirectWifi.Peer> result=new ArrayList<>();
+        if(devices!=null)for(WifiP2pDevice device:devices){
+            // A registered exact device name identifies the room. Some radio results
+            // omit/change the WPS category; it must not hide a known room.
+            if(device!=null&&rooms.containsDevice(device.deviceName)&&device.deviceAddress!=null&&!device.deviceAddress.trim().isEmpty())
+                result.add(new DirectWifi.Peer(device.deviceName,device.deviceAddress));
+        }
+        return result;
     }
     @SuppressLint("MissingPermission") public void link(Consumer<DirectWifi.Link> done){
         permission();manager.requestConnectionInfo(channel,info->{

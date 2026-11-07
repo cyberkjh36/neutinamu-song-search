@@ -24,11 +24,17 @@ final class RoomDirectory {
     }
     static String normalize(String name){return name==null?"":name.trim().toUpperCase(Locale.ROOT);}
     String device(String room){return devices.get(room);}
+    boolean containsDevice(String name){return devices.containsValue(normalize(name));}
     String room(DirectWifi.Peer peer){
         for(Map.Entry<String,String> entry:devices.entrySet())if(entry.getValue().equals(normalize(peer.name)))return entry.getKey();
         return null;
     }
-    String label(DirectWifi.Peer peer){String room=room(peer);return room==null?"미등록 반주기 · "+(peer.name==null?"이름 없음":peer.name):room+"번방";}
+    String label(DirectWifi.Peer peer){String room=room(peer);return room==null?"미등록 반주기":room+"번방";}
+    List<DirectWifi.Peer> registered(List<DirectWifi.Peer> peers){
+        List<DirectWifi.Peer> result=new ArrayList<>();
+        for(DirectWifi.Peer peer:peers)if(peer!=null&&room(peer)!=null)result.add(peer);
+        return sorted(result);
+    }
     List<DirectWifi.Peer> sorted(List<DirectWifi.Peer> peers){
         List<DirectWifi.Peer> result=new ArrayList<>(peers);
         result.sort(Comparator.comparingInt((DirectWifi.Peer p)->room(p)==null?100:Integer.parseInt(room(p))).thenComparing(p->normalize(p.name)));
