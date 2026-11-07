@@ -41,5 +41,15 @@ public class SongCatalogTest {
         SongCatalog c=new SongCatalog();c.load(new StringReader("1,꿈,가수\n"));Thread.currentThread().interrupt();
         try{c.page("꿈",0,30);fail();}catch(CancellationException expected){}finally{Thread.interrupted();}
     }
+    @Test public void initialsMatchTitleSingerAndMixedSyllables()throws Exception{
+        SongCatalog c=new SongCatalog();c.load(new StringReader("1,사랑해,김범수\n2,사랑아,홍길동\n3,꿈,조용필\n4,가,가수\n5,까,가수\n6,A+B,Pop\n"));
+        assertEquals(Arrays.asList(1,2),numbers(c.page("ㅅㄹ",0,30)));
+        assertEquals(Arrays.asList(1),numbers(c.page("사ㄹㅎ",0,30)));
+        assertEquals(Arrays.asList(1),numbers(c.page("ㄱㅂㅅ 사랑",0,30)));
+        assertEquals(Arrays.asList(3),numbers(c.page("ᄌᄋᄑ ㄲ",0,30)));
+        assertEquals(Arrays.asList(5),numbers(c.page("ㄲ",0,30)).subList(1,2));
+        assertEquals(Arrays.asList(6),numbers(c.page("A+B",0,30)));
+        assertTrue(c.search("ㅅㄹ 없는가수",30).isEmpty());assertTrue(c.search("ㅎㄱㄷ 꿈",30).isEmpty());
+    }
     private List<Integer> numbers(SongCatalog.Page page){List<Integer> n=new ArrayList<>();for(SongCatalog.Song song:page.songs)n.add(song.number);return n;}
 }

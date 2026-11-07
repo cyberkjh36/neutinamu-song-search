@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - 'p2-direct/**'
+      - 'index.html'
+      - 'chosung.js'
+      - 'native-search.js'
+      - 'p2-ui.mjs'
+      - 'tests/**'
       - '.github/workflows/p2-direct-trial.yml'
 permissions:
   contents: read
@@ -23,6 +28,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test existing web search and initial consonants
+        run: npm ci && npm test
       - name: Test protocol, build Android trial, run lint
         run: gradle -p p2-direct :core:test :core:jar :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug --no-daemon
       - name: Confirm both existing catalogs are in APK
@@ -32,6 +42,9 @@ jobs:
           with zipfile.ZipFile('p2-direct/app/build/outputs/apk/debug/app-debug.apk') as z:
               assert len(z.read('assets/catalog-20261018.csv')) > 3000000
               assert len(z.read('assets/catalog-update-20261104.csv')) > 7000
+              assert b'NeutiP2' in z.read('assets/song-search/native-search.js')
+              assert b'Chosung' in z.read('assets/song-search/chosung.js')
+              assert b'native-search.js' in z.read('assets/song-search/index.html')
               assert not any(n.endswith(('.pcap','.pcapng','.p2profile')) for n in z.namelist())
           PY
       - name: Package public APK signing tool

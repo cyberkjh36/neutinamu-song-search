@@ -1,4 +1,5 @@
 import {P2Client} from './p2-client.mjs';
+if(!window.NeutiP2){
 const byId=id=>document.getElementById(id);
 const panel=document.createElement('details');panel.className='p2-panel';panel.id='p2Panel';
 panel.innerHTML=`<summary>📱 P2 반주기 연결 <span class="p2-pill">예약 · 리모컨</span></summary>
@@ -37,3 +38,5 @@ for(const b of keys)b.onclick=()=>{if(b.dataset.p2Key==='cancel'&&!confirm('현�
 const qr=new URL(location.href).searchParams.get('p2');if(qr&&/^[0-9]{8}$/.test(qr)){byId('p2Room').value=qr;panel.open=true;}
 let refreshing=false;async function heartbeat(){if(refreshing||!client.state||client.busy)return;refreshing=true;try{await client.refresh();}catch(e){byId('p2ControlResult').textContent=e.message||'인터넷 연결을 확인해 주세요.';}finally{refreshing=false;}}
 setInterval(heartbeat,5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)heartbeat();});paint();
+
+}

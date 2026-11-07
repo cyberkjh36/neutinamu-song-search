@@ -81,8 +81,16 @@
     .voice-dialog button{width:100%;min-height:48px}
     @keyframes voicePulse{50%{box-shadow:0 0 0 22px #72e0e709;background:#1b8fa2}}
     @media(prefers-reduced-motion:reduce){.voice-dialog.listening .voice-orb{animation:none}}
+  .p2-native .update-area,.p2-native #installCTA,.p2-native #installHelp,.p2-native .legacy-steps{display:none!important}
+    .native-connection{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}
+    .native-connection p{grid-column:1/-1;margin:0}.native-connection #nativeStop{grid-column:1/-1}
+    .native-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.native-controls button{flex:1;min-height:58px;font-size:19px}
+    .native-controls p{width:100%;text-align:left}.native-controls #nativePlay{background:var(--green);color:var(--bg)}
+    button:disabled{opacity:.5}.p2-native .searchrow{display:flex;flex-wrap:wrap}.p2-native .searchrow input{flex:1 1 100%}
   </style>
   <link rel="stylesheet" href="p2.css">
+  <script src="chosung.js"></script>
+  <script src="native-search.js" defer></script>
   <script type="module" src="p2-ui.mjs"></script>
 </head>
 <body>
@@ -112,7 +120,7 @@
   </details>
   <section class="panel">
     <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
-    <div class="searchrow"><input id="query" type="search" placeholder="곡 제목 또는 가수 입력" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
+    <div class="searchrow"><input id="query" type="search" placeholder="제목 · 가수 · 초성 (예: ㅅㄹ)" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
     <button id="voiceBtn" class="voice"><span class="mic">🎙</span>노래제목으로 번호검색</button>
     <div id="message" class="message" aria-live="polite"></div>
     <div id="hero" class="hero" aria-live="polite"><div class="matchlabel">가장 가까운 곡</div><div id="heroNumber" class="number"></div><div id="heroTitle" class="title"></div><div id="heroArtist" class="artist"></div></div>
@@ -179,6 +187,7 @@
   });
   window.addEventListener('appinstalled',function(){pending=null;busy=false;byId('installCTA').hidden=true;message('설치되었습니다. 홈 화면이나 앱 목록에서 ‘느티나무’를 찾아 주세요.');});
   function init(){
+    if(window.NeutiP2)return;
     if(shortcut){byId('refreshBtn').href='./refresh.html?shortcut=1';byId('refreshFooterLink').href='./refresh.html?shortcut=1';}
     ['Chrome','Samsung'].forEach(function(name){
       var a=byId('open'+name),pkg=name==='Chrome'?'com.android.chrome':'com.sec.android.app.sbrowser';
@@ -257,7 +266,7 @@ function fitHeroNumber(){
 window.addEventListener('resize',()=>requestAnimationFrame(fitHeroNumber));
 // Ignore trailing version/OST subtitles when matching a short song title.
 function mainTitle(song){return normalize(song.title.replace(/\s*[（(\[].*$/u,''))}
-function score(song,q,terms){
+function score(song,q,terms,initial,termPatterns){
  if(!q)return 0;
  const t=song.titleN,a=song.artistN,h=song.hay,base=mainTitle(song);
  if(song.code===q)return 1200;
@@ -272,12 +281,16 @@ function score(song,q,terms){
  if(a.includes(q))return 650;
  if(h.includes(q))return 600;
  let hits=0;for(const x of terms)if(x.length&&h.includes(x))hits++;
- return terms.length&&hits===terms.length?hits*100+80:0;
+ if(terms.length&&hits===terms.length)return hits*100+80;
+ if(initial){if(initial.exact.test(t))return 950;if(initial.start.test(t))return 780;if(initial.any.test(t))return 680;if(initial.any.test(a))return 630;}
+ if(termPatterns&&termPatterns.some(Boolean)&&terms.every((term,i)=>h.includes(term)||(termPatterns[i]&&termPatterns[i].any.test(h))))return 500;
+ return 0;
 }
 function findSongs(data,query){
  const q=normalize(query),terms=query.split(/\s+/).map(normalize).filter(Boolean);
  if(!q)return [];
- let found=data.map(s=>({s,n:score(s,q,terms)})).filter(x=>x.n>0);
+ const initial=Chosung.pattern(q),termPatterns=terms.map(Chosung.pattern);
+ let found=data.map(s=>({s,n:score(s,q,terms,initial,termPatterns)})).filter(x=>x.n>0);
  // A one-character title should not be buried among partial-title/artist matches.
  if(Array.from(q).length===1&&found.some(x=>x.n>=980))found=found.filter(x=>x.n>=980);
  return found.sort((x,y)=>y.n-x.n||x.s.code.localeCompare(y.s.code));
@@ -353,7 +366,7 @@ function startVoice(){
 }
 window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
 window.setNativeSpeechError=function(message){setMessage(message,true)};
-function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function download(name,content,type){if(window.NeutiP2){NeutiP2.saveCsv(name,content);return;}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function quoteCSV(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}
 async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
 const template='\uFEFF곡번호,곡제목,가수\r\n';

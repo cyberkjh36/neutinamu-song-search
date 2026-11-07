@@ -47,16 +47,29 @@ public final class SongCatalog {
         if(offset<0||limit<1)throw new IllegalArgumentException("Invalid page");
         String q=normalize(query);if(q.isEmpty())return new Page(new ArrayList<>(),0,0);
         List<String> terms=new ArrayList<>();for(String part:SPACE.split(query)){String term=normalize(part);if(!term.isEmpty())terms.add(term);}
+        java.util.regex.Pattern initial=initialPattern(q);List<java.util.regex.Pattern> termPatterns=new ArrayList<>();
+        for(String term:terms)termPatterns.add(initialPattern(term));
         List<Song> numbers=new ArrayList<>(),exact=new ArrayList<>(),rest=new ArrayList<>();
         for(Song s:songs.values()){
             if(Thread.currentThread().isInterrupted())throw new java.util.concurrent.CancellationException();
             if(String.valueOf(s.number).equals(q))numbers.add(s);
             else if(s.titleKey.equals(q))exact.add(s);
-            else if(s.hay.contains(q)||containsAll(s.hay,terms))rest.add(s);
+            else if(s.hay.contains(q)||containsAll(s.hay,terms,termPatterns)||(initial!=null&&initial.matcher(s.hay).find()))rest.add(s);
         }
         numbers.addAll(exact);numbers.addAll(rest);int start=Math.min(offset,numbers.size());
         int end=start+(int)Math.min((long)limit,numbers.size()-start);
         return new Page(new ArrayList<>(numbers.subList(start,end)),numbers.size(),start);
     }
-    private static boolean containsAll(String text,List<String> terms){for(String term:terms)if(!text.contains(term))return false;return true;}
+    private static boolean containsAll(String text,List<String> terms,List<java.util.regex.Pattern> patterns){
+        for(int i=0;i<terms.size();i++)if(!text.contains(terms.get(i))&&(patterns.get(i)==null||!patterns.get(i).matcher(text).find()))return false;return true;
+    }
+    private static java.util.regex.Pattern initialPattern(String query){
+        String initials="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";StringBuilder pattern=new StringBuilder();boolean found=false;
+        for(char c:query.toCharArray()){
+            int i=c>=0x1100&&c<=0x1112?c-0x1100:initials.indexOf(c);
+            if(i>=0){found=true;pattern.append('[').append((char)(0xac00+i*588)).append('-').append((char)(0xac00+(i+1)*588-1)).append(']');}
+            else pattern.append(java.util.regex.Pattern.quote(String.valueOf(c)));
+        }
+        return found?java.util.regex.Pattern.compile(pattern.toString()):null;
+    }
 }

@@ -6,12 +6,12 @@ android {
         applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 6
-        versionName '0.6-search-controls'
+        versionCode 7
+        versionName '0.7-voice-chosung'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
-    sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets') } }
+    sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets'); assets.srcDir layout.buildDirectory.dir('search-assets') } }
     lint { abortOnError true }
     testOptions { unitTests { includeAndroidResources = true } }
 }
@@ -20,7 +20,12 @@ tasks.register('prepareCatalog', Copy) {
     include 'catalog-20261018.csv', 'catalog-update-20261104.csv'
     into layout.buildDirectory.dir('catalog-assets')
 }
-tasks.named('preBuild').configure { dependsOn 'prepareCatalog' }
+tasks.register('prepareSearch', Copy) {
+    from rootProject.projectDir.parentFile
+    include 'index.html', 'chosung.js', 'native-search.js', 'p2-ui.mjs', 'p2-client.mjs', 'p2.css', 'icon.svg', 'icon-192.png', 'icon-512.png'
+    into layout.buildDirectory.dir('search-assets/song-search')
+}
+tasks.named('preBuild').configure { dependsOn 'prepareCatalog', 'prepareSearch' }
 dependencies {
     implementation project(':core')
     testImplementation 'junit:junit:4.13.2'

@@ -29,7 +29,7 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-/** Native-only trial. Does not expose a socket bridge to arbitrary web content. */
+/** P2 session host and bundled voice/keyboard song search. */
 public final class MainActivity extends Activity {
     private static final int PICK_CAPTURE=1,P2P_PERMISSION=2;
     private static final String TJ_PACKAGE="kr.tj.tjsmartplay_U";
@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
     private CaptureProfile profile;private ProfileStore profileStore;private SongCatalog catalog;
     private TextView profileStatus,connectionBanner;
     private TextView status,actionStatus,catalogStatus,selection;
-    private ScrollView scroll;
+    private ScrollView scroll;private FrameLayout screens;private SongSearchView songSearch;
     private EditText query,number;private LinearLayout results,contentRoot,connectionDetails,selectionPanel,resultsPanel;
     private Button settingsToggle,previousPage,nextPage;private boolean settingsExpanded;
     private Button connect,play,cancel,importButton,search;
@@ -69,9 +69,10 @@ public final class MainActivity extends Activity {
         scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(bg);
         LinearLayout root=new LinearLayout(this);contentRoot=root;root.setOrientation(LinearLayout.VERTICAL);root.setPadding(dp(22),dp(24),dp(22),dp(30));scroll.addView(root);
         root.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(dp(22),dp(24)+insets.getSystemWindowInsetTop(),dp(22),dp(30)+insets.getSystemWindowInsetBottom());return insets;});
-        setContentView(scroll);
+        screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
+        button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"직접연결 0.6 · 노래를 검색하고 선택해 주세요",15,false);
+        text(root,"통합판 0.7 · P2 연결 설정",15,false);
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
         connectionBanner=text(root,"○ P2 연결 전",20,true);connectionBanner.setTag("connectionBanner");
         connectionBanner.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -152,6 +153,15 @@ public final class MainActivity extends Activity {
                 directHost=link.host;directInterface=link.interfaceName;beginConnect();
             }
         });
+        songSearch=new SongSearchView(this,new SongSearchView.Host(){
+            public void connection(){showConnection();}
+            public void play(int song){number.setText(String.valueOf(song));if(ensureControlReady(true))dispatch(true,song);paint();}
+            public void cancel(){if(ensureControlReady(false))dispatch(false,0);paint();}
+            public void refresh(){paint();}
+        });
+        screens.addView(songSearch.view,new FrameLayout.LayoutParams(-1,-1));
+        songSearch.view.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(0,insets.getSystemWindowInsetTop(),0,insets.getSystemWindowInsetBottom());return insets;});
+        showSongSearch();
         restoreProfile();
         paint();
         worker.execute(()->{
@@ -332,6 +342,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
+        if(songSearch!=null&&songSearch.result(request,result,data))return;
         if(request!=PICK_CAPTURE||result!=RESULT_OK||data==null||data.getData()==null)return;
         stopDiscovery();importing=true;diagnostics.event("PROFILE_IMPORT_STARTED");show("연결 기록을 읽는 중입니다…");
         worker.execute(()->{
@@ -465,12 +476,17 @@ public final class MainActivity extends Activity {
         importButton.setEnabled(true);play.setEnabled(true);cancel.setEnabled(true);
         play.setText(s==Session.State.PLAY?"시작 확인 중…":"▶ 곡 시작");
         search.setEnabled(catalog!=null);
+        if(songSearch!=null)songSearch.state(connectionBanner.getText().toString(),status.getText().toString(),busy||commandQueued||s==Session.State.AUTH||s==Session.State.IDENTIFY||s==Session.State.PLAY||s==Session.State.CANCEL);
     }
-    private void show(String text){status.setText(text);if(actionStatus!=null)actionStatus.setText(text);}
+    private void show(String text){status.setText(text);if(actionStatus!=null)actionStatus.setText(text);paint();}
+    private void showSongSearch(){if(songSearch==null)return;scroll.setVisibility(View.GONE);songSearch.view.setVisibility(View.VISIBLE);paint();}
+    private void showConnection(){if(songSearch==null)return;songSearch.view.setVisibility(View.GONE);scroll.setVisibility(View.VISIBLE);scroll.smoothScrollTo(0,0);}
+    @Override public void onBackPressed(){if(songSearch!=null&&scroll.getVisibility()==View.VISIBLE){showSongSearch();return;}super.onBackPressed();}
     private void feedback(String text){show(text);Toast.makeText(this,text,Toast.LENGTH_LONG).show();}
     private void ui(Runnable action){runOnUiThread(()->{if(!destroyed)action.run();});}
     @Override protected void onDestroy(){
         destroyed=true;
+        if(songSearch!=null)songSearch.close();
         if(peerDialog!=null)peerDialog.dismiss();
         if(directWifi!=null)try{directWifi.close();}catch(RuntimeException ignored){}
         if(receiverRegistered){unregisterReceiver(wifiReceiver);receiverRegistered=false;}

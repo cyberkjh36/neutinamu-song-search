@@ -43,6 +43,15 @@ public class MainActivityTest {
         for(int i=1;i<=65;i++)csv.append(i).append(",사랑 ").append(i).append(",가수\n");
         catalog.load(new java.io.StringReader(csv.toString()));set("catalog",catalog);call("paint");
     }
+    @Test public void integratedSearchAndConnectionShareOneSessionAndPlaybackGuard()throws Exception{
+        SongSearchView web=(SongSearchView)field("songSearch");assertEquals(View.VISIBLE,web.view.getVisibility());
+        web.handle("{\"command\":\"connection\"}");assertEquals(View.GONE,web.view.getVisibility());
+        view("showSongSearch").performClick();assertEquals(View.VISIBLE,web.view.getVisibility());
+        web.handle("{\"command\":\"play\",\"number\":\"10909\"}");
+        assertEquals("10909",((EditText)view("songNumber")).getText().toString());assertTrue(message().contains("[C00]"));assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+        web.handle("{\"command\":\"connection\"}");app.onBackPressed();assertEquals(View.VISIBLE,web.view.getVisibility());
+    }
     @Test public void resultsBeyondThirtyAreReachableAndSelectionNeverStartsSong()throws Exception{
         installCatalog();EditText query=view("query");query.setText("사랑");assertEquals(0,((LinearLayout)view("results")).getChildCount());
         view("search").performClick();finishSearch();LinearLayout list=view("results");assertEquals(30,list.getChildCount());
