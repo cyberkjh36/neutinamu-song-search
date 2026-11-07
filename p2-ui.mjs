@@ -1,16 +1,17 @@
 import {P2Client} from './p2-client.mjs';
 const byId=id=>document.getElementById(id);
 const panel=document.createElement('details');panel.className='p2-panel';panel.id='p2Panel';
-panel.innerHTML=`<summary>📱 P2 반주기 연결 <span class="p2-pill">예약 · 리모컨</span></summary>
+panel.innerHTML=`<summary>PC 중계 연결 <span class="p2-pill">기존 장치 사용 시</span></summary>
+<p>이 기능은 PC와 송신 장치를 사용하는 기존 중계 방식입니다. 휴대폰과 P2의 직접 연결 기능이 아닙니다.</p>
 <p>PC의 <b>P2 휴대폰 연결</b> 창에 나온 QR을 찍거나 연결번호 8자리를 입력하세요.</p>
 <form id="p2JoinForm" class="p2-line"><label for="p2Room" class="small">P2 연결번호 8자리</label><input id="p2Room" inputmode="numeric" autocomplete="off" pattern="[0-9]{8}" maxlength="8" placeholder="00000000" required><button id="p2Join" type="submit">P2 연결</button><button id="p2Leave" type="button" hidden>연결 해제</button></form>
 <p id="p2Status" class="p2-status" role="status">아직 연결하지 않았습니다. 노래 검색은 그대로 사용할 수 있습니다.</p>
 <div class="p2-grid" aria-label="P2 리모컨"><button type="button" data-p2-key="start" disabled>▶ 시작</button><button type="button" data-p2-key="pause" disabled>Ⅱ 일시정지</button><button type="button" data-p2-key="cancel" disabled>■ 취소</button><button type="button" data-p2-key="key_down" disabled>♭ 음정 −</button><button type="button" data-p2-key="key_up" disabled>♯ 음정 +</button></div>
 <p class="p2-note">송신 장치와 실제 리모컨 신호 학습이 필요합니다. 신호 전송 후 예약·재생 여부는 P2 화면에서 확인하세요. 반주기에서 숫자를 입력 중이라면 먼저 입력칸을 비워 주세요.</p>
 <p id="p2ControlResult" class="p2-result" role="status"></p>`;
-const searchPanel=byId('query').closest('section');searchPanel.before(panel);
+const searchPanel=byId('query').closest('section');document.querySelector('.footer').before(panel);
 const reserve=document.createElement('button');reserve.type='button';reserve.className='p2-reserve';reserve.id='p2Reserve';reserve.disabled=true;reserve.textContent='＋ 이 곡 P2 예약';
-const open=document.createElement('button');open.type='button';open.className='p2-open';open.textContent='P2 연결 / 리모컨 열기';
+const open=document.createElement('button');open.type='button';open.className='p2-open';open.textContent='PC 중계로 예약하기 (장치 필요)';
 const result=document.createElement('p');result.id='p2SongResult';result.className='p2-result';result.setAttribute('role','status');
 byId('hero').append(reserve,open,result);
 let selected=null,connecting=false;
@@ -20,6 +21,7 @@ function paint(){
  byId('p2Leave').hidden=!client.state;byId('p2Leave').disabled=client.busy;
  const state=client.state;
  byId('p2Status').textContent=!state?'아직 연결하지 않았습니다. 노래 검색은 그대로 사용할 수 있습니다.':!state.online?'PC 연결이 끊겼습니다. PC 프로그램을 확인해 주세요.':state.capabilities?.includes('reserve')?`연결됨 · ${state.name} · 신호 전송 가능`:`연결됨 · ${state.name} · PC에서 장치 연결과 신호 시험을 완료해 주세요.`;
+ reserve.hidden=!client.state;
  reserve.disabled=!selected||!client.can({action:'reserve',number:selected.code});
  reserve.textContent=client.busy?'전송 결과 확인 중…':'＋ 이 곡 P2 예약';
  for(const b of keys)b.disabled=!client.can({action:'key',key:b.dataset.p2Key});

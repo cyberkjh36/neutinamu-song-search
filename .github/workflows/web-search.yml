@@ -1,0 +1,34 @@
+name: Web search and home screen
+on:
+  pull_request:
+    paths: ['index.html', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', '.github/workflows/web-search.yml']
+  push:
+    branches: [main]
+    paths: ['index.html', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', '.github/workflows/web-search.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci && npm test
+      - name: Prepare Chromium and WebKit checks
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps webkit
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Verify Android and iPhone web flows
+        env:
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        run: node tools/web-browser-check.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-search-browser-check
+          path: browser-report/*.png
+          retention-days: 14
