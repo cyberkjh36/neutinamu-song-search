@@ -145,12 +145,12 @@ public class MainActivityTest {
             assertNull(field("profile"));assertFalse(store.exists());assertNull(field("session"));
         }finally{store.clear();}
     }
-    @Test public void brokenSavedProfileExplainsReimportAndDoesNotConnect()throws Exception{
+    @Test public void brokenSavedProfileExplainsRoomQrOptionAndDoesNotConnect()throws Exception{
         java.io.File path=new java.io.File(app.getNoBackupFilesDir(),"test-broken.enc");
         try(java.io.FileOutputStream out=new java.io.FileOutputStream(path)){out.write(new byte[]{1,2,3});}
         ProfileStore store=new ProfileStore(path,()->ProfileStoreTest.KEY);
         try{set("profileStore",store);call("restoreProfile");finishWorker();assertNull(field("profile"));assertNull(field("session"));
-            assertTrue(((TextView)view("profileStatus")).getText().toString().contains("다시 선택"));assertEquals(false,field("importing"));
+            assertTrue(((TextView)view("profileStatus")).getText().toString().contains("방 QR"));assertEquals(false,field("importing"));
         }finally{store.clear();}
     }
     @Test public void startBeforeConnectionIsClickableAndExplained()throws Exception{
