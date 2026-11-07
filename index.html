@@ -93,9 +93,7 @@
     .web-scope-note{border-top:1px solid var(--line);padding-top:12px}
     .update-link{font-size:17px;min-height:48px;padding:12px}.update-area p{font-size:13px}
   </style>
-  <link rel="stylesheet" href="p2.css">
   <script src="chosung.js"></script>
-  <script type="module" src="p2-ui.mjs"></script>
 </head>
 <body>
 <main>
@@ -116,7 +114,7 @@
     <div id="message" class="message" aria-live="polite"></div>
     <div id="hero" class="hero" aria-live="polite"><div class="matchlabel">가장 가까운 곡</div><div id="heroNumber" class="number"></div><div id="heroTitle" class="title"></div><div id="heroArtist" class="artist"></div></div>
     <div id="results" class="results"></div>
-    <p class="hint web-scope-note">이 웹앱은 노래 번호 검색용입니다. 찾은 번호를 반주기 리모컨에 입력하세요. P2 직접 재생은 별도의 안드로이드 앱에서 사용할 수 있습니다.</p>
+    <p class="hint web-scope-note">반주기를 선택해 직접 연결하던 기능은 휴대폰에 설치한 안드로이드 직접연결 앱의 기능입니다. 그 앱에서 ‘P2 연결·설정 → 주변 P2 찾기’를 이용하세요. PC나 중계용 휴대폰은 필요하지 않습니다. 현재 웹 화면에서는 반주기를 검색하거나 직접 연결할 수 없습니다.</p>
   </section>
   <section class="panel">
     <strong>곡 데이터</strong>
@@ -142,7 +140,7 @@
       <li>추가했는데 안 보이면 <b>앱 목록 및 다른 홈 화면 페이지</b>를 살펴보고 <b>홈 화면 구성 잠금</b> 설정도 확인하세요.</li>
     </ol>
   </details>
-  <div class="footer"><b>웹앱 버전 2026.11.07 · v15</b> · <a id="refreshFooterLink" href="./refresh.html" style="color:var(--cyan)">최신 버전 불러오기</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>웹앱 버전 2026.11.07 · v16</b> · <a id="refreshFooterLink" href="./refresh.html" style="color:var(--cyan)">최신 버전 불러오기</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>

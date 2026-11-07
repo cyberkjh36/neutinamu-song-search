@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{
 async function check(name,type,ua){
  const browser=await type.launch(name==='android-chromium'?{executablePath:process.env.CHROMIUM_PATH||'/usr/bin/google-chrome'}:{});
  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:ua});
- const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await context.newPage(),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',req=>requests.push(req.url()));
  const url='http://127.0.0.1:'+server.address().port+prefix;
  const ready=()=>page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
  try{
@@ -25,6 +25,7 @@ async function check(name,type,ua){
   await page.evaluate(()=>navigator.serviceWorker.ready);
   assert.equal(await page.locator('#installCTA').isVisible(),true);
   assert.equal(await page.locator('#query').isVisible(),true);
+  assert.equal(await page.locator('#p2Panel,#p2Room,#p2Join').count(),0,'No PC relay or eight-digit connection form');
   assert.ok((await page.locator('#query').boundingBox()).y<750,'Search is reachable on the first screen');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
   const manifest=await (await context.request.get(url+'manifest.webmanifest')).json();
@@ -46,7 +47,8 @@ async function check(name,type,ua){
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='693');
   assert.equal(await page.locator('#heroTitle').textContent(),'꿈');
   assert.equal(await page.locator('#heroArtist').textContent(),'조용필');
-  assert.equal(await page.locator('#p2Reserve').isVisible(),false,'No unusable reservation button without a bridge');
+  assert.equal(await page.locator('#p2Reserve,.p2-open').count(),0,'No misleading PC reservation/remote buttons');
+  assert.equal(requests.some(url=>/\/p2-(ui|client)\.mjs(?:[?#]|$)/.test(url)),false,'Legacy PC relay code must not be loaded');
   await page.locator('#hero').scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(output,name+'-result.png')});
   // Exercise the browser voice UI with a deterministic recognition result, not live audio.
@@ -67,9 +69,25 @@ async function check(name,type,ua){
   await page.reload();await ready();
   await page.locator('#query').fill('ㄱㄹㅅㄱㄴㅇㄹㅅㅁ');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroTitle').textContent==='가로수 그늘 아래 서면');
+  assert.equal(await page.locator('#p2Panel,#p2Room,#p2Reserve,.p2-open').count(),0,'PC relay stays absent offline');
   networkUnavailable=false;await context.setOffline(false);
   await page.addInitScript(()=>Object.defineProperty(navigator,'standalone',{get:()=>true}));
   await page.goto(url);await ready();assert.equal(await page.locator('#installCTA').isVisible(),false);
+  for(const room of ['1','2','3','5','6','7','8']){
+   await page.goto(url+'p2-room.html?room='+room);
+   assert.equal(await page.locator('#roomTitle').textContent(),room+'번방 반주기 연결');
+   assert.equal(await page.locator('#connectRoom').isVisible(),name==='android-chromium');
+   if(name==='android-chromium')assert.match(await page.locator('#connectRoom').getAttribute('href'),new RegExp('^intent://connect\\?room='+room+'#Intent;'));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Room page does not overflow');
+  }
+  await page.screenshot({path:path.join(output,name+'-room-qr.png')});
+  await page.goto(url+'p2-room.html?room=1&room=5');assert.equal(await page.locator('#connectRoom').isVisible(),false);
+  // A room-page navigation must never replace the cached song-search index.
+  await page.goto(url);await ready();
+  if(name==='iphone-webkit')networkUnavailable=true;else await context.setOffline(true);
+  await page.goto(url+'p2-room.html?room=5');assert.equal(await page.locator('#roomTitle').textContent(),'5번방 반주기 연결');
+  await page.goto(url);await ready();assert.equal(await page.locator('#query').isVisible(),true);
+  networkUnavailable=false;await context.setOffline(false);
   assert.deepEqual(errors,[]);
   console.log('PASS '+name+': initials, IME, voice result/cancel, icon guide, manifest/icons, offline catalog, standalone launch, no overflow.');
  }finally{networkUnavailable=false;await context.close();await browser.close();}
