@@ -15,7 +15,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  try{
   const page=await browser.newPage({viewport:{width:360,height:740},deviceScaleFactor:1,isMobile:true,hasTouch:true});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(()=>{window.commands=[];window.saved=[];window.NeutiP2={command(raw){window.commands.push(JSON.parse(raw));},saveCsv(name,text){window.saved.push({name,length:text.length,header:text.slice(0,30)});}};});
+  await page.addInitScript(()=>{window.commands=[];window.saved=[];window.NeutiP2={command(raw){window.commands.push(JSON.parse(raw));},saveCsv(name,text){window.saved.push({name,length:text.length,bytes:new TextEncoder().encode(text).length,header:text.slice(0,30)});}};});
   await page.goto(process.env.SEARCH_URL||'http://127.0.0.1:'+server.address().port+'/search/index.html');
   await page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled);
   assert.equal(await page.locator('#p2Room').count(),0,'Native app must not ask for PC relay code');
@@ -25,9 +25,10 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   const dir=process.env.CHECK_OUTPUT||path.join(root,'p2-direct/app/build/reports/p2-ui');fs.mkdirSync(dir,{recursive:true});
   await page.screenshot({path:dir+'/search-home.png'});
   await page.locator('#query').fill('ㄱㄹㅅㄱㄴㅇㄹㅅㅁ');await page.locator('#searchBtn').click();
-  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='3');
+  await page.waitForFunction(()=>document.getElementById('heroTitle').textContent==='가로수 그늘 아래 서면');
   assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='play')),false);
-  await page.locator('.result').first().click();assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='play')),false);
+  await page.locator('.result').filter({has:page.getByText('3',{exact:true})}).click();
+  assert.equal(await page.locator('#heroNumber').textContent(),'3');assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='play')),false);
   await page.locator('#nativePlay').click();await page.evaluate(()=>document.getElementById('nativePlay').click());
   assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1);
   assert.equal(await page.evaluate(()=>commands.find(x=>x.command==='play').number),'3');
@@ -44,7 +45,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.locator('#voiceBtn').isEnabled(),true);
   await page.locator('#voiceBtn').click();await page.evaluate(()=>onP2NativeVoice([],'음성 검색을 취소했습니다.'));
   assert.equal(await page.locator('#voiceBtn').isEnabled(),true);assert.match(await page.locator('#message').textContent(),/취소/);
-  await page.locator('#exportBtn').click();await page.waitForFunction(()=>saved.length===1);assert.ok(await page.evaluate(()=>saved[0].length>3000000));
+  await page.locator('#exportBtn').click();await page.waitForFunction(()=>saved.length===1);assert.ok(await page.evaluate(()=>saved[0].bytes>3000000));
   await page.locator('#fileInput').dispatchEvent('click');assert.equal(await page.evaluate(()=>commands.at(-1).command),'import');
   await page.evaluate(()=>onP2NativeImport('곡번호,곡제목,가수\n777777,한글테스트,가수\n777778,<img src=x onerror=alert(1)>,가수',''));
   await page.locator('#query').fill('ㅎㄱㅌㅅㅌ');await page.locator('#searchBtn').click();
