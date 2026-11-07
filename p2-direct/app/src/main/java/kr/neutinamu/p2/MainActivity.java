@@ -361,7 +361,7 @@ public final class MainActivity extends Activity {
                     if(saved!=null){diagnostics.event("PROFILE_RESTORED");profileStatus.setText("저장된 연결 정보를 불러왔습니다. PCAP 파일을 다시 선택하지 않아도 됩니다.");connectionMessage="[C01] ‘주변 P2 찾기’에서 반주기를 선택해 주세요. 이미 연결되어 있다면 ‘기존 직접 연결 확인’으로 확인할 수 있습니다.";show(connectionMessage);}
                     paint();attemptRoomRequest();});
             }catch(IOException|java.security.GeneralSecurityException|RuntimeException e){ui(()->{
-                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("저장된 정보를 읽지 못했습니다. 기존 PCAP 파일을 다시 선택해 주세요.");setSettingsExpanded(true);paint();attemptRoomRequest();
+                importing=false;diagnostics.event("PROFILE_RESTORE_FAILED");profileStatus.setText("직원용 연결 기록을 읽지 못했습니다. 방 QR 연결은 계속 사용할 수 있습니다.");setSettingsExpanded(true);paint();attemptRoomRequest();
             });}
         });
     }
@@ -374,7 +374,7 @@ public final class MainActivity extends Activity {
     private void askForgetProfile(){
         if(!canForgetProfile())return;
         new AlertDialog.Builder(this).setTitle("연결 정보를 지울까요?")
-            .setMessage("다음 연결 때 PCAP 파일을 다시 선택해야 합니다. 원본 PCAP 파일과 반주기의 노래는 삭제하지 않습니다.")
+            .setMessage("직원용 연결 기록만 지웁니다. 방 QR 연결은 유지되며 원본 PCAP 파일과 반주기의 노래는 삭제하지 않습니다.")
             .setNegativeButton("유지",null).setPositiveButton("지우기",(d,w)->forgetProfile()).show();
     }
     private void forgetProfile(){
@@ -382,8 +382,8 @@ public final class MainActivity extends Activity {
         worker.execute(()->{
             try{profileStore.clear();ui(()->{
                 profile=null;directHost=null;directInterface=null;directMode=false;importing=false;roomRequest=null;activeRoom=null;roomPending=false;
-                diagnostics.event("PROFILE_FORGOTTEN");profileStatus.setText("저장된 연결 정보를 지웠습니다. 연결하려면 PCAP 파일을 선택해 주세요.");
-                connectionMessage="[C00] PCAP 연결 기록을 먼저 선택해 주세요.";show(connectionMessage);wifiStatus.setText(connectionMessage);paint();
+                diagnostics.event("PROFILE_FORGOTTEN");profileStatus.setText("직원용 연결 기록을 지웠습니다. 방 QR 또는 주변 P2 찾기를 사용하세요.");
+                connectionMessage="방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.";show(connectionMessage);wifiStatus.setText(connectionMessage);paint();
             });}catch(IOException|RuntimeException e){ui(()->{importing=false;diagnostics.event("PROFILE_DELETE_FAILED");feedback("연결 정보를 지우지 못했습니다. 다시 시도해 주세요.");paint();});}
         });
     }
