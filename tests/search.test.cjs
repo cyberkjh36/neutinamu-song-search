@@ -9,7 +9,7 @@ function app(){
  const elements=new Map();
  function element(){const classes=new Set();return {open:false,setAttribute(n,v){if(n==='open')this.open=true},removeAttribute(n){if(n==='open')this.open=false},showModal(){this.open=true},close(){this.open=false},value:'',textContent:'',innerHTML:'',style:{},children:[],disabled:false,clientWidth:320,className:'',classList:{add:x=>classes.add(x),remove:x=>classes.delete(x),contains:x=>classes.has(x),toggle(){}},replaceChildren(){this.children=[]},append(x){this.children.push(x)},querySelector(){return element()},scrollIntoView(){},focus(){this.focused=true},addEventListener(){}}}
  const c={Element:function(){},console,URL,Blob,setTimeout,navigator:{},location:{protocol:'https:'},document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createRange(){return {selectNodeContents(){},getBoundingClientRect(){return {width:250}}}},addEventListener(){}},innerHeight:800,addEventListener(){}};
- c.window=c;vm.createContext(c);
+ c.window=c;c.Chosung=require('../chosung.js');vm.createContext(c);
  vm.runInContext(Array.from(fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)).pop()[1],c);
  c.csv=vm.runInContext('BUNDLED_CATALOGS.map(c=>c.url)',c).map((url,index)=>{const text=fs.readFileSync(path.join(root,url),'utf8').replace(/^\uFEFF/,'');return index?text.slice(text.indexOf('\n')+1):text}).join('\n');
  vm.runInContext(`cachedSongs=csvParse(csv.replace(/^\\uFEFF/,''),',').slice(1).map(([code,title,artist])=>({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)}));`,c);
@@ -77,4 +77,19 @@ test('older IndexedDB without getAll loads songs using a cursor',async()=>{
  const {run}=app();
  run(`cachedSongs=null;db={transaction(){return {objectStore(){return {openCursor(){const request={};let i=0;const values=[{code:'693',title:'꿈',artist:'조용필'},{code:'3',title:'가로수 그늘 아래 서면',artist:'이문세'}];function next(){setTimeout(()=>{request.result=i<values.length?{value:values[i++],continue:next}:null;request.onsuccess()},0)}next();return request}}}}}};`);
  const songs=await run('allSongs()');assert.equal(songs.length,2);assert.equal(songs[0].code,'693');
+});
+
+test('Hangul initials search titles, singers, mixed queries and exact tense consonants',()=>{
+ const {run}=app();
+ for(const [q,code] of [['ㄱㄹㅅㄱㄴㅇㄹㅅㅁ','3'],['이ㅁㅅ ㄱㄹㅅ','3'],['ㅈㅇㅍ 꿈','693'],['ᄌᄋᄑ 꿈','693']])assert.ok(run(`findSongs(cachedSongs,${JSON.stringify(q)}).some(x=>x.s.code===${JSON.stringify(code)})`),q);
+ for(const q of ['ㅈㅇㅍ 꿈','꿈 ㅈㅇㅍ','ㅈㅇㅍ꿈','ㅈㅇㅍ ㄲ'])assert.equal(run(`findSongs(cachedSongs,${JSON.stringify(q)})[0].s.code`),'693',q);
+ assert.ok(run("findSongs(cachedSongs,'ㄲ').some(x=>x.s.code==='693')"));
+ assert.ok(!run("findSongs(cachedSongs,'ㄱ').some(x=>x.s.code==='693')"));
+ assert.equal(run("findSongs(cachedSongs,'ㄱㄹㅅ nonexistentartistzzzz').length"),0);
+ assert.equal(run("findSongs(cachedSongs,'10909')[0].s.code"),'10909');
+});
+test('initial patterns treat punctuation literally, including brackets',()=>{
+ const {pattern}=require('../chosung.js');assert.equal(pattern('abc'),null);
+ assert.ok(pattern('ㅅ+').any.test('사+'));assert.ok(!pattern('ㅅ+').any.test('사사'));
+ assert.ok(pattern('ㄱ[').any.test('가['));assert.ok(!pattern('ㄲ').any.test('가'));
 });
