@@ -6,8 +6,8 @@ android {
         applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 16
-        versionName '0.11.2-discovery'
+        versionCode 17
+        versionName '0.11.3-title'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
