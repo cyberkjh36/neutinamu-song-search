@@ -37,8 +37,10 @@ final class RoomDirectory {
     // A QR can select a known room, never a host, password, song, or arbitrary command.
     String fromIntent(Intent intent){
         if(intent==null||!Intent.ACTION_VIEW.equals(intent.getAction()))return null;
-        Uri uri=intent.getData();if(uri==null||!"neutinamu-p2".equals(uri.getScheme())||!"connect".equals(uri.getAuthority()))return null;
-        if(!"".equals(uri.getPath())||uri.getFragment()!=null)return null;
+        Uri uri=intent.getData();if(uri==null||uri.getFragment()!=null)return null;
+        boolean app="neutinamu-p2".equals(uri.getScheme())&&"connect".equals(uri.getAuthority())&&"".equals(uri.getPath());
+        boolean web="https".equals(uri.getScheme())&&"cyberkjh36.github.io".equals(uri.getAuthority())&&"/neutinamu-song-search/p2-room.html".equals(uri.getPath());
+        if(!app&&!web)return null;
         try{
             if(!uri.getQueryParameterNames().equals(Collections.singleton("room"))||uri.getQueryParameters("room").size()!=1)return null;
             String room=uri.getQueryParameter("room");return devices.containsKey(room)?room:null;

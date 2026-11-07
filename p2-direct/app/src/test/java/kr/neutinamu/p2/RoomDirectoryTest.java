@@ -42,4 +42,11 @@ public class RoomDirectoryTest {
         assertNull(rooms.fromIntent(new Intent(Intent.ACTION_SEND,Uri.parse("neutinamu-p2://connect?room=1"))));
         for(String uri:new String[]{"https://connect?room=1","neutinamu-p2://other?room=1","neutinamu-p2://connect:7070?room=1","neutinamu-p2://connect/play?room=1","neutinamu-p2://user@connect?room=1"})assertNull(uri,rooms.fromIntent(new Intent(Intent.ACTION_VIEW,Uri.parse(uri))));
     }
+    @Test public void existingPrintedHttpsQrTargetsSameRoomAndRejectsOtherPaths()throws Exception{
+        RoomDirectory rooms=sample();
+        assertEquals("5",rooms.fromIntent(new Intent(Intent.ACTION_VIEW,Uri.parse("https://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room=5"))));
+        for(String url:new String[]{"http://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room=5","https://other.github.io/neutinamu-song-search/p2-room.html?room=5","https://cyberkjh36.github.io/neutinamu-song-search/?room=5","https://cyberkjh36.github.io/neutinamu-song-search/p2-room.html?room=5&song=10909"})
+            assertNull(url,rooms.fromIntent(new Intent(Intent.ACTION_VIEW,Uri.parse(url))));
+    }
+
 }

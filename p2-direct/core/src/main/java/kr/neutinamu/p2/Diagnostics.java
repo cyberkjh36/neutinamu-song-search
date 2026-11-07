@@ -31,7 +31,7 @@ public final class Diagnostics {
         lines.addLast(elapsed()+"ms "+text);
     }
     private long elapsed(){return (System.nanoTime()-started)/1000000;}
-    public synchronized String report(){return "P2 직접연결 통합판 0.8.2\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+
+    public synchronized String report(){return "P2 직접연결 통합판 0.9.0\n개인정보·인증값·주소·원본 패킷은 포함하지 않습니다.\n"+
         "UPTIME_MS="+elapsed()+"\nHEARTBEAT_RX="+heartbeatRx+" LAST_RX_MS="+lastHeartbeatRx+
         "\nHEARTBEAT_TX="+heartbeatTx+" LAST_TX_MS="+lastHeartbeatTx+"\n"+String.join("\n",lines);}
 }

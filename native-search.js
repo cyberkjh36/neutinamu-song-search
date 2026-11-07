@@ -27,7 +27,7 @@
       window.P2Remote.setSong(null);setMessage('새 노래 제목·가수 또는 초성을 입력해 주세요.');$('query').focus();
     };
     $('fileInput').addEventListener('click',e=>{e.preventDefault();send('import');});
-    document.querySelector('.footer').textContent='음성·키보드·초성 검색 + P2 직접연결 · 0.8.2\n음성 인식은 휴대폰의 음성 서비스와 인터넷 연결이 필요할 수 있습니다.\n공식 TJ 앱이 아닙니다. 수록곡은 반주기 업데이트 상태에 따라 다를 수 있습니다.';
+    document.querySelector('.footer').textContent='음성·키보드·초성 검색 + P2 직접연결 · 0.9.0\n음성 인식은 휴대폰의 음성 서비스와 인터넷 연결이 필요할 수 있습니다.\n공식 TJ 앱이 아닙니다. 수록곡은 반주기 업데이트 상태에 따라 다를 수 있습니다.';
     document.querySelector('.footer').style.whiteSpace='pre-line';
     send('status');
   });

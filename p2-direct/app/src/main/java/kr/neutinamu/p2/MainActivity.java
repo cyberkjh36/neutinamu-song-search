@@ -41,7 +41,7 @@ public final class MainActivity extends Activity {
     private volatile boolean destroyed=false,connecting=false;
     private boolean importing=false,commandQueued=false;
     private final Diagnostics diagnostics=new Diagnostics();
-    private String connectionMessage="PCAP 연결 기록을 선택하고 P2 연결 시험을 눌러 주세요.";
+    private String connectionMessage="방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.";
     private CaptureProfile profile;private ProfileStore profileStore;private SongCatalog catalog;
     private TextView profileStatus,connectionBanner;
     private TextView status,actionStatus,catalogStatus,selection;
@@ -75,7 +75,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);screens.addView(scroll);setContentView(screens);
         button(root,"← 음성·키보드 노래검색으로 돌아가기",this::showSongSearch).setTag("showSongSearch");
         text(root,"느티나무 · P2 직접연결",27,true);
-        text(root,"통합판 0.8.2 · P2 연결 설정",15,false);
+        text(root,"통합판 0.9.0 · P2 연결 설정",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -88,12 +88,12 @@ public final class MainActivity extends Activity {
             beginConnect();
         });connect.setTag("connect");
         button(connectionRow,"주변 P2 찾기",this::findP2).setTag("findP2");equalButtons(connectionRow);
-        status=text(root,"처음에는 ‘P2 연결’을 눌러 기존 PCAP 파일을 선택하세요.",15,false);status.setTag("connectionStatus");
+        status=text(root,"방 QR을 스캔하면 해당 방을 찾아 연결합니다. 처음 나오는 권한·연결 확인 창은 허용해 주세요.",15,false);status.setTag("connectionStatus");
         settingsToggle=button(root,"연결 설정 · 도움말 ▾",()->setSettingsExpanded(!settingsExpanded));settingsToggle.setTag("settingsToggle");
         connectionDetails=column(root);connectionDetails.setTag("connectionDetails");connectionDetails.setVisibility(View.GONE);
-        text(connectionDetails,"처음 한 번 연결 기록을 선택하면 다음부터 자동으로 불러옵니다. 반주기와의 연결은 직접 눌러 시작하세요.",15,false);
+        text(connectionDetails,"방 QR 연결에는 파일 선택이 필요하지 않습니다. 연결이 안 될 때 직원이 기존 연결 기록을 등록할 수 있습니다.",15,false);
         importButton=button(connectionDetails,"PCAP 연결 기록 선택",this::chooseCapture);importButton.setTag("importProfile");
-        profileStatus=text(connectionDetails,"저장된 연결 정보가 없습니다. 전에 보내 주신 PCAP 파일을 선택하세요.",14,false);profileStatus.setTag("profileStatus");
+        profileStatus=text(connectionDetails,"손님은 방 QR을 사용하세요. 아래 연결 기록 도구는 직원용입니다.",14,false);profileStatus.setTag("profileStatus");
         text(connectionDetails,"연결 정보는 휴대폰 안에 암호화해 저장합니다. 앱 삭제·데이터 초기화 후에는 다시 선택해야 합니다.",14,false);
         button(connectionDetails,"저장된 연결 정보 지우기",this::askForgetProfile).setTag("forgetProfile");
         button(connectionDetails,"기존 직접 연결 확인",()->{
@@ -154,6 +154,7 @@ public final class MainActivity extends Activity {
                 peerDialog=new AlertDialog.Builder(MainActivity.this).setTitle("연결할 방을 선택하세요")
                     .setItems(names,(d,index)->{
                         DirectWifi.Peer selected=ordered.get(index);String room=rooms.room(selected);
+                        if(room==null&&profile==null){directWifi.stopFinding();feedback("매장에 등록된 방을 선택해 주세요. 미등록 반주기는 직원의 연결 설정이 필요합니다.");return;}
                         if(room!=null&&ordered.stream().filter(p->room.equals(rooms.room(p))).count()>1){
                             directWifi.stopFinding();feedback("같은 방의 반주기가 여러 대 발견되어 연결하지 않았습니다. 직원에게 확인해 주세요.");return;
                         }
@@ -194,7 +195,6 @@ public final class MainActivity extends Activity {
     private void findP2(){
         if(connecting||importing||session!=null||directWifi.joining()){feedback("연결 준비 또는 실행 연결 중입니다. 현재 연결을 해제한 뒤 찾아 주세요.");return;}
         roomRequest=null;activeRoom=null;roomPending=false;stopDiscovery();
-        if(profile==null){chooseCapture();return;}
         directMode=true;directHost=null;directInterface=null;findAfterPermission=true;prepareWifi();
     }
     @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);handleRoomIntent(intent);}
@@ -203,6 +203,7 @@ public final class MainActivity extends Activity {
         String room=rooms.fromIntent(intent);
         if(room==null){showConnection();feedback("이 QR의 방정보를 확인할 수 없습니다. 직원에게 확인하거나 ‘주변 P2 찾기’를 눌러 주세요.");return;}
         if(session!=null||connecting||directWifi.joining()||commandQueued){
+            if(room.equals(activeRoom)&&session!=null&&session.state()==Session.State.READY){showSongSearch();return;}
             showConnection();
             feedback(room.equals(activeRoom)?room+"번방에 연결되어 있거나 연결 중입니다.":"현재 연결을 먼저 해제한 뒤 "+room+"번방 QR을 다시 스캔해 주세요. 다른 방으로 명령을 보내지 않았습니다.");return;
         }
@@ -212,14 +213,13 @@ public final class MainActivity extends Activity {
     private void attemptRoomRequest(){
         if(!roomPending||roomRequest==null||destroyed)return;
         if(importing){show(roomRequest+"번방 · 저장된 연결 정보를 확인하고 있습니다…");return;}
-        if(profile==null){setSettingsExpanded(true);show(roomRequest+"번방 · 이 휴대폰의 최초 연결 설정이 필요합니다. 직원에게 연결 기록 설정을 요청해 주세요.");return;}
         if(connecting||session!=null||directWifi.joining())return;
         roomPending=false;activeRoom=roomRequest;directMode=true;directHost=null;directInterface=null;
         findAfterPermission=true;show(roomRequest+"번방 반주기를 찾습니다. 다른 방에는 연결하지 않습니다.");prepareWifi();
     }
     private void prepareWifi(){
         if(importing){feedback("연결 정보를 준비 중입니다. 잠시 기다려 주세요.");return;}
-        if(profile==null){feedback("[W00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
+        if(profile==null&&!directMode){feedback("[W00] 방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.");return;}
         if(checkSelfPermission(wifiPermission())!=PackageManager.PERMISSION_GRANTED){
             wifiStatus.setText(Build.VERSION.SDK_INT>=33?"직접 Wi-Fi 연결 확인을 위해 ‘근처 기기’ 권한을 허용해 주세요.":
                 "이 안드로이드 버전에서는 직접 Wi-Fi 연결 확인에 위치 권한이 필요합니다. 위치를 수집하거나 저장하지 않습니다.");
@@ -243,7 +243,7 @@ public final class MainActivity extends Activity {
         boolean granted=false;
         for(int i=0;i<permissions.length&&i<results.length;i++)if(permissions[i].equals(wifiPermission())&&results[i]==PackageManager.PERMISSION_GRANTED)granted=true;
         if(granted)prepareWifi();
-        else{diagnostics.event("P2P_PERMISSION_DENIED");wifiStatus.setText("[W03] 직접 연결 확인 권한이 허용되지 않았습니다. ‘기존 직접 연결 확인’을 다시 눌러 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다. TJ매니저는 종료하지 마세요.");}
+        else{diagnostics.event("P2P_PERMISSION_DENIED");show("[W03] 연결 권한이 허용되지 않았습니다. 방 QR을 다시 스캔하고 권한을 허용해 주세요. Android 12에서는 ‘정확한 위치’가 필요합니다.");wifiStatus.setText(status.getText());}
     }
     private void showWifiState(P2pRegistration.State state){
         if(destroyed||directMode)return;
@@ -408,10 +408,12 @@ public final class MainActivity extends Activity {
     }
     private void beginConnect(){
         if(roomRequest!=null&&directHost==null){roomPending=true;attemptRoomRequest();return;}
-        if(profile==null){feedback("[C00] PCAP 연결 기록을 먼저 선택해 주세요.");chooseCapture();return;}
+        if(profile==null&&roomRequest==null){findP2();return;}
         if(importing||connecting||session!=null||(directWifi!=null&&directWifi.joining()))return;
         diagnostics.event("CONNECT_STARTED");
-        CaptureProfile selected=profile;String target=directHost==null?selected.host:directHost;String radio=directInterface;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
+        CaptureProfile selected=profile;String target=directHost==null?selected.host:directHost;
+        String device=roomRequest==null?null:rooms.device(roomRequest);
+        String radio=directInterface;connecting=true;paint();show("P2에 직접 연결하고 있습니다…");
         worker.execute(()->{
             Socket socket=null;
             try{
@@ -419,7 +421,10 @@ public final class MainActivity extends Activity {
                 if(destroyed){socket.close();return;}
                 socket.connect(new InetSocketAddress(target,7070),5000);
                 diagnostics.event("TCP_CONNECTED");
-                CaptureProfile live=selected.forConnection(target,currentMac(socket));
+                String mac=currentMac(socket);
+                CaptureProfile live=device==null?selected.forConnection(target,mac):
+                    selected!=null&&selected.matchesDevice(device)?selected.forConnection(target,mac):CaptureProfile.forRoom(target,device,mac);
+                diagnostics.event(device!=null?"ROOM_REGISTRATION_READY":"SAVED_REGISTRATION_READY");
                 diagnostics.event("CURRENT_WIFI_ADDRESS_APPLIED");
                 final Session[] holder=new Session[1];
                 Session opened=new Session(socket,live,new Session.Listener(){
@@ -495,7 +500,7 @@ public final class MainActivity extends Activity {
             diagnostics.event("CONTROL_BLOCKED_NOT_CONNECTED");
             feedback("[C00] P2 연결이 완료되지 않아 곡 실행·취소 명령을 보내지 않았습니다.\n"+connectionMessage);
             new AlertDialog.Builder(this).setTitle("P2 연결이 필요합니다").setMessage(connectionMessage)
-                .setPositiveButton(profile==null?"연결 기록 선택":"P2 연결",(d,w)->{if(profile==null)chooseCapture();else beginConnect();})
+                .setPositiveButton("P2 연결",(d,w)->beginConnect())
                 .setNegativeButton("닫기",null).show();return false;
         }
         if(s!=Session.State.READY&&!(s==Session.State.PLAY&&!start)){

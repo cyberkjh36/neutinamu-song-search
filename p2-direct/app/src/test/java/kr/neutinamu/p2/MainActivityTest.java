@@ -162,9 +162,9 @@ public class MainActivityTest {
     @Test public void cancelBeforeConnectionExplainsMissingConnection(){
         assertTrue(view("cancel").isEnabled());view("cancel").performClick();assertTrue(message().contains("[C00]"));
     }
-    @Test public void connectionWithoutProfileOpensPicker(){
+    @Test public void connectionWithoutProfileStartsDiscoveryWithoutFilePicker(){
         assertTrue(view("connect").isEnabled());view("connect").performClick();
-        assertEquals(Intent.ACTION_OPEN_DOCUMENT,shadowOf(app).getNextStartedActivity().getAction());
+        assertNull(shadowOf(app).getNextStartedActivity());
     }
     @Test public void diagnosisShownAtBothConnectionAndPlayControls()throws Exception{
         Method show=MainActivity.class.getDeclaredMethod("show",String.class);show.setAccessible(true);
@@ -176,14 +176,14 @@ public class MainActivityTest {
         assertEquals(Intent.ACTION_CHOOSER,chooser.getAction());
         Intent send=chooser.getParcelableExtra(Intent.EXTRA_INTENT);assertNotNull(send);
         assertEquals("text/plain",send.getType());String text=send.getStringExtra(Intent.EXTRA_TEXT);
-        assertTrue(text.contains("P2 직접연결 통합판 0.8.2"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
+        assertTrue(text.contains("P2 직접연결 통합판 0.9.0"));assertFalse(text.contains("TJAA"));assertFalse(text.contains("192.168."));
     }
     @Test public void managerSettingsBlockedBeforeWifiPreparation(){
         view("tjSettings").performClick();assertTrue(message().contains("기존 직접 연결 확인"));
         assertNull(shadowOf(app).getNextStartedActivity());
     }
     @Test @Config(sdk={28,29,31,35}) public void preparationNeedsCaptureAndPermissionDenialDoesNotClaimSuccess(){
-        view("prepareWifi").performClick();assertEquals(Intent.ACTION_OPEN_DOCUMENT,shadowOf(app).getNextStartedActivity().getAction());
+        view("prepareWifi").performClick();assertNull(shadowOf(app).getNextStartedActivity());
         app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_DENIED});
         assertTrue(((TextView)view("wifiStatus")).getText().toString().contains("[W03]"));
         assertEquals(android.os.Build.VERSION.SDK_INT>=33?"android.permission.NEARBY_WIFI_DEVICES":"android.permission.ACCESS_FINE_LOCATION",MainActivity.wifiPermission());
@@ -204,12 +204,27 @@ public class MainActivityTest {
         // Recreate only so the common teardown still owns a live Activity.
         controller=Robolectric.buildActivity(MainActivity.class).setup();app=controller.get();
     }
-    @Test public void roomQrWaitsForProfileAndDoesNotOpenPcapPickerOrSendSong()throws Exception{
+    @Test public void freshRoomQrWaitsForPermissionThenFindsCorrectRoomWithoutProfile()throws Exception{
         finishWorker();set("rooms",RoomDirectoryTest.sample());
+        DirectWifi old=(DirectWifi)field("directWifi");Field listener=DirectWifi.class.getDeclaredField("listener");listener.setAccessible(true);
+        DirectWifiTest.Fake backend=new DirectWifiTest.Fake();DirectWifi replacement=new DirectWifi(backend,new android.os.Handler(Looper.getMainLooper()),(DirectWifi.Listener)listener.get(old));old.close();set("directWifi",replacement);
+        shadowOf(app).denyPermissions(MainActivity.wifiPermission());
         app.onNewIntent(RoomDirectoryTest.link("room=5"));
-        assertEquals("5",field("roomRequest"));assertEquals(true,field("roomPending"));
-        assertTrue(message().contains("5번방"));assertTrue(message().contains("최초 연결 설정"));assertNull(field("session"));
-        assertNull(shadowOf(app).getNextStartedActivityForResult());
+        assertEquals("5",field("roomRequest"));assertEquals(false,field("roomPending"));assertNull(field("profile"));assertNull(backend.discovery);
+        assertNull(shadowOf(app).getNextStartedActivityForResult());assertNull(field("session"));
+        shadowOf(app).grantPermissions(MainActivity.wifiPermission());
+        app.onRequestPermissionsResult(2,new String[]{MainActivity.wifiPermission()},new int[]{android.content.pm.PackageManager.PERMISSION_GRANTED});
+        backend.discovery.accept(true);DirectWifi.Peer five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");
+        backend.peers.accept(java.util.Arrays.asList(new DirectWifi.Peer("TJ_P2_TEST_A_1_B","01"),five));backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertSame(five,backend.selectedPeer);assertEquals(1,backend.joined);assertEquals("5",field("activeRoom"));assertNull(field("profile"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
+    }
+    @Test public void sameRoomQrReturnsToSearchWhenAlreadyConnected()throws Exception{
+        finishWorker();set("rooms",RoomDirectoryTest.sample());set("activeRoom","1");set("roomRequest","1");
+        Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{app.onNewIntent(RoomDirectoryTest.link("room=1"));assertSame(session,field("session"));assertEquals(View.VISIBLE,((SongSearchView)field("songSearch")).view.getVisibility());}
+        finally{session.close();set("session",null);}
     }
     @Test public void invalidRoomQrCannotReplaceCurrentTarget()throws Exception{
         finishWorker();set("rooms",RoomDirectoryTest.sample());set("roomRequest","1");

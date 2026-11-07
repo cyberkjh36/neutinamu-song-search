@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "kr.neutinamu.p2.direct",
+      "sha256_cert_fingerprints": ["E9:23:39:BA:88:AE:92:6B:8A:5D:89:58:D4:51:28:8A:0C:B6:B3:02:BC:77:81:0B:3F:46:F5:36:32:3C:7B:18"]
+    }
+  }
+]

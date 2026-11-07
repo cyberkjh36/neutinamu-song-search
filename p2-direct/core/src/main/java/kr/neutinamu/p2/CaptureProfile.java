@@ -8,12 +8,46 @@ import java.nio.charset.StandardCharsets;
 public final class CaptureProfile {
     public final String host;
     private final byte[] registration, identity;
+    private final String roomSerial;
     private CaptureProfile(String host,byte[] registration,byte[] identity) {
+        this(host,registration,identity,null);
+    }
+    private CaptureProfile(String host,byte[] registration,byte[] identity,String roomSerial) {
         this.host=host;this.registration=registration.clone();this.identity=identity.clone();
+        this.roomSerial=roomSerial;
+    }
+    /** Room connection for the zero-password configuration observed on the owner's P2.
+     * Uses the legacy client's anonymous phone-field value; no captured phone/MAC is shipped.
+     * Other passwords are never guessed or retried. Readiness still requires exact serial match. */
+    public static CaptureProfile forRoom(String host,String deviceName,String currentMac)throws IOException {
+        validateHost(host);String serial=serialFromDevice(deviceName);
+        byte[] body=new byte[47];body[0]='T';body[1]='J';body[2]='A';body[3]='A';
+        byte[] anonymous="0000000000".getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(anonymous,0,body,12,anonymous.length);
+        CaptureProfile result=new CaptureProfile(host,Wire.encode(3000,new byte[]{1,0,0,0,0,4,0,1},body),new byte[0],serial);
+        return result.forConnection(host,currentMac);
+    }
+    private static String serialFromDevice(String deviceName)throws IOException {
+        if(deviceName==null||!deviceName.matches("TJ_P2_P[0-9]{10}_[0-9]+_B"))throw new IOException("Unsupported room device");
+        return deviceName.split("_")[2];
+    }
+    private static boolean serialMatches(byte[] info,String serial){
+        if(info==null||info.length<20)return false;
+        // The 20-byte serial field contains a three-character model prefix and the device serial.
+        for(int i=0;i<3;i++)if(!((info[i]>='A'&&info[i]<='Z')||(info[i]>='0'&&info[i]<='9')))return false;
+        byte[] expected=serial.getBytes(StandardCharsets.US_ASCII);
+        for(int i=0;i<expected.length;i++)if(info[3+i]!=expected[i])return false;
+        for(int i=3+expected.length;i<20;i++)if(info[i]!=0)return false;
+        return true;
+    }
+    public boolean matchesDevice(String deviceName){
+        try{String serial=serialFromDevice(deviceName);return roomSerial!=null?roomSerial.equals(serial):serialMatches(identity,serial);}
+        catch(IOException e){return false;}
     }
     public byte[] registration() { return registration.clone(); }
     /** Sensitive bytes: callers must encrypt before persisting; never publish or log. */
     public byte[] storageBytes() throws IOException {
+        if(roomSerial!=null)throw new IOException("Room profiles are rebuilt from the selected room, not persisted");
         ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
         out.writeInt(0x50325001);byte[] h=host.getBytes(StandardCharsets.US_ASCII);
         out.writeByte(h.length);out.write(h);out.write(registration);out.writeByte(identity.length);out.write(identity);
@@ -48,11 +82,12 @@ public final class CaptureProfile {
         byte[] fresh=registration.clone();Arrays.fill(fresh,43,63,(byte)0);
         byte[] mac=currentMac.toUpperCase(Locale.ROOT).getBytes(StandardCharsets.US_ASCII);
         System.arraycopy(mac,0,fresh,43,mac.length);
-        return new CaptureProfile(currentHost,fresh,identity);
+        return new CaptureProfile(currentHost,fresh,identity,roomSerial);
     }
     /** Keep the connection password and app-protocol marker for subsequent requests. */
     byte[] packet(byte[] packet){byte[] result=packet.clone();System.arraycopy(registration,5,result,5,5);return result;}
     public boolean matchesIdentity(byte[] info) {
+        if(roomSerial!=null)return serialMatches(info,roomSerial);
         return info.length>=identity.length && Arrays.equals(identity,Arrays.copyOf(info,identity.length));
     }
     public static CaptureProfile read(InputStream input) throws IOException {
