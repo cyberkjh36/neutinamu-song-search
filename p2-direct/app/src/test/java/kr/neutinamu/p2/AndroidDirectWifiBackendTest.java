@@ -52,4 +52,22 @@ public class AndroidDirectWifiBackendTest {
         assertEquals(report.indexOf("SCAN_TOTAL 2"),report.lastIndexOf("SCAN_TOTAL 2"));
         assertFalse(report.contains("PRIVATE_SERIAL"));assertFalse(report.contains("secret"));
     }
+
+    @Test public void allRegisteredSerialAliasesAreCountedWithoutLeakingNames()throws Exception{
+        StringBuilder mapping=new StringBuilder();List<WifiP2pDevice> peers=new ArrayList<>();
+        int[] numbers={1,2,3,5,6,7,8};
+        for(int i=0;i<numbers.length;i++){
+            String suffix=(7000000+i)+"_"+(i+1)+"_B";
+            mapping.append(numbers[i]+"번 TJ_P2_P020"+suffix+"\n");
+            peers.add(peer("TJ_P2_"+suffix,"02:11:22:33:44:0"+i,null));
+        }
+        RoomDirectory rooms=RoomDirectory.read(new StringReader(mapping.toString()));
+        Diagnostics diagnostics=new Diagnostics();AndroidDirectWifiBackend backend=new AndroidDirectWifiBackend(RuntimeEnvironment.getApplication(),rooms,diagnostics);
+        List<DirectWifi.Peer> registered=rooms.registered(backend.roomPeers(peers));
+        assertEquals(7,registered.size());for(int i=0;i<numbers.length;i++)assertEquals(numbers[i]+"번방",rooms.label(registered.get(i)));
+        backend.recordPeers(peers,registered.size());String report=diagnostics.report();
+        assertTrue(report.contains("SCAN_TOTAL 7 ROOMS 7 P2_UNKNOWN 0 UNNAMED 0"));
+        assertFalse(report.contains("700000"));assertFalse(report.contains("02:11"));
+    }
+
 }

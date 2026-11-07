@@ -72,7 +72,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.3 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.4 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);

@@ -49,4 +49,27 @@ public class RoomDirectoryTest {
             assertNull(url,rooms.fromIntent(new Intent(Intent.ACTION_VIEW,Uri.parse(url))));
     }
 
+
+    @Test public void radioAliasMapsToRoomButPreservesFullProtocolIdentity()throws Exception{
+        String full="TJ_P2_P0207654321_7_B",radio="TJ_P2_7654321_7_B";
+        RoomDirectory rooms=RoomDirectory.read(new StringReader("8번방 "+full+"\n"));
+        DirectWifi.Peer discovered=new DirectWifi.Peer(radio,"02:11:22:33:44:55");
+        assertEquals("8",rooms.room(discovered));assertTrue(rooms.containsDevice(radio));
+        assertEquals(full,rooms.device("8"));assertSame(discovered,rooms.registered(Collections.singletonList(discovered)).get(0));
+        CaptureProfile profile=CaptureProfile.forRoom("192.168.49.1",rooms.device("8"),"02:11:22:33:44:55");
+        byte[] identity=Arrays.copyOf("P2BP0207654321".getBytes("US-ASCII"),20);
+        assertTrue(profile.matchesIdentity(identity));identity[13]='2';assertFalse(profile.matchesIdentity(identity));
+    }
+    @Test public void aliasesRequireTheWholeSerialAndSuffix()throws Exception{
+        RoomDirectory rooms=RoomDirectory.read(new StringReader("8번 TJ_P2_P0207654321_7_B"));
+        for(String name:new String[]{"TJ_P2_7654322_7_B","TJ_P2_7654321_8_B","TJ_P2_7654321_7_C","TJ_P2_P0217654321_7_B","DIRECT-XX-TJ_P2_7654321_7_B","TJ_P2_7654321_7_B_EXTRA"})
+            assertFalse(name,rooms.containsDevice(name));
+        assertTrue(rooms.containsDevice(" tj_p2_7654321_7_b "));
+        assertTrue(rooms.containsDevice("TJ_P2_P0207654321_7_B"));
+    }
+    @Test public void twoRoomsWithSameRadioAliasAreRejected()throws Exception{
+        try{RoomDirectory.read(new StringReader("1번 TJ_P2_P0207654321_7_B\n8번 TJ_P2_7654321_7_B"));fail();}
+        catch(IOException expected){}
+    }
+
 }

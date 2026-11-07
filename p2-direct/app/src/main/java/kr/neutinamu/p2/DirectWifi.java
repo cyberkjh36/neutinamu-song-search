@@ -46,7 +46,7 @@ final class DirectWifi implements AutoCloseable {
     private void fail(String code,String message){invalidate();joining=false;searching=false;selected=null;listener.status(code,message);}
     void find(){find(null);}
     void find(String target){
-        if(closed||joining)return;targetName=target==null?null:RoomDirectory.normalize(target);invalidate();searching=true;peers=Collections.emptyList();selected=null;int request=generation;
+        if(closed||joining)return;targetName=target==null?null:RoomDirectory.discoveryKey(target);invalidate();searching=true;peers=Collections.emptyList();selected=null;int request=generation;
         try{
             if(!opened){opened=backend.open(()->{opened=false;if(!closed)fail("W26","Wi-Fi Direct 사용 등록이 끊겼습니다. 다시 찾아 주세요.");});}
             if(!opened){fail("W26","Wi-Fi Direct를 사용할 수 없습니다.");return;}
@@ -72,7 +72,7 @@ final class DirectWifi implements AutoCloseable {
             peers=new ArrayList<>(unique.values());
             if(targetName!=null){
                 Peer match=null;
-                for(Peer peer:peers)if(targetName.equals(RoomDirectory.normalize(peer.name))){
+                for(Peer peer:peers)if(targetName.equals(RoomDirectory.discoveryKey(peer.name))){
                     if(match!=null){fail("W28","같은 방 이름의 반주기가 여러 대 발견되어 연결하지 않았습니다. 직원에게 확인해 주세요.");return;}
                     match=peer;
                 }

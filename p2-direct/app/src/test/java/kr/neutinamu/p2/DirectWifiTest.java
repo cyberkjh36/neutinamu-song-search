@@ -114,4 +114,23 @@ public class DirectWifiTest {
         client.select(visible.get(0));backend.reply(UP);assertEquals(1,hosts.size());
     }
 
+
+    @Test public void qrFullIdentityFindsShortRadioNameThroughBackendFilter()throws Exception{
+        RoomDirectory rooms=RoomDirectory.read(new java.io.StringReader("8번 TJ_P2_P0207654321_7_B"));
+        AndroidDirectWifiBackend radio=new AndroidDirectWifiBackend(RuntimeEnvironment.getApplication(),rooms);
+        List<DirectWifi.Peer> found=radio.roomPeers(Arrays.asList(
+            AndroidDirectWifiBackendTest.peer("TJ_P2_7654321_7_B",PEER.address,null),
+            AndroidDirectWifiBackendTest.peer("TJ_P2_7654322_7_B","02:99:88:77:66:55",null)));
+        client.find(rooms.device("8"));backend.discovery.accept(true);backend.peers.accept(found);
+        assertNull(visible);assertTrue(client.joining());backend.reply(new DirectWifi.Link(false,false,null,null));
+        assertEquals(1,backend.joined);assertSame(found.get(0),backend.selectedPeer);assertEquals(PEER.address,backend.selectedPeer.address);
+        backend.join.accept(true);shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));backend.reply(UP);
+        assertEquals(Collections.singletonList("192.168.49.1"),hosts);assertFalse(codes.contains("W21"));
+    }
+    @Test public void longAndShortAliasesAtDifferentAddressesAreAmbiguous(){
+        client.find("TJ_P2_P0207654321_7_B");backend.discovery.accept(true);
+        backend.peers.accept(Arrays.asList(new DirectWifi.Peer("TJ_P2_7654321_7_B",PEER.address),new DirectWifi.Peer("TJ_P2_P0207654321_7_B","02:99:88:77:66:55")));
+        assertTrue(codes.contains("W28"));assertEquals(0,backend.joined);assertTrue(hosts.isEmpty());
+    }
+
 }
