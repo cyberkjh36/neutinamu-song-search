@@ -36,6 +36,7 @@ jobs:
       - name: Test protocol, build Android trial, run lint
         run: gradle -p p2-direct :core:test :core:jar :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug --no-daemon
       - name: Verify integrated phone search in Chromium
+        if: always()
         env:
           CHROMIUM_PATH: /usr/bin/google-chrome
         run: |

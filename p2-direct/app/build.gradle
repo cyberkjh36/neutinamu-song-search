@@ -13,7 +13,7 @@ android {
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
     sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets'); assets.srcDir layout.buildDirectory.dir('search-assets') } }
     lint { abortOnError true }
-    testOptions { unitTests { includeAndroidResources = true } }
+    testOptions { unitTests { includeAndroidResources = true; all { maxHeapSize = '2g' } } }
 }
 tasks.register('prepareCatalog', Copy) {
     from rootProject.projectDir.parentFile
