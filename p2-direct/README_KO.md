@@ -1,3 +1,18 @@
+# 0.11.11 · 배포 APK의 방 목록 누락 수정
+
+0.11.10 배포 과정에서 CI의 기본 APK에 매장 방 대응표를 넣는 단계가 누락되었습니다. 진단의 `ROOM_DIRECTORY_UNAVAILABLE`, `ROOMS 0`과 실제 APK의 `assets/p2-rooms.txt` 부재를 확인했습니다. 이미 확인된 0.11.9 배포본에서 방 대응표를 그대로 복원하며, 검색·예약·연결 코드는 변경하지 않습니다. 0.11.10의 A16 호환 연결은 계속 시험 기능입니다.
+
+**CI APK는 매장 방 정보가 없으므로 그대로 서명하거나 배포하지 않습니다.**
+
+1. `python3 p2-direct/tools/package_release.py prepare --input-apk CI_UNSIGNED.apk --rooms-from-apk VERIFIED_VENUE.apk --output-apk ROOM_UNSIGNED.apk`
+2. 기존 제작자 키로 `ROOM_UNSIGNED.apk`를 서명합니다.
+3. `python3 p2-direct/tools/package_release.py verify --apk SIGNED.apk --rooms-from-apk VERIFIED_VENUE.apk`
+4. 서명·버전·전체 방 대응표·검색 자산을 검증하고, 배포된 다운로드의 SHA-256도 대조합니다.
+
+방 정보 누락·빈 목록·잘못된 형식·중복 방/기기·이전 방 정보와의 불일치를 실패로 처리하는 패키징 회귀 검사를 CI에 추가했습니다. 원본 방 정보는 공개 소스에 넣지 않습니다. 기존 설치 QR과 각 방 연결 QR은 유지합니다.
+
+아래는 이전 버전의 변경 기록입니다.
+
 # 0.11.10 · Android 16 A03 호환 연결 시험판
 
 갤럭시 A16 / Android 16의 로그에서 TCP 연결 뒤 현재 Wi-Fi Direct 주소 읽기가 실패하여 초기 등록을 보내기 전에 A03으로 종료되는 현상을 확인했습니다.

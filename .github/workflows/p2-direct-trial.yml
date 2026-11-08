@@ -46,6 +46,8 @@ jobs:
           node-version: '22'
       - name: Test existing web search and initial consonants
         run: npm ci && npm test
+      - name: Test final APK room directory packaging guard
+        run: python3 -m unittest discover -s p2-direct/tools -p 'test_package_release.py' -v
       - name: Test protocol, build Android trial, run lint
         run: gradle -p p2-direct :core:test :core:jar :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug --no-daemon
       - name: Verify integrated phone search in Chromium
@@ -74,7 +76,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: P2-Direct-Android-Trial
+          name: P2-Direct-Android-CI-Requires-Room-Packaging
           path: |
             p2-direct/app/build/outputs/apk/debug/app-debug.apk
             p2-direct/app/build/outputs/apk/release/app-release-unsigned.apk
