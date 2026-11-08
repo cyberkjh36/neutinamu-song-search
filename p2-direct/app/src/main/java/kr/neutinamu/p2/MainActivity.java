@@ -72,7 +72,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.5 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.6 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -137,7 +137,8 @@ public final class MainActivity extends Activity {
             public void connection(){showConnection();}
             public void connect(){toggleConnection();}
             public void find(){findP2();}
-            public void pause(){pauseCommand();}
+            public void next(){advanceCommand(true,0,0);}
+            public void playQueued(int song,int index){advanceCommand(false,song,index);}
             public void play(int song){if(ensureControlReady(true))dispatch(true,song);paint();}
             public void reserve(int song){queueCommand(true,song);}
             public void queue(){queueCommand(false,0);}
@@ -475,20 +476,23 @@ public final class MainActivity extends Activity {
     private void dispatch(boolean start,int song){
         Session active=session;if(active==null||commandQueued){feedback("[WAIT] 연결 상태를 확인해 주세요.");return;}
         commandQueued=true;diagnostics.event(start?"PLAY_TAPPED":"CANCEL_TAPPED");
-        show(start?"[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…":"[C10] 취소 버튼 입력을 받았습니다. 요청을 전송합니다…");
+        show(start?"[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…":"[C10] 정지 버튼 입력을 받았습니다. 요청을 전송합니다…");
         worker.execute(()->{
             try{if(start)active.play(song);else active.cancel();}
             catch(IOException|RuntimeException e){diagnostics.event("COMMAND_SEND_FAILED");ui(()->show("[P02] 명령 전송 또는 처리에 실패했습니다. 반주기 화면을 확인하고 진단 결과를 공유해 주세요."));}
             finally{ui(()->{commandQueued=false;paint();});}
         });
     }
-    private void pauseCommand(){
+    private void advanceCommand(boolean next,int song,int index){
         if(!ensureControlReady(true)){paint();return;}
+        if(!next&&(!queueValid||index<0||index>=queueSongs.size()||queueSongs.get(index)!=song)){
+            feedback("예약 목록이 바뀌었습니다. 새로고침한 뒤 곡을 다시 눌러 주세요.");return;
+        }
         Session active=session;if(active==null||commandQueued)return;
-        commandQueued=true;diagnostics.event("PAUSE_TAPPED");show("일시정지·계속 요청 중…");
+        commandQueued=true;diagnostics.event(next?"NEXT_TAPPED":"QUEUE_PLAY_TAPPED");show("최신 예약 순서를 확인합니다…");
         worker.execute(()->{
-            try{active.pause();}
-            catch(IOException|RuntimeException e){diagnostics.event("PAUSE_SEND_FAILED");ui(()->show("일시정지·계속 요청을 확인하지 못했습니다. 반주기 화면을 확인해 주세요."));}
+            try{if(next)active.next();else active.playQueued(song,index);}
+            catch(IOException|RuntimeException e){diagnostics.event("ADVANCE_SEND_FAILED");ui(()->{if(session==active)show("곡 변경 요청을 확인하지 못했습니다. 반주기 화면을 확인해 주세요.");});}
             finally{ui(()->{commandQueued=false;paint();});}
         });
     }
@@ -511,7 +515,7 @@ public final class MainActivity extends Activity {
         if(status==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();
         boolean searching=directWifi!=null&&directWifi.searching();
         boolean busy=connecting||importing||searching||(directWifi!=null&&directWifi.joining());
-        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL||s==Session.State.PAUSE||s==Session.State.RESERVE||s==Session.State.QUEUE;
+        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL||s==Session.State.PAUSE||s==Session.State.RESERVE||s==Session.State.QUEUE||s==Session.State.ADVANCE_QUEUE||s==Session.State.ADVANCE_STOP||s==Session.State.ADVANCE_PLAY;
         if(!linked){queueValid=false;queueSongs=Collections.emptyList();queueMessage="먼저 P2에 연결해 주세요.";}
         String roomLabel=roomRequest==null?"P2":roomRequest+"번방";
         connectionBanner.setText(linked?"● "+(activeRoom==null?"P2":activeRoom+"번방")+" 연결됨":searching?"◌ "+roomLabel+" 찾는 중…":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ "+roomLabel+" 연결 준비 중…":"○ "+roomLabel+" 연결 전");

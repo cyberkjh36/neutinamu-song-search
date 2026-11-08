@@ -51,6 +51,8 @@ public final class Wire {
         return java.util.Collections.unmodifiableList(songs);
     }
     public static byte[] cancel() { return encode(4100,NORMAL,integer(12)); }
+    /** Start with no song number: use the machine's next reserved song. */
+    public static byte[] next() { return encode(4100,NORMAL,integer(11)); }
     /** P2 pause/resume toggle. One explicit tap, never an automatic retry. */
     public static byte[] pause() { return encode(4100,NORMAL,integer(25)); }
     public static final class Frame {

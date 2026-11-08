@@ -143,20 +143,37 @@ public class MainActivityTest {
         assertEquals(View.VISIBLE,((SongSearchView)field("songSearch")).view.getVisibility());
         Object first=backend.discovery;command("connect");assertSame(first,backend.discovery);
     }
-    @Test public void pauseUsesAuthenticatedSessionOnceAndKeepsConnectionBanner()throws Exception{
+    @Test public void nextUsesAuthenticatedSessionOnceAndKeepsConnectionBanner()throws Exception{
         java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
         Session session=new Session(new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}},ProfileStoreTest.sample(),(state,message)->{});
         Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
         try{
-            command("pause");command("pause");finishWorker();
-            assertArrayEquals(ProfileStoreTest.sample().packet(Wire.pause()),sent.toByteArray());assertEquals(Session.State.PAUSE,session.state());
+            command("next");command("next");finishWorker();
+            assertArrayEquals(ProfileStoreTest.sample().packet(Wire.queue()),sent.toByteArray());assertEquals(Session.State.ADVANCE_QUEUE,session.state());
             assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
             assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));
         }finally{session.close();set("session",null);}
     }
-    @Test public void pauseBeforeConnectionNeverSendsCommand()throws Exception{
-        command("pause");assertTrue(message().contains("[C00]"));assertNull(field("session"));
-        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PAUSE_TAPPED"));
+    @Test public void nextBeforeConnectionNeverSendsCommand()throws Exception{
+        command("next");assertTrue(message().contains("[C00]"));assertNull(field("session"));
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("NEXT_TAPPED"));
+    }
+    @Test public void queueTapChecksCurrentRoomListThenSerializesLatestQueueRequest()throws Exception{
+        java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
+        Session session=new Session(new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}},ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{
+            SongSearchView web=(SongSearchView)field("songSearch");
+            String request="{\"command\":\"queuePlay\",\"number\":\"914\",\"index\":1}";
+            web.handle(request);finishWorker();assertEquals(0,sent.size());
+            set("queueSongs",java.util.Arrays.asList(47050,914,47050));set("queueValid",true);
+            web.handle(request);web.handle(request);finishWorker();
+            assertArrayEquals(ProfileStoreTest.sample().packet(Wire.queue()),sent.toByteArray());
+            assertEquals(Session.State.ADVANCE_QUEUE,session.state());
+            for(Session.State phase:new Session.State[]{Session.State.ADVANCE_QUEUE,Session.State.ADVANCE_STOP,Session.State.ADVANCE_PLAY}){
+                state.set(session,phase);call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
+            }
+        }finally{session.close();set("session",null);}
     }
     @Test public void disconnectFromMainSurfaceClearsRoomQueue()throws Exception{
         Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
