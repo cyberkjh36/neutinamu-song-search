@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
+        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -43,6 +43,15 @@ public class SongSearchViewTest {
         search.handle("{\"command\":\"queuePlay\",\"number\":\"0\",\"index\":0}");
         search.handle("{\"command\":\"pause\"}");
         assertFalse(calls.stream().anyMatch(x->x.startsWith("queuePlay:")||x.equals("pause")));
+    }
+    @Test public void queueCancellationRequiresExactNumberAndBoundedIntegerPosition(){
+        search.handle("{\"command\":\"queueCancel\",\"number\":\"914\",\"index\":1}");
+        assertEquals(Arrays.asList("queueCancel:914:1"),calls);calls.clear();
+        for(String index:new String[]{"-1","255","1.5","01","1e2","null","true"})search.handle("{\"command\":\"queueCancel\",\"number\":\"914\",\"index\":\""+index+"\"}");
+        search.handle("{\"command\":\"queueCancel\",\"number\":\"914\"}");
+        search.handle("{\"command\":\"queueCancel\",\"number\":\"0\",\"index\":0}");
+        search.handle("{\"command\":\"pause\"}");
+        assertFalse(calls.stream().anyMatch(x->x.startsWith("queueCancel:")||x.equals("pause")));
     }
     @Test public void playbackDisplayIsReadOnlyAndRejectsInvalidSongNumbers(){
         search.playback(914,true);assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("onP2NativePlayback"));

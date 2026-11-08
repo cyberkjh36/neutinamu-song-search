@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.8 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.9 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -146,6 +146,7 @@ public final class MainActivity extends Activity {
             public void find(){findP2();}
             public void next(){advanceCommand(true,0,0);}
             public void playQueued(int song,int index){advanceCommand(false,song,index);}
+            public void cancelQueued(int song,int index){cancelQueueCommand(song,index);}
             public void play(int song){if(ensureControlReady(true))dispatch(true,song);paint();}
             public void reserve(int song){queueCommand(true,song);}
             public void queue(){queueCommand(false,0);}
@@ -547,6 +548,19 @@ public final class MainActivity extends Activity {
         worker.execute(()->{
             try{if(next)active.next();else active.playQueued(song,index);}
             catch(IOException|RuntimeException e){diagnostics.event("ADVANCE_SEND_FAILED");ui(()->{if(session==active)show("곡 변경 요청을 확인하지 못했습니다. 반주기 화면을 확인해 주세요.");});}
+            finally{ui(()->{commandQueued=false;paint();});}
+        });
+    }
+    private void cancelQueueCommand(int song,int index){
+        if(!ensureControlReady(true)){paint();return;}
+        if(!queueValid||index<0||index>=queueSongs.size()||queueSongs.get(index)!=song){
+            feedback("예약 목록이 바뀌었습니다. 새로고침한 뒤 취소할 곡을 다시 선택해 주세요.");return;
+        }
+        Session active=session;if(active==null||commandQueued)return;
+        commandQueued=true;diagnostics.event("QUEUE_CANCEL_TAPPED");show("선택한 곡의 예약 취소를 확인합니다…");
+        worker.execute(()->{
+            try{active.cancelQueued(song,index);}
+            catch(IOException|RuntimeException e){diagnostics.event("QUEUE_CANCEL_FAILED");ui(()->{if(session==active)show("예약 취소를 확인하지 못했습니다. 목록을 새로고침한 뒤 확인해 주세요.");});}
             finally{ui(()->{commandQueued=false;paint();});}
         });
     }

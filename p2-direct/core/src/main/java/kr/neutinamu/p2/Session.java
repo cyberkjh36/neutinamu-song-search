@@ -8,7 +8,7 @@ import java.util.Collections;
 
 /** One live connection; never retries a play/cancel command automatically. */
 public final class Session implements Closeable {
-    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, PAUSE, RESERVE, QUEUE, ADVANCE_QUEUE, ADVANCE_MOVE, ADVANCE_CONFIRM, ADVANCE_STOP, ADVANCE_RECHECK, ADVANCE_PLAY, ADVANCE_VERIFY, CLOSED }
+    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, PAUSE, RESERVE, QUEUE, ADVANCE_QUEUE, ADVANCE_MOVE, ADVANCE_CONFIRM, ADVANCE_STOP, ADVANCE_RECHECK, ADVANCE_PLAY, ADVANCE_VERIFY, REMOVE_QUEUE, REMOVE_SEND, REMOVE_VERIFY, CLOSED }
     public interface Listener {
         void changed(State state,String message);
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
@@ -22,6 +22,7 @@ public final class Session implements Closeable {
     private enum QueueAction { NEXT, SELECTED, SEARCH }
     private QueueAction queueAction;private int selectedQueueIndex;
     private Wire.QueueSnapshot expectedQueue;
+    private Wire.QueueSnapshot lastQueue,removeBefore;private int removeSong,removeIndex;
     private int playingSong;private boolean playbackKnown;
     public Session(Socket socket,CaptureProfile profile,Listener listener)throws IOException {
         this(socket,profile,listener,10000,60000);
@@ -56,6 +57,9 @@ public final class Session implements Closeable {
                         if(state==State.IDENTIFY){fail("[I02] 초기 응답은 받았지만 반주기 확인 응답이 없습니다.");break;}
                         if(advancing()){
                             advanceFailed("[N11] 예약곡 실행 단계의 응답을 확인하지 못했습니다. 반주기 화면과 최신 예약 목록을 확인해 주세요. 자동 재전송하지 않습니다.");continue;
+                        }
+                        if(removing()){
+                            removalFailed("[R21] 예약 취소 결과를 확인하지 못했습니다. 중복 요청을 피하려면 목록을 새로고침해 주세요. 자동 재전송하지 않습니다.");continue;
                         }
                         if(state==State.RESERVE||state==State.QUEUE){
                             String message=state==State.RESERVE?"[R11] 예약 응답을 받지 못했습니다. 중복 예약을 피하려면 예약 목록을 먼저 확인하세요. 자동 재전송하지 않습니다.":"[Q11] 예약 목록 응답을 받지 못했습니다. 새로고침을 눌러 다시 확인하세요.";
@@ -98,6 +102,12 @@ public final class Session implements Closeable {
         // Observe every authenticated notification, including commands from another remote.
         // A play request or its acceptance never substitutes for a reported playing song.
         if(f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))updatePlayback(0,true);
+        if(state==State.REMOVE_SEND&&f.code==4210){
+            if(f.bodyType()==9&&f.body.length==4&&Wire.u32(f.body,0)==100){
+                change(State.REMOVE_VERIFY,"예약 취소 응답을 받았습니다. 남은 목록을 확인합니다…");write(Wire.queue());
+            }else removalFailed("[R22] 반주기가 예약 취소를 승인하지 않았습니다. 목록을 새로고침해 주세요.");
+            return;
+        }
         if(state==State.ADVANCE_MOVE&&f.code==4210){
             if(f.bodyType()==9&&f.body.length==4&&Wire.u32(f.body,0)==100){
                 change(State.ADVANCE_CONFIRM,"선택한 예약곡의 순서 변경 응답을 받았습니다. 실제 목록을 확인합니다…");write(Wire.queue());
@@ -129,14 +139,32 @@ public final class Session implements Closeable {
         if(f.code==4200||f.code==4220){
             List<Integer> songs;Wire.QueueSnapshot snapshot;
             try{snapshot=Wire.queueSnapshot(f);songs=snapshot.songs;}catch(IOException invalid){
+                lastQueue=null;
                 String message="[Q12] 예약 목록을 확인하지 못했습니다. 새로고침을 눌러 주세요.";
                 listener.queue(Collections.emptyList(),message,false);
+                if(removing()&&f.code==4200){removalFailed("[R25] 예약 목록을 확인하지 못해 취소 처리를 멈췄습니다. 목록을 새로고침해 주세요.");return;}
                 if(advancing()&&f.code==4200){advanceFailed("[N12] 예약 목록을 확인하지 못해 후속 실행을 중단했습니다. 반주기 화면과 목록을 확인해 주세요.");return;}
                 if(state==State.QUEUE){reservedSong=0;change(State.READY,message);}return;
             }
+            lastQueue=snapshot;
             String message="P2 예약곡 "+songs.size()+"곡 · 반주기에서 받은 순서입니다.";
             if(state==State.QUEUE&&reservedSong>0&&songs.contains(reservedSong))message=reservedSong+"번이 P2 예약 목록에 있습니다. · 총 "+songs.size()+"곡";
             listener.queue(songs,message,true);
+            if(f.code==4200&&removing()){
+                if(state==State.REMOVE_QUEUE){
+                    if(!removeBefore.sameOrder(snapshot)){
+                        clearRemoval();change(State.READY,"[R23] 예약 목록이 바뀌어 취소하지 않았습니다. 최신 목록에서 다시 선택해 주세요.");return;
+                    }
+                    change(State.REMOVE_SEND,removeSong+"번 예약 취소 요청 중…");
+                    write(Wire.removeReserved(songs.size(),removeSong,removeIndex));return;
+                }
+                if(state==State.REMOVE_VERIFY){
+                    String result=removeBefore.without(removeIndex).sameOrder(snapshot)?
+                        removeSong+"번 예약 취소 완료 · 남은 예약 "+songs.size()+"곡":
+                        "[R24] 취소 응답은 받았지만 남은 목록이 예상과 다릅니다. 표시된 반주기 목록을 확인해 주세요.";
+                    clearRemoval();change(State.READY,result);return;
+                }
+            }
             if(f.code==4200&&advancing()){
                 if(state==State.ADVANCE_QUEUE){
                     if(songs.isEmpty()){
@@ -221,6 +249,18 @@ public final class Session implements Closeable {
         reservedSong=0;change(State.QUEUE,"P2 예약 목록을 불러오는 중…");
         try{write(Wire.queue());}catch(IOException e){fail("예약 목록 요청을 보내지 못했습니다.");throw e;}
     }
+    public synchronized void cancelQueued(int song,int index)throws IOException {
+        if(song<1||song>99999999||index<0||index>254)throw new IllegalArgumentException("Invalid queue selection");
+        if(state!=State.READY)throw new IOException("이전 명령의 응답을 기다려 주세요.");
+        if(lastQueue==null||index>=lastQueue.songs.size()||lastQueue.songs.get(index)!=song)
+            throw new IOException("예약 목록을 새로고침한 뒤 다시 선택해 주세요.");
+        removeBefore=lastQueue;removeSong=song;removeIndex=index;
+        change(State.REMOVE_QUEUE,"취소 전 최신 예약 목록을 확인합니다…");
+        try{write(Wire.queue());}catch(IOException e){fail("예약 취소 요청의 전송 결과를 확인하지 못했습니다. 자동 재전송하지 않습니다.");throw e;}
+    }
+    private boolean removing(){return state==State.REMOVE_QUEUE||state==State.REMOVE_SEND||state==State.REMOVE_VERIFY;}
+    private void clearRemoval(){removeBefore=null;removeSong=0;removeIndex=0;}
+    private void removalFailed(String message){clearRemoval();lastQueue=null;listener.queue(Collections.emptyList(),message,false);change(State.READY,message);}
     /** One explicit tap is one transaction; each dependent command requires the previous response. */
     public synchronized void next()throws IOException { advance(QueueAction.NEXT,0,0); }
     /** Search-screen Start respects the actual queue; only an empty queue uses the selected song. */
@@ -248,6 +288,6 @@ public final class Session implements Closeable {
         if(playingSong==song&&playbackKnown==known)return;
         playingSong=song;playbackKnown=known;listener.playback(song,known);
     }
-    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;clearAdvance();updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
+    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;clearAdvance();clearRemoval();lastQueue=null;updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
     @Override public void close(){fail("연결을 해제했습니다.");}
 }

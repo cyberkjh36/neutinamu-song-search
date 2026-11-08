@@ -98,6 +98,37 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.match(await page.locator('.queue-help').textContent(),/나머지는 원래 순서대로/);
   await page.screenshot({path:dir+'/queue-selected-playing.png'});
 
+  // Cancellation removes only the selected reservation after an authoritative queue update.
+  assert.equal(await page.locator('.queue-cancel').count(),4);
+  await page.locator('.queue-cancel').nth(1).focus();await page.keyboard.press('Enter');
+  await page.evaluate(()=>document.querySelectorAll('.queue-cancel')[1].click());
+  assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='queueCancel')),[{command:'queueCancel',number:'914',index:1}]);
+  assert.equal(await page.locator('#nativeQueueList li').count(),4);
+  assert.equal(await page.locator('#nativeNowNumber').textContent(),'10092');
+  assert.equal(await page.locator('.queue-play').first().isDisabled(),true);
+  assert.equal(await page.locator('#nativeQueueNext').isDisabled(),true);
+  await page.evaluate(()=>{onP2NativeQueue({songs:[10909,47050,16398],message:'P2 예약곡 3곡',valid:true});onP2NativeState({label:'● 1번방 연결됨',message:'914번 예약 취소 완료 · 남은 예약 3곡',busy:false,connected:true});});
+  await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList li').length===3);
+  assert.deepEqual(await page.locator('.queue-song span').allTextContents().then(rows=>rows.map(row=>row.split(' · ')[0])),['10909','47050','16398']);
+  assert.equal(await page.locator('#nativeQueueNav .queue-count').textContent(),'3');
+  assert.equal(await page.locator('#nativeNowNumber').textContent(),'10092');
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),0,'Reservation cancellation cannot stop playback');
+  const nextBefore=await page.evaluate(()=>commands.filter(x=>x.command==='next').length);
+  await page.locator('#nativeQueueNext').click();await page.evaluate(()=>document.getElementById('nativeQueueNext').click());
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='next').length),nextBefore+1);
+  assert.equal(await page.locator('#nativeQueuePanel').isVisible(),true);
+  assert.equal(await page.locator('#nativeNext').isDisabled(),true);
+  await page.evaluate(()=>onP2NativeState({label:'● 1번방 연결됨',message:'다음곡 실행 응답 확인',busy:false,connected:true}));
+  for(const width of [320,360,430]){
+    await page.setViewportSize({width,height:800});
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.queue-cancel')].every(el=>{let r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.right<=innerWidth;})));
+    const row=page.locator('#nativeQueueList li').first();await row.scrollIntoViewIfNeeded();
+    await page.screenshot({path:dir+'/queue-cancel-'+width+'.png'});
+  }
+  await page.setViewportSize({width:360,height:740});
+  await page.locator('#nativeQueueNext').scrollIntoViewIfNeeded();await page.screenshot({path:dir+'/queue-next.png'});
+
   await page.locator('#nativeQueueNav').click();assert.equal(await page.locator('#nativeQueuePanel').isVisible(),false);
   await page.locator('#nativeQueueNav').click();
   await page.evaluate(()=>{onP2NativeState({label:'● 1번방 연결됨',message:'응답이 없습니다.',busy:false,connected:true});onP2NativeQueue({songs:[],message:'[Q11] 예약 목록 응답을 받지 못했습니다.',valid:false});});

@@ -18,7 +18,7 @@ final class SongSearchView {
     static final int VOICE=71,IMPORT=72,EXPORT=73;
     static final int MAX_CSV=16*1024*1024;
     private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
-    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh(); }
+    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh(); }
     interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
     private final Activity activity;private final Host host;private final ExecutorService files=Executors.newSingleThreadExecutor();
@@ -83,10 +83,11 @@ final class SongSearchView {
                 case "next":host.next();break;
                 case "status":host.refresh();break;
                 case "play":case "reserve":String n=request.optString("number");if(!n.matches("[1-9][0-9]{0,7}")){fileMessage("올바른 곡번호를 선택해 주세요.");host.refresh();return;}if(command.equals("play"))host.play(Integer.parseInt(n));else host.reserve(Integer.parseInt(n));break;
-                case "queuePlay":
+                case "queuePlay":case "queueCancel":
                     String number=request.optString("number"),position=request.optString("index");
                     if(!number.matches("[1-9][0-9]{0,7}")||!position.matches("0|[1-9][0-9]{0,2}")||Integer.parseInt(position)>254){fileMessage("예약 목록에서 곡을 다시 선택해 주세요.");host.refresh();return;}
-                    host.playQueued(Integer.parseInt(number),Integer.parseInt(position));break;
+                    if(command.equals("queuePlay"))host.playQueued(Integer.parseInt(number),Integer.parseInt(position));
+                    else host.cancelQueued(Integer.parseInt(number),Integer.parseInt(position));break;
                 case "queue":host.queue();break;
                 case "cancel":host.cancel();break;
                 case "voice":startVoice();break;

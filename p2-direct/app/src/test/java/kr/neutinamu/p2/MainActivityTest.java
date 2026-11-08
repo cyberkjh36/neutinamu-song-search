@@ -178,6 +178,28 @@ public class MainActivityTest {
             }
         }finally{session.close();set("session",null);}
     }
+    @Test public void queueCancellationSerializesOnceAndPreservesConnectionAndPlayingSong()throws Exception{
+        finishWorker();java.io.ByteArrayOutputStream sent=new java.io.ByteArrayOutputStream();
+        Session session=new Session(new java.net.Socket(){@Override public java.io.OutputStream getOutputStream(){return sent;}},ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        try{
+            SongSearchView web=(SongSearchView)field("songSearch");String request="{\"command\":\"queueCancel\",\"number\":\"914\",\"index\":1}";
+            web.handle(request);finishWorker();assertEquals(0,sent.size());
+            byte[] list=new byte[19];list[0]=2;System.arraycopy(Wire.integer(47050),0,list,1,4);System.arraycopy(Wire.integer(914),0,list,10,4);
+            byte[] bytes=Wire.encode(4200,new byte[]{1,0,0,0,0,4,1,1},list);
+            Field cached=Session.class.getDeclaredField("lastQueue");cached.setAccessible(true);cached.set(session,Wire.queueSnapshot(new Wire.Decoder().feed(bytes,bytes.length).get(0)));
+            set("queueSongs",java.util.Arrays.asList(47050,914));set("queueValid",true);set("nowPlayingSong",10909);set("playbackKnown",true);
+            web.handle(request);web.handle(request);finishWorker();
+            assertArrayEquals(ProfileStoreTest.sample().packet(Wire.queue()),sent.toByteArray());assertEquals(Session.State.REMOVE_QUEUE,session.state());
+            for(Session.State phase:new Session.State[]{Session.State.REMOVE_QUEUE,Session.State.REMOVE_SEND,Session.State.REMOVE_VERIFY}){
+                state.set(session,phase);call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
+                assertTrue((Boolean)field("queueValid"));assertEquals(10909,field("nowPlayingSong"));assertTrue((Boolean)field("keeperRequested"));
+                web.handle(request);command("next");command("cancel");finishWorker();
+                assertArrayEquals(ProfileStoreTest.sample().packet(Wire.queue()),sent.toByteArray());
+            }
+            String log=((Diagnostics)field("diagnostics")).report();assertTrue(log.contains("QUEUE_CANCEL_TAPPED"));assertFalse(log.contains("PLAY_TAPPED"));assertFalse(log.contains("ms CANCEL_TAPPED"));
+        }finally{session.close();set("session",null);}
+    }
     @Test public void closingConnectionClearsCurrentPlaybackAndKeeper()throws Exception{
         Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
         Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);

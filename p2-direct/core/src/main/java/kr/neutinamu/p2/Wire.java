@@ -43,6 +43,13 @@ public final class Wire {
         byte[] body=new byte[8];body[0]=(byte)count;put32(body,1,song);body[5]=3;body[6]=(byte)from;body[7]=(byte)to;
         return encode(4210,NORMAL,body);
     }
+    /** Remove one reservation by its zero-based position, never stop the playing song. */
+    public static byte[] removeReserved(int count,int song,int index) {
+        if(count<1||count>255||song<1||song>99999999||index<0||index>=count)
+            throw new IllegalArgumentException("Invalid reservation removal");
+        byte[] body=new byte[8];body[0]=(byte)count;put32(body,1,song);body[5]=2;body[6]=(byte)index;
+        return encode(4210,NORMAL,body);
+    }
     /** Playback notification: LE song number + one opaque option byte. Zero has no song title. */
     public static int playingSong(Frame frame)throws IOException {
         if(frame.code!=4300||frame.bodyType()!=1||frame.body.length!=5)throw new IOException("Invalid playback notification");
@@ -81,6 +88,13 @@ public final class Wire {
         public QueueSnapshot withoutFirst(){
             if(songs.isEmpty())throw new IllegalStateException("Empty queue");
             return new QueueSnapshot(songs.subList(1,songs.size()),Arrays.copyOfRange(entries,9,entries.length));
+        }
+        public QueueSnapshot without(int index){
+            if(index<0||index>=songs.size())throw new IllegalArgumentException("Invalid queue index");
+            List<Integer> remaining=new ArrayList<>(songs);remaining.remove(index);
+            byte[] kept=new byte[entries.length-9];System.arraycopy(entries,0,kept,0,index*9);
+            System.arraycopy(entries,(index+1)*9,kept,index*9,entries.length-(index+1)*9);
+            return new QueueSnapshot(remaining,kept);
         }
     }
     public static byte[] cancel() { return encode(4100,NORMAL,integer(12)); }

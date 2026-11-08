@@ -1,3 +1,11 @@
+# 0.11.9 reservation cancellation
+
+User-authorized single reservation removal uses command 4210, version 1, body length 8: unsigned current count, LE u32 song, operation 2, zero-based source position, trailing zero. The provided client's deletion call and queue adapter confirm this layout and indexing. No vendor source or identifiers are shipped.
+
+A cancellation starts only from READY with a cached valid queue entry. Read 4200 again and compare all nine bytes of every entry to the snapshot selected before the request. A changed list ends the operation without mutation. Send one removal, require 4210 body-type 9 / value 100, then read 4200 and compare the result to the prior snapshot with exactly one entry removed. 4220 broadcasts update the visible list but cannot replace the required acknowledgement/query responses. Reject, timeout, malformed data or disconnect stops the operation without mutation retry. Actual returned lists are never replaced with predicted success lists. No 4000 or 4100 command is emitted by reservation cancellation.
+
+The queue-sheet next button invokes the existing next transaction unchanged. Connection setup, heartbeat, recovery, room mapping, playback controls and search retain their prior behavior. An independent remote can still modify the machine between snapshot read and removal; the server's count/song/index validation and post-read remain essential. Real P2 deletion is not hardware verified by these tests.
+
 # 0.11.8 queue consumption
 
 The search-screen Start first requests 4200. If reservations exist it starts the machine queue head; only an empty response permits direct 4000/1200 start of the search selection. Reserve remains 4000/1100 append.
