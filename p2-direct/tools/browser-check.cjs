@@ -33,6 +33,24 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.locator('#query').inputValue(),'검색 중인 글자');assert.equal(await page.locator('#nativeConnect').textContent(),'연결 해제');
   assert.equal(await page.locator('#query').count(),1);assert.equal(await page.locator('#voiceBtn').count(),1);
   await page.locator('#query').fill('');await page.screenshot({path:dir+'/search-home.png'});
+  // Selected five-digit number must fill the available line on narrow and wide phones.
+  await page.locator('#query').fill('98032');await page.locator('#searchBtn').click();
+  await page.waitForFunction(()=>document.getElementById('heroTitle').textContent==='돌아와요 부산항에');
+  for(const width of [320,360,430]){
+    await page.setViewportSize({width,height:800});
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const metrics=await page.locator('#heroNumber').evaluate(el=>{
+      const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),box=el.getBoundingClientRect();
+      return {font:parseFloat(getComputedStyle(el).fontSize),textWidth:text.width,width:box.width,left:text.left,right:text.right};
+    });
+    assert.ok(metrics.font>=85,'Selected number must be large enough to read at '+width+'px');
+    assert.ok(metrics.textWidth<=metrics.width&&metrics.textWidth>=metrics.width*.93,'Number must fill one line without clipping');
+    assert.ok(metrics.left>=0&&metrics.right<=width);
+    await page.locator('#hero').screenshot({path:dir+'/large-selected-98032-'+width+'.png'});
+    console.log('Selected-number layout',width,JSON.stringify(metrics));
+  }
+  await page.setViewportSize({width:360,height:740});
+
   await page.evaluate(()=>onP2NativePlayback({number:914,known:true}));
   await page.waitForFunction(()=>document.getElementById('nativeNowTitle').textContent==='킬리만자로의 표범');
   assert.match(await page.locator('#nativeNowArtist').textContent(),/조용필/);
@@ -123,6 +141,9 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
     await page.setViewportSize({width,height:800});
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.queue-cancel')].every(el=>{let r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.right<=innerWidth;})));
+    assert.ok(await page.locator('#nativeQueueList strong').evaluateAll(els=>els.every(el=>parseFloat(getComputedStyle(el).fontSize)>=30&&el.scrollWidth<=el.clientWidth+1)));
+    assert.ok(await page.locator('.queue-song>span').evaluateAll(els=>els.every(el=>parseFloat(getComputedStyle(el).fontSize)>=24&&el.scrollWidth<=el.clientWidth+1)));
+    assert.ok(await page.locator('.queue-play').evaluateAll(els=>els.every(el=>el.getBoundingClientRect().width>=240)));
     const row=page.locator('#nativeQueueList li').first();await row.scrollIntoViewIfNeeded();
     await page.screenshot({path:dir+'/queue-cancel-'+width+'.png'});
   }
@@ -190,6 +211,29 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.evaluate(()=>onP2NativePlayback({number:99999999,known:true}));
   await page.waitForFunction(()=>document.getElementById('nativeNowTitle').textContent==='제목 정보 없음');
   assert.equal(await page.locator('#nativeNowNumber').textContent(),'99999999');
+  // Long titles and the largest supported song number remain readable and scrollable.
+  await page.evaluate(()=>onP2NativeImport('곡번호,곡제목,가수\n99999999,아주 긴 노래 제목도 끝까지 읽을 수 있도록 표시하는 예약곡 테스트,이름이 긴 테스트 가수',''));
+  await page.locator('#query').fill('99999999');await page.locator('#searchBtn').click();
+  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='99999999');
+  await page.setViewportSize({width:320,height:800});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  assert.ok(await page.locator('#heroNumber').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+  await page.locator('#nativeQueue').click();
+  await page.evaluate(()=>{onP2NativeQueue({songs:[99999999,98032],message:'예약곡 2곡',valid:true});onP2NativeState({label:'● 8번방 연결됨',message:'예약곡을 받았습니다.',busy:false,connected:true});});
+  await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList li').length===2);
+  for(const width of [320,360,430]){
+    await page.setViewportSize({width,height:800});
+    assert.ok(await page.locator('.queue-sheet').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Queue sheet must not scroll horizontally');
+    assert.ok(await page.locator('#nativeNowNumber').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Eight-digit now-playing number must fit');
+    const row=page.locator('#nativeQueueList li').first();
+    await row.scrollIntoViewIfNeeded();
+    await page.screenshot({path:dir+'/large-queue-long-title-'+width+'.png'});
+    await row.locator('.queue-cancel').click();
+    assert.deepEqual(await page.evaluate(()=>commands.at(-1)),{command:'queueCancel',number:'99999999',index:0});
+    await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'테스트 응답',busy:false,connected:true}));
+  }
+  await page.locator('#nativeQueueClose').click();
+
   await page.evaluate(()=>{onP2NativeState({label:'8번방 다시 연결 대기 중',message:'같은 방에 다시 연결합니다.',busy:false,connected:false,reconnecting:true});});
   assert.equal(await page.locator('#nativeConnect').textContent(),'다시 연결 취소');
   assert.equal(await page.locator('#nativeNext').isEnabled(),false);
@@ -197,6 +241,6 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'다시 연결되었습니다.',busy:false,connected:true}));
   assert.equal(await page.locator('#nativeNowNumber').textContent(),'');assert.match(await page.locator('#nativeNowTitle').textContent(),/기다리는 중/);
   assert.deepEqual(errors,[]);
-  console.log('PASS: bundled catalog, initials, voice alternatives/cancel/stale results, single-screen connect/search, selection/play/reserve/stop/next, queue tap and keyboard activation, independent current-song display and clearing on disconnect/stop, duplicate tap guard, CSV import/export, literal titles, compact layout.');
+  console.log('PASS: bundled catalog, initials, voice alternatives/cancel/stale results, single-screen connect/search, selection/play/reserve/stop/next, queue tap and keyboard activation, independent current-song display and clearing on disconnect/stop, duplicate tap guard, CSV import/export, literal titles, large responsive song numbers and accessible queue layout.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1);});
