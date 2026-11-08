@@ -41,7 +41,7 @@ public final class MainActivity extends Activity {
     private List<Integer> queueSongs=Collections.emptyList();private boolean queueValid;
     private int nowPlayingSong;private boolean playbackKnown;
     private String queueMessage="예약 목록을 열면 반주기의 예약 순서를 확인합니다.";
-    private final Diagnostics diagnostics=new Diagnostics();
+    private final Diagnostics diagnostics=new Diagnostics(BuildConfig.VERSION_NAME,Build.VERSION.SDK_INT);
     private String connectionMessage="방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.";
     private CaptureProfile profile;private ProfileStore profileStore;
     private TextView profileStatus,connectionBanner;
@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.9 · 직원용 연결 도구",15,false);
+        text(root,"통합판 "+BuildConfig.VERSION_NAME+" · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -422,11 +422,13 @@ public final class MainActivity extends Activity {
                 if(destroyed){socket.close();return;}
                 socket.connect(new InetSocketAddress(target,7070),5000);
                 diagnostics.event("TCP_CONNECTED");
-                String mac=currentMac(socket);
-                CaptureProfile live=connectionProfile(target,device,mac,selected);
+                final Socket transport=socket;
+                ClientIdentity.Selection client=ClientIdentity.resolve(()->currentMac(transport),device!=null,
+                    ()->new GuestIdentityStore(MainActivity.this).get());
+                CaptureProfile live=connectionProfile(target,device,client.value,selected);
                 diagnostics.event(device!=null?"GUEST_ROOM_REGISTRATION_READY":"SAVED_STAFF_REGISTRATION_READY");
                 if(device!=null)diagnostics.event(selected!=null&&selected.matchesDevice(device)?"ROOM_KNOWN_PASSWORD":"ROOM_DEFAULT_PASSWORD");
-                diagnostics.event("CURRENT_WIFI_ADDRESS_APPLIED");
+                diagnostics.event(client.anonymous?"GUEST_COMPAT_ID_APPLIED":"CURRENT_WIFI_ADDRESS_APPLIED");
                 final Session[] holder=new Session[1];
                 final boolean[] verified=new boolean[1];
                 Session opened=new Session(socket,live,new Session.Listener(){
@@ -454,7 +456,7 @@ public final class MainActivity extends Activity {
                 session=opened;reader.execute(opened::run);
             }catch(IOException|RuntimeException e){
                 if(socket!=null)try{socket.close();}catch(IOException ignored){}
-                String code=e instanceof CurrentAddressException?"A03":e instanceof NoRouteToHostException?"N10":e instanceof SocketTimeoutException?"N11":e instanceof ConnectException?"N12":e instanceof SecurityException?"N13":"N14";
+                String code=e instanceof ClientIdentity.Unavailable?"A03":e instanceof NoRouteToHostException?"N10":e instanceof SocketTimeoutException?"N11":e instanceof ConnectException?"N12":e instanceof SecurityException?"N13":"N14";
                 diagnostics.event(code);
                 ui(()->{if(code.equals("N10")){directHost=null;directInterface=null;}connectionMessage=code.equals("A03")?
                     "[A03] 휴대폰의 현재 Wi-Fi Direct 주소를 읽지 못했습니다. 이전 주소로 대신 접속하지 않았습니다. 안드로이드 버전과 진단 결과를 보내 주세요.":code.equals("N10")?
@@ -469,13 +471,12 @@ public final class MainActivity extends Activity {
         if(saved==null)throw new IOException("No saved connection profile");
         return saved.forConnection(target,mac);
     }
-    private static final class CurrentAddressException extends IOException { }
     private static String currentMac(Socket socket)throws IOException {
         NetworkInterface iface=NetworkInterface.getByInetAddress(socket.getLocalAddress());
         byte[] mac=iface==null?null:iface.getHardwareAddress();
-        if(mac==null||mac.length!=6||(mac[0]&1)!=0)throw new CurrentAddressException();
+        if(mac==null||mac.length!=6||(mac[0]&1)!=0)throw new ClientIdentity.Unavailable();
         StringBuilder value=new StringBuilder();for(byte part:mac){if(value.length()>0)value.append(':');value.append(String.format(Locale.ROOT,"%02X",part&255));}
-        String result=value.toString();if(result.equals("02:00:00:00:00:00")||result.equals("00:00:00:00:00:00"))throw new CurrentAddressException();return result;
+        String result=value.toString();if(!ClientIdentity.valid(result))throw new ClientIdentity.Unavailable();return result;
     }
     private Socket socketFor(String host,String radio)throws IOException {
         InetAddress remote=InetAddress.getByName(host);

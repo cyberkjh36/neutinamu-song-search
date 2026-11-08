@@ -6,9 +6,10 @@ android {
         applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 23
-        versionName '0.11.9-queue-cancel'
+        versionCode 24
+        versionName '0.11.10-a16-trial'
     }
+    buildFeatures { buildConfig true }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
     // Only catalog CSVs are included. PCAPs and registration profiles are never assets.
     sourceSets { main { assets.srcDir layout.buildDirectory.dir('catalog-assets'); assets.srcDir layout.buildDirectory.dir('search-assets') } }
