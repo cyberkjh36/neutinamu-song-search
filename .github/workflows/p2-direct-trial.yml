@@ -27,9 +27,16 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
           log-accepted-android-sdk-licenses: false
+      # Keep the existing version while avoiding the distribution redirect's 504 errors.
+      - name: Install verified Gradle 8.11.1
+        run: |
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 180 \
+            https://github.com/gradle/gradle-distributions/releases/download/v8.11.1/gradle-8.11.1-bin.zip \
+            --output "$RUNNER_TEMP/gradle-8.11.1-bin.zip"
+          printf '%s  %s\n' f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6 "$RUNNER_TEMP/gradle-8.11.1-bin.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle-8.11.1-bin.zip" -d "$RUNNER_TEMP/p2-gradle"
+          echo "$RUNNER_TEMP/p2-gradle/gradle-8.11.1/bin" >> "$GITHUB_PATH"
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
