@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         screens=new FrameLayout(this);setContentView(screens);
         button(root,"닫기 · 노래 검색으로",this::showSongSearch).setTag("showSongSearch");
         text(root,"연결 도움말",27,true);
-        text(root,"통합판 0.11.7 · 직원용 연결 도구",15,false);
+        text(root,"통합판 0.11.8 · 직원용 연결 도구",15,false);
         TextView credit=text(root,"made by cyberkjh",14,false);credit.setPadding(0,0,0,dp(8));
         credit.setTextColor(Color.rgb(183,200,216));
         diagnostics.event("APP_OPEN_ANDROID "+android.os.Build.VERSION.SDK_INT);
@@ -532,7 +532,7 @@ public final class MainActivity extends Activity {
         commandQueued=true;diagnostics.event(start?"PLAY_TAPPED":"CANCEL_TAPPED");
         show(start?"[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…":"[C10] 정지 버튼 입력을 받았습니다. 요청을 전송합니다…");
         worker.execute(()->{
-            try{if(start)active.play(song);else active.cancel();}
+            try{if(start)active.startInOrder(song);else active.cancel();}
             catch(IOException|RuntimeException e){diagnostics.event("COMMAND_SEND_FAILED");ui(()->show("[P02] 명령 전송 또는 처리에 실패했습니다. 반주기 화면을 확인하고 진단 결과를 공유해 주세요."));}
             finally{ui(()->{commandQueued=false;paint();});}
         });
@@ -570,7 +570,7 @@ public final class MainActivity extends Activity {
         keepConnection(connecting||(active!=null&&s!=Session.State.CLOSED));
         boolean searching=directWifi!=null&&directWifi.searching();
         boolean busy=connecting||importing||searching||(directWifi!=null&&directWifi.joining());
-        boolean linked=s==Session.State.READY||s==Session.State.PLAY||s==Session.State.CANCEL||s==Session.State.PAUSE||s==Session.State.RESERVE||s==Session.State.QUEUE||s==Session.State.ADVANCE_QUEUE||s==Session.State.ADVANCE_STOP||s==Session.State.ADVANCE_PLAY;
+        boolean linked=s!=Session.State.CLOSED&&s!=Session.State.AUTH&&s!=Session.State.IDENTIFY;
         if(!linked){queueValid=false;queueSongs=Collections.emptyList();queueMessage="먼저 P2에 연결해 주세요.";nowPlayingSong=0;playbackKnown=false;}
         String roomLabel=roomRequest==null?"P2":roomRequest+"번방";
         connectionBanner.setText(recoveryPending?"◌ "+roomLabel+" 다시 연결 대기 중…":linked?"● "+(activeRoom==null?"P2":activeRoom+"번방")+" 연결됨":searching?"◌ "+roomLabel+" 찾는 중…":busy||s==Session.State.AUTH||s==Session.State.IDENTIFY?"◌ "+roomLabel+" 연결 준비 중…":"○ "+roomLabel+" 연결 전");

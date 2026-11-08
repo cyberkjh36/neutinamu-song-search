@@ -42,6 +42,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.locator('.result').filter({has:page.getByText('3',{exact:true})}).click();
   assert.equal(await page.locator('#heroNumber').textContent(),'3');assert.equal(await page.evaluate(()=>commands.some(x=>x.command==='play')),false);
   assert.equal(await page.locator('#nativeNowNumber').textContent(),'914','Search selection must not change current playback');
+  assert.match(await page.locator('#nativeOrderHelp').textContent(),/예약곡이 있으면 첫 곡부터/);
   await page.locator('#nativePlay').click();await page.evaluate(()=>document.getElementById('nativePlay').click());
   assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),1);
   assert.equal(await page.evaluate(()=>commands.find(x=>x.command==='play').number),'3');
@@ -78,6 +79,24 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.evaluate(()=>onP2NativeState({label:'● 1번방 연결됨',message:'[N15] 예약 순서가 바뀌었습니다. 곡을 다시 눌러 주세요.',busy:false,connected:true}));
   assert.match(await page.locator('#nativeQueueAction').textContent(),/순서가 바뀌었습니다/);
   assert.equal(await page.locator('.queue-play').nth(0).isEnabled(),true);
+
+  // Five reservations, explicit third selection, then authoritative consumption and original remainder.
+  await page.evaluate(()=>onP2NativeQueue({songs:[10909,914,10092,47050,16398],message:'예약곡 5곡',valid:true}));
+  await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList li').length===5);
+  assert.equal(await page.locator('#nativeQueueNav .queue-count').textContent(),'5');
+  await page.locator('.queue-play').nth(2).click();
+  assert.deepEqual(await page.evaluate(()=>commands.at(-1)),{command:'queuePlay',number:'10092',index:2});
+  assert.equal(await page.locator('#nativeQueueList li').count(),5,'A tap cannot remove an unconfirmed reservation');
+  await page.evaluate(()=>{onP2NativeState({label:'● 1번방 연결됨',message:'선택한 예약곡 실행 중…',busy:true,connected:true});onP2NativeQueue({songs:[10092,10909,914,47050,16398],message:'반주기 순서 확인',valid:true});});
+  await page.waitForFunction(()=>document.querySelector('#nativeQueueList li .queue-song').textContent.includes('10092'));
+  await page.evaluate(()=>{onP2NativePlayback({number:10092,known:true});onP2NativeQueue({songs:[10909,914,47050,16398],message:'실행한 항목이 예약에서 빠졌습니다. 남은 4곡',valid:true});onP2NativeState({label:'● 1번방 연결됨',message:'예약 순서대로 진행합니다.',busy:false,connected:true});});
+  await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList li').length===4&&document.getElementById('nativeNowNumber').textContent==='10092');
+  assert.deepEqual(await page.locator('.queue-song span').allTextContents().then(rows=>rows.map(row=>row.split(' · ')[0])),['10909','914','47050','16398']);
+  assert.deepEqual(await page.locator('.queue-order').allTextContents(),['1','2','3','4']);
+  assert.equal(await page.locator('#nativeQueueNav .queue-count').textContent(),'4');
+  assert.equal(await page.locator('#nativeQueuePanel .queue-count').textContent(),'4');
+  assert.match(await page.locator('.queue-help').textContent(),/나머지는 원래 순서대로/);
+  await page.screenshot({path:dir+'/queue-selected-playing.png'});
 
   await page.locator('#nativeQueueNav').click();assert.equal(await page.locator('#nativeQueuePanel').isVisible(),false);
   await page.locator('#nativeQueueNav').click();

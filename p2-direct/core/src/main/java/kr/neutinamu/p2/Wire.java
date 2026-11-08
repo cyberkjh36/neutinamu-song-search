@@ -36,6 +36,13 @@ public final class Wire {
         byte[] b=new byte[9];put32(b,0,key);put32(b,4,song);return encode(4000,PLAY,b);
     }
     public static byte[] queue() { return encode(4200,INFO,new byte[0]); }
+    /** Official queue order operation: current count, song, operation 3, zero-based source/destination. */
+    public static byte[] moveReserved(int count,int song,int from,int to) {
+        if(count<1||count>255||song<1||song>99999999||from<0||to<0||from>=count||to>=count||from==to)
+            throw new IllegalArgumentException("Invalid reservation move");
+        byte[] body=new byte[8];body[0]=(byte)count;put32(body,1,song);body[5]=3;body[6]=(byte)from;body[7]=(byte)to;
+        return encode(4210,NORMAL,body);
+    }
     /** Playback notification: LE song number + one opaque option byte. Zero has no song title. */
     public static int playingSong(Frame frame)throws IOException {
         if(frame.code!=4300||frame.bodyType()!=1||frame.body.length!=5)throw new IOException("Invalid playback notification");
@@ -45,6 +52,9 @@ public final class Wire {
     }
     /** 4200: count + 9-byte entries; 4220: 7-byte update metadata, then the same list. */
     public static List<Integer> queueSongs(Frame frame)throws IOException {
+        return queueSnapshot(frame).songs;
+    }
+    public static QueueSnapshot queueSnapshot(Frame frame)throws IOException {
         int offset=frame.code==4200?0:frame.code==4220?7:-1;
         if(offset<0||frame.bodyType()!=1||frame.body.length<=offset)throw new IOException("Invalid queue response");
         int count=frame.body[offset]&255;
@@ -55,7 +65,23 @@ public final class Wire {
             if(song<1||song>99999999)throw new IOException("Invalid queue song");
             songs.add((int)song);
         }
-        return java.util.Collections.unmodifiableList(songs);
+        return new QueueSnapshot(songs,Arrays.copyOfRange(frame.body,offset+1,frame.body.length));
+    }
+    /** Retains opaque per-entry bytes so equal song numbers do not hide a changed reservation. */
+    public static final class QueueSnapshot {
+        public final List<Integer> songs;private final byte[] entries;
+        private QueueSnapshot(List<Integer> songs,byte[] entries){this.songs=java.util.Collections.unmodifiableList(new ArrayList<>(songs));this.entries=entries.clone();}
+        public boolean sameOrder(QueueSnapshot other){return other!=null&&Arrays.equals(entries,other.entries);}
+        public QueueSnapshot moveToFront(int index){
+            if(index<0||index>=songs.size())throw new IllegalArgumentException("Invalid queue index");
+            List<Integer> order=new ArrayList<>(songs);order.add(0,order.remove(index));byte[] moved=entries.clone();
+            System.arraycopy(entries,index*9,moved,0,9);System.arraycopy(entries,0,moved,9,index*9);
+            return new QueueSnapshot(order,moved);
+        }
+        public QueueSnapshot withoutFirst(){
+            if(songs.isEmpty())throw new IllegalStateException("Empty queue");
+            return new QueueSnapshot(songs.subList(1,songs.size()),Arrays.copyOfRange(entries,9,entries.length));
+        }
     }
     public static byte[] cancel() { return encode(4100,NORMAL,integer(12)); }
     /** Start with no song number: use the machine's next reserved song. */

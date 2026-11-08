@@ -8,7 +8,7 @@ import java.util.Collections;
 
 /** One live connection; never retries a play/cancel command automatically. */
 public final class Session implements Closeable {
-    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, PAUSE, RESERVE, QUEUE, ADVANCE_QUEUE, ADVANCE_STOP, ADVANCE_PLAY, CLOSED }
+    public enum State { AUTH, IDENTIFY, READY, PLAY, CANCEL, PAUSE, RESERVE, QUEUE, ADVANCE_QUEUE, ADVANCE_MOVE, ADVANCE_CONFIRM, ADVANCE_STOP, ADVANCE_RECHECK, ADVANCE_PLAY, ADVANCE_VERIFY, CLOSED }
     public interface Listener {
         void changed(State state,String message);
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
@@ -19,7 +19,9 @@ public final class Session implements Closeable {
     private State state=State.AUTH;private long deadline,lastReceived;private int wanted;
     private final int commandTimeoutMs,idleTimeoutMs;
     private boolean playReply;private int reservedSong;
-    private boolean nextReserved;private int selectedQueueIndex;
+    private enum QueueAction { NEXT, SELECTED, SEARCH }
+    private QueueAction queueAction;private int selectedQueueIndex;
+    private Wire.QueueSnapshot expectedQueue;
     private int playingSong;private boolean playbackKnown;
     public Session(Socket socket,CaptureProfile profile,Listener listener)throws IOException {
         this(socket,profile,listener,10000,60000);
@@ -52,8 +54,8 @@ public final class Session implements Closeable {
                     if(state!=State.READY&&t>deadline) {
                         if(state==State.AUTH){fail("[A02] P2에 접속했지만 초기 연결 응답이 없습니다.");break;}
                         if(state==State.IDENTIFY){fail("[I02] 초기 응답은 받았지만 반주기 확인 응답이 없습니다.");break;}
-                        if(state==State.ADVANCE_QUEUE||state==State.ADVANCE_STOP||state==State.ADVANCE_PLAY){
-                            advanceFailed("[N11] "+(state==State.ADVANCE_QUEUE?"최신 예약 목록":state==State.ADVANCE_STOP?"현재 곡 정지":"선택한 곡 재생")+" 응답을 확인하지 못했습니다. 반주기 화면을 확인해 주세요. 자동 재전송하지 않습니다.");continue;
+                        if(advancing()){
+                            advanceFailed("[N11] 예약곡 실행 단계의 응답을 확인하지 못했습니다. 반주기 화면과 최신 예약 목록을 확인해 주세요. 자동 재전송하지 않습니다.");continue;
                         }
                         if(state==State.RESERVE||state==State.QUEUE){
                             String message=state==State.RESERVE?"[R11] 예약 응답을 받지 못했습니다. 중복 예약을 피하려면 예약 목록을 먼저 확인하세요. 자동 재전송하지 않습니다.":"[Q11] 예약 목록 응답을 받지 못했습니다. 새로고침을 눌러 다시 확인하세요.";
@@ -73,7 +75,7 @@ public final class Session implements Closeable {
         if(state==State.CLOSED)return;lastReceived=now();
         Long scalar=null;
         if(f.code==3000&&(f.body.length==1||f.body.length==4))scalar=f.body.length==1?(long)(f.body[0]&255):Wire.u32(f.body,0);
-        else if((f.code==4000||f.code==4100)&&f.body.length==4)scalar=Wire.u32(f.body,0);
+        else if((f.code==4000||f.code==4100||f.code==4210)&&f.body.length==4)scalar=Wire.u32(f.body,0);
         listener.frame(false,f.code,f.body.length,scalar);
         if(f.code==1000&&f.body.length==0){write(Wire.heartbeat());return;}
         if(state==State.AUTH&&f.code==3000) {
@@ -96,22 +98,25 @@ public final class Session implements Closeable {
         // Observe every authenticated notification, including commands from another remote.
         // A play request or its acceptance never substitutes for a reported playing song.
         if(f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))updatePlayback(0,true);
+        if(state==State.ADVANCE_MOVE&&f.code==4210){
+            if(f.bodyType()==9&&f.body.length==4&&Wire.u32(f.body,0)==100){
+                change(State.ADVANCE_CONFIRM,"선택한 예약곡의 순서 변경 응답을 받았습니다. 실제 목록을 확인합니다…");write(Wire.queue());
+            }else advanceFailed("[N16] 예약 순서 변경을 확인하지 못했습니다. 곡을 시작하지 않았습니다. 목록을 새로고침해 주세요.");
+            return;
+        }
         if(state==State.ADVANCE_STOP&&f.code==4100){
             if(f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12))){
-                change(State.ADVANCE_PLAY,"현재 곡 정지 응답을 받았습니다. "+wanted+"번 시작 요청 중…");
-                write(nextReserved?Wire.next():Wire.play(wanted));
+                change(State.ADVANCE_RECHECK,"정지 응답을 받았습니다. 시작 전 예약 순서를 다시 확인합니다…");write(Wire.queue());
             }else if(f.bodyType()==3||f.bodyType()==9)advanceFailed("[N13] 정지 요청을 확인하지 못해 다음 시작 명령을 보내지 않았습니다.");
             return;
         }
         if(state==State.ADVANCE_PLAY){
-            int command=nextReserved?4100:4000;
-            if(f.code==command){
+            if(f.code==4100){
                 if(f.bodyType()==3||(f.bodyType()==9&&(scalar==null||scalar!=100))){advanceFailed("[N14] 반주기가 시작 요청을 승인하지 않았습니다. 반주기 화면을 확인해 주세요.");return;}
-                listener.changed(state,"시작 요청의 응답을 받았습니다. "+wanted+"번 재생 확인을 기다립니다…");
-                return;
+                listener.changed(state,"예약곡 시작 응답을 받았습니다. "+wanted+"번 재생 확인을 기다립니다…");return;
             }
             if(reportedSong!=null&&reportedSong>0&&reportedSong==wanted){
-                reservedSong=0;change(State.QUEUE,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 예약 목록을 갱신합니다…");write(Wire.queue());return;
+                change(State.ADVANCE_VERIFY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 남은 예약 순서를 확인합니다…");write(Wire.queue());return;
             }
         }
         if(state==State.PAUSE&&f.code==4100){
@@ -122,24 +127,47 @@ public final class Session implements Closeable {
             return;
         }
         if(f.code==4200||f.code==4220){
-            List<Integer> songs;
-            try{songs=Wire.queueSongs(f);}catch(IOException invalid){
+            List<Integer> songs;Wire.QueueSnapshot snapshot;
+            try{snapshot=Wire.queueSnapshot(f);songs=snapshot.songs;}catch(IOException invalid){
                 String message="[Q12] 예약 목록을 확인하지 못했습니다. 새로고침을 눌러 주세요.";
                 listener.queue(Collections.emptyList(),message,false);
-                if(state==State.ADVANCE_QUEUE&&f.code==4200){advanceFailed("[N12] 최신 예약 목록을 확인하지 못해 곡을 변경하지 않았습니다. 새로고침해 주세요.");return;}
+                if(advancing()&&f.code==4200){advanceFailed("[N12] 예약 목록을 확인하지 못해 후속 실행을 중단했습니다. 반주기 화면과 목록을 확인해 주세요.");return;}
                 if(state==State.QUEUE){reservedSong=0;change(State.READY,message);}return;
             }
             String message="P2 예약곡 "+songs.size()+"곡 · 반주기에서 받은 순서입니다.";
             if(state==State.QUEUE&&reservedSong>0&&songs.contains(reservedSong))message=reservedSong+"번이 P2 예약 목록에 있습니다. · 총 "+songs.size()+"곡";
             listener.queue(songs,message,true);
-            if(state==State.ADVANCE_QUEUE&&f.code==4200){
-                if(songs.isEmpty()){change(State.READY,"예약곡이 없습니다. 노래를 찾아 먼저 예약해 주세요. 현재 곡은 정지하지 않았습니다.");return;}
-                if(!nextReserved&&(selectedQueueIndex>=songs.size()||songs.get(selectedQueueIndex)!=wanted)){
-                    // Show the fresh list; never substitute another position or guess a duplicate entry.
-                    change(State.READY,"[N15] 예약 순서가 바뀌었습니다. 갱신된 목록에서 곡을 다시 눌러 주세요. 현재 곡은 정지하지 않았습니다.");return;
+            if(f.code==4200&&advancing()){
+                if(state==State.ADVANCE_QUEUE){
+                    if(songs.isEmpty()){
+                        if(queueAction==QueueAction.SEARCH){int fallback=wanted;clearAdvance();change(State.READY,"예약곡이 없어 선택한 곡을 실행합니다…");play(fallback);}
+                        else{clearAdvance();change(State.READY,"예약곡이 없습니다. 노래를 찾아 먼저 예약해 주세요. 현재 곡은 정지하지 않았습니다.");}
+                        return;
+                    }
+                    if(queueAction==QueueAction.SELECTED&&(selectedQueueIndex>=songs.size()||songs.get(selectedQueueIndex)!=wanted)){
+                        clearAdvance();change(State.READY,"[N15] 예약 순서가 바뀌었습니다. 갱신된 목록에서 곡을 다시 눌러 주세요. 현재 곡은 정지하지 않았습니다.");return;
+                    }
+                    expectedQueue=snapshot;
+                    if(queueAction==QueueAction.SELECTED&&selectedQueueIndex>0){
+                        expectedQueue=snapshot.moveToFront(selectedQueueIndex);
+                        change(State.ADVANCE_MOVE,"선택한 예약곡을 먼저 실행하도록 순서를 준비합니다…");
+                        write(Wire.moveReserved(songs.size(),wanted,selectedQueueIndex,0));return;
+                    }
+                    wanted=songs.get(0);stopForQueue();return;
                 }
-                if(nextReserved)wanted=songs.get(0);
-                change(State.ADVANCE_STOP,"현재 곡을 정지한 뒤 "+wanted+"번을 시작합니다…");write(Wire.cancel());return;
+                if(state==State.ADVANCE_CONFIRM||state==State.ADVANCE_RECHECK){
+                    if(!expectedQueue.sameOrder(snapshot)){
+                        clearAdvance();change(State.READY,"[N17] 예약 순서가 예상과 달라 시작을 멈췄습니다. 최신 목록에서 다시 선택해 주세요.");return;
+                    }
+                    if(state==State.ADVANCE_CONFIRM){stopForQueue();return;}
+                    change(State.ADVANCE_PLAY,"첫 번째 예약곡 "+wanted+"번을 실행합니다…");write(Wire.next());return;
+                }
+                if(state==State.ADVANCE_VERIFY){
+                    String result=expectedQueue.withoutFirst().sameOrder(snapshot)?
+                        wanted+"번 재생 확인 · 실행한 항목이 예약에서 빠졌습니다. 남은 "+songs.size()+"곡은 예약 순서대로 진행합니다.":
+                        "[N18] 곡 재생은 확인했으나 남은 예약 목록이 예상과 다릅니다. 표시된 반주기 목록을 확인해 주세요.";
+                    clearAdvance();change(State.READY,result);return;
+                }
             }
             if(state==State.QUEUE){reservedSong=0;change(State.READY,message);}
             return;
@@ -194,22 +222,32 @@ public final class Session implements Closeable {
         try{write(Wire.queue());}catch(IOException e){fail("예약 목록 요청을 보내지 못했습니다.");throw e;}
     }
     /** One explicit tap is one transaction; each dependent command requires the previous response. */
-    public synchronized void next()throws IOException { advance(true,0,0); }
+    public synchronized void next()throws IOException { advance(QueueAction.NEXT,0,0); }
+    /** Search-screen Start respects the actual queue; only an empty queue uses the selected song. */
+    public synchronized void startInOrder(int song)throws IOException {
+        if(song<1||song>99999999)throw new IllegalArgumentException("Invalid song number");
+        advance(QueueAction.SEARCH,song,0);
+    }
     public synchronized void playQueued(int song,int index)throws IOException {
         if(song<1||song>99999999||index<0||index>254)throw new IllegalArgumentException("Invalid queue selection");
-        advance(false,song,index);
+        advance(QueueAction.SELECTED,song,index);
     }
-    private void advance(boolean next,int song,int index)throws IOException {
+    private void advance(QueueAction action,int song,int index)throws IOException {
         if(state!=State.READY)throw new IOException("연결 준비 또는 이전 명령 처리를 기다려 주세요.");
-        nextReserved=next;wanted=song;selectedQueueIndex=index;reservedSong=0;
+        queueAction=action;expectedQueue=null;wanted=song;selectedQueueIndex=index;reservedSong=0;
         change(State.ADVANCE_QUEUE,"최신 예약 순서를 확인합니다…");
         try{write(Wire.queue());}catch(IOException e){fail("예약 목록 요청을 보내지 못했습니다. 곡 시작 명령은 보내지 않았습니다.");throw e;}
     }
-    private void advanceFailed(String message){listener.queue(Collections.emptyList(),message,false);change(State.READY,message);}
+    private boolean advancing(){return state.name().startsWith("ADVANCE_");}
+    private void clearAdvance(){queueAction=null;expectedQueue=null;}
+    private void stopForQueue()throws IOException {
+        change(State.ADVANCE_STOP,"현재 곡을 정지한 뒤 예약곡 "+wanted+"번을 시작합니다…");write(Wire.cancel());
+    }
+    private void advanceFailed(String message){clearAdvance();listener.queue(Collections.emptyList(),message,false);change(State.READY,message);}
     private void updatePlayback(int song,boolean known){
         if(playingSong==song&&playbackKnown==known)return;
         playingSong=song;playbackKnown=known;listener.playback(song,known);
     }
-    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
+    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;clearAdvance();updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
     @Override public void close(){fail("연결을 해제했습니다.");}
 }

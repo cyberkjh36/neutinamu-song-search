@@ -1,3 +1,17 @@
+# 0.11.8 queue consumption
+
+The search-screen Start first requests 4200. If reservations exist it starts the machine queue head; only an empty response permits direct 4000/1200 start of the search selection. Reserve remains 4000/1100 append.
+
+Selected reservation execution now uses the provided client's queue order operation followed by numberless 4100/11, rather than direct 4000/1200 (which can leave that reservation queued). The observed 4210 request body is exactly 8 bytes: current unsigned count, LE u32 song number, operation 3, zero-based source index, zero-based destination index. Header uses the ordinary version-1 control form, with connection credentials applied by the existing packet writer. The official callback treats body-type 9 integer 100 as success; 4211 and 4212 are rejection conditions. No operation-1 semantics are assumed and no deletion packet is used.
+
+Evidence from the user-provided Android client: `RemoConManagerImpl.changeReserveSongOrder` constructs this request; the adapter's `onStopDrag` passes current list size, selected song, original zero-based position and destination. The request serializer and inner data serializer establish byte order and widths. Vendor code and binary artifacts are kept outside this repository.
+
+Transaction: fresh 4200 → verify clicked index/song → (if non-head) 4210 move to index 0 → success 100 → fresh 4200 verifies the exact expected 9-byte entries → 4100/12 stop → acknowledged stop → fresh 4200 rechecks order → 4100/11 → matching 4300 playback → fresh 4200 verifies expected remainder. All other reservations retain relative order. Opaque entry bytes are retained for comparisons; duplicated song numbers cannot mask changed entry metadata. The server still controls real ordering and consumption. A remaining-list mismatch is displayed, never hidden or repaired by blindly deleting a duplicate.
+
+All phases are bounded by the existing command timeout, with no mutation retries or replay on reconnect. Concurrent controllers cannot be made atomic across separate device commands; changed snapshots stop further actions. Failure after a confirmed reorder may leave the selected entry at the front, so callers must refresh rather than silently rolling back other users' changes. Native P2 continuous playback handles subsequent songs; no inferred end-of-song timer is introduced. Hardware testing is still required.
+
+Earlier protocol notes follow.
+
 # P2 legacy interoperability findings
 
 ## 0.11.5 guest registration correction

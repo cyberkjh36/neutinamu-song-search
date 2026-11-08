@@ -84,10 +84,11 @@ public class MainActivityTest {
             SongSearchView web=(SongSearchView)field("songSearch");web.handle("{\"command\":\"connection\"}");view("showSongSearch").performClick();assertSame(session,field("session"));
             web.handle("{\"command\":\"play\",\"number\":\"10909\"}");
             web.handle("{\"command\":\"play\",\"number\":\"10909\"}");finishWorker();
-            assertArrayEquals(profile.packet(Wire.play(10909)),sent.toByteArray());assertEquals(Session.State.PLAY,session.state());
-            web.handle("{\"command\":\"cancel\"}");finishWorker();
-            java.io.ByteArrayOutputStream expected=new java.io.ByteArrayOutputStream();expected.write(profile.packet(Wire.play(10909)));expected.write(profile.packet(Wire.cancel()));
-            assertArrayEquals(expected.toByteArray(),sent.toByteArray());assertEquals(Session.State.CANCEL,session.state());
+            assertArrayEquals(profile.packet(Wire.queue()),sent.toByteArray());assertEquals(Session.State.ADVANCE_QUEUE,session.state());
+            // Search Start waits for the real queue. Stop is blocked during that transaction.
+            web.handle("{\"command\":\"cancel\"}");finishWorker();assertArrayEquals(profile.packet(Wire.queue()),sent.toByteArray());
+            state.set(session,Session.State.READY);sent.reset();web.handle("{\"command\":\"cancel\"}");finishWorker();
+            assertArrayEquals(profile.packet(Wire.cancel()),sent.toByteArray());assertEquals(Session.State.CANCEL,session.state());
         }finally{session.close();set("session",null);}
     }
     @Test public void integratedSearchAndConnectionShareOneSessionAndPlaybackGuard()throws Exception{
@@ -170,8 +171,10 @@ public class MainActivityTest {
             web.handle(request);web.handle(request);finishWorker();
             assertArrayEquals(ProfileStoreTest.sample().packet(Wire.queue()),sent.toByteArray());
             assertEquals(Session.State.ADVANCE_QUEUE,session.state());
-            for(Session.State phase:new Session.State[]{Session.State.ADVANCE_QUEUE,Session.State.ADVANCE_STOP,Session.State.ADVANCE_PLAY}){
+            set("nowPlayingSong",10909);set("playbackKnown",true);
+            for(Session.State phase:new Session.State[]{Session.State.ADVANCE_QUEUE,Session.State.ADVANCE_MOVE,Session.State.ADVANCE_CONFIRM,Session.State.ADVANCE_STOP,Session.State.ADVANCE_RECHECK,Session.State.ADVANCE_PLAY,Session.State.ADVANCE_VERIFY}){
                 state.set(session,phase);call("paint");assertTrue(((TextView)view("connectionBanner")).getText().toString().contains("연결됨"));
+                assertTrue((Boolean)field("queueValid"));assertEquals(10909,field("nowPlayingSong"));assertTrue((Boolean)field("playbackKnown"));
             }
         }finally{session.close();set("session",null);}
     }
