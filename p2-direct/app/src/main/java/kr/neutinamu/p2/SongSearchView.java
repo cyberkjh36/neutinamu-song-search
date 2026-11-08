@@ -145,11 +145,16 @@ final class SongSearchView {
     }
     private void voice(List<String> texts,String error){js("onP2NativeVoice",new JSONArray().put(new JSONArray(texts)).put(error));}
     private void fileMessage(String text){js("onP2NativeFile",new JSONArray().put(text));}
-    void state(String label,String message,boolean busy,boolean connected){
-        try{JSONObject state=new JSONObject().put("label",label).put("message",message).put("busy",busy).put("connected",connected);js("onP2NativeState",new JSONArray().put(state));}catch(JSONException ignored){}
+    void state(String label,String message,boolean busy,boolean connected){state(label,message,busy,connected,false);}
+    void state(String label,String message,boolean busy,boolean connected,boolean reconnecting){
+        try{JSONObject state=new JSONObject().put("label",label).put("message",message).put("busy",busy).put("connected",connected).put("reconnecting",reconnecting);js("onP2NativeState",new JSONArray().put(state));}catch(JSONException ignored){}
     }
     void queue(List<Integer> songs,String message,boolean valid){
         try{js("onP2NativeQueue",new JSONArray().put(new JSONObject().put("songs",new JSONArray(songs)).put("message",message).put("valid",valid)));}catch(JSONException ignored){}
+    }
+    void playback(int song,boolean known){
+        boolean valid=known&&song>=0&&song<=99999999;
+        try{js("onP2NativePlayback",new JSONArray().put(new JSONObject().put("number",valid?song:0).put("known",valid)));}catch(JSONException ignored){}
     }
     void openQueue(){js("onP2NativeQueueOpen",new JSONArray());}
     private void js(String function,JSONArray arguments){if(!closed)view.evaluateJavascript("window."+function+"&&window."+function+".apply(null,"+arguments.toString().replace("\u2028","\\u2028").replace("\u2029","\\u2029")+")",null);}

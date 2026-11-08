@@ -36,6 +36,13 @@ public final class Wire {
         byte[] b=new byte[9];put32(b,0,key);put32(b,4,song);return encode(4000,PLAY,b);
     }
     public static byte[] queue() { return encode(4200,INFO,new byte[0]); }
+    /** Playback notification: LE song number + one opaque option byte. Zero has no song title. */
+    public static int playingSong(Frame frame)throws IOException {
+        if(frame.code!=4300||frame.bodyType()!=1||frame.body.length!=5)throw new IOException("Invalid playback notification");
+        long song=u32(frame.body,0);
+        if(song>99999999)throw new IOException("Invalid playing song");
+        return (int)song;
+    }
     /** 4200: count + 9-byte entries; 4220: 7-byte update metadata, then the same list. */
     public static List<Integer> queueSongs(Frame frame)throws IOException {
         int offset=frame.code==4200?0:frame.code==4220?7:-1;

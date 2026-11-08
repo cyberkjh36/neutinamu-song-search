@@ -19,12 +19,13 @@ public class ReservationTest {
     }
     static final class QueueHarness implements AutoCloseable {
         final ServerSocket server;final Socket peer;final Session session;final Thread thread;
-        final List<String> messages=new CopyOnWriteArrayList<>();volatile List<Integer> songs;volatile boolean valid;
+        final List<String> messages=new CopyOnWriteArrayList<>();volatile List<Integer> songs;volatile boolean valid;volatile int playing=-1;volatile boolean playbackKnown;final List<Integer> playbackEvents=new CopyOnWriteArrayList<>();
         QueueHarness(int timeout)throws Exception{
             server=new ServerSocket(0,1,InetAddress.getLoopbackAddress());Socket client=new Socket(InetAddress.getLoopbackAddress(),server.getLocalPort());peer=server.accept();peer.setSoTimeout(1500);
             session=new Session(client,profile(),new Session.Listener(){
                 public void changed(Session.State state,String message){messages.add(message);}
                 public void queue(List<Integer> data,String message,boolean ok){songs=data;valid=ok;messages.add(message);}
+                public void playback(int song,boolean known){playing=song;playbackKnown=known;playbackEvents.add(known?song:-1);}
             },timeout,5000);thread=new Thread(session::run);thread.start();assertEquals(3000,readFrame(peer).code);
         }
         void ready()throws Exception{send(peer,3000,new byte[]{7});assertEquals(3100,readFrame(peer).code);send(peer,3100,id());await(Session.State.READY);}

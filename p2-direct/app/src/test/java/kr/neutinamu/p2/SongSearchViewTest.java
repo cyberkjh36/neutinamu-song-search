@@ -44,6 +44,12 @@ public class SongSearchViewTest {
         search.handle("{\"command\":\"pause\"}");
         assertFalse(calls.stream().anyMatch(x->x.startsWith("queuePlay:")||x.equals("pause")));
     }
+    @Test public void playbackDisplayIsReadOnlyAndRejectsInvalidSongNumbers(){
+        search.playback(914,true);assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("onP2NativePlayback"));
+        assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("\"number\":914"));assertTrue(calls.isEmpty());
+        search.playback(-1,true);assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("\"known\":false"));
+        search.playback(0,true);assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("\"known\":true"));assertTrue(calls.isEmpty());
+    }
     @Test public void assetsCannotReadProfilesOrLoadRemoteCode()throws Exception{
         assertEquals("song-search/index.html",SongSearchView.assetPath(Uri.parse(SongSearchView.HOME)));
         assertEquals("catalog-20261018.csv",SongSearchView.assetPath(Uri.parse("https://appassets.androidplatform.net/search/catalog-20261018.csv")));

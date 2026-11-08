@@ -13,14 +13,16 @@ public final class Session implements Closeable {
         void changed(State state,String message);
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
         default void queue(List<Integer> songs,String message,boolean valid) {}
+        default void playback(int song,boolean known) {}
     }
     private final Socket socket;private final CaptureProfile profile;private final Listener listener;
     private State state=State.AUTH;private long deadline,lastReceived;private int wanted;
     private final int commandTimeoutMs,idleTimeoutMs;
     private boolean playReply;private int reservedSong;
     private boolean nextReserved;private int selectedQueueIndex;
+    private int playingSong;private boolean playbackKnown;
     public Session(Socket socket,CaptureProfile profile,Listener listener)throws IOException {
-        this(socket,profile,listener,10000,30000);
+        this(socket,profile,listener,10000,60000);
     }
     Session(Socket socket,CaptureProfile profile,Listener listener,int commandTimeoutMs,int idleTimeoutMs)throws IOException {
         this.socket=socket;this.profile=profile;this.listener=listener;
@@ -86,6 +88,14 @@ public final class Session implements Closeable {
             change(State.READY,"[READY] P2 연결 응답 확인 · 곡을 선택한 뒤 시작을 누르세요.");return;
         }
         if(state==State.AUTH||state==State.IDENTIFY)return;
+        Integer reportedSong=null;
+        if(f.code==4300){
+            try{reportedSong=Wire.playingSong(f);updatePlayback(reportedSong,reportedSong>0);}
+            catch(IOException invalid){updatePlayback(0,false);}
+        }
+        // Observe every authenticated notification, including commands from another remote.
+        // A play request or its acceptance never substitutes for a reported playing song.
+        if(f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))updatePlayback(0,true);
         if(state==State.ADVANCE_STOP&&f.code==4100){
             if(f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12))){
                 change(State.ADVANCE_PLAY,"현재 곡 정지 응답을 받았습니다. "+wanted+"번 시작 요청 중…");
@@ -100,7 +110,7 @@ public final class Session implements Closeable {
                 listener.changed(state,"시작 요청의 응답을 받았습니다. "+wanted+"번 재생 확인을 기다립니다…");
                 return;
             }
-            if(f.code==4300&&f.bodyType()==1&&f.body.length==5&&Wire.u32(f.body,0)==wanted){
+            if(reportedSong!=null&&reportedSong>0&&reportedSong==wanted){
                 reservedSong=0;change(State.QUEUE,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 예약 목록을 갱신합니다…");write(Wire.queue());return;
             }
         }
@@ -152,7 +162,7 @@ public final class Session implements Closeable {
             // Progress must not reset the command deadline or imply playback success.
             listener.changed(state,"[P10] 시작 요청 응답을 받았습니다. 응답값="+(scalar==null?"형식 미확인":scalar)+" · 실제 재생 확인을 기다립니다…");
         }
-        if(state==State.PLAY&&f.code==4300&&f.bodyType()==1&&f.body.length==5&&Wire.u32(f.body,0)==wanted)
+        if(state==State.PLAY&&reportedSong!=null&&reportedSong>0&&reportedSong==wanted)
             change(State.READY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 실제 화면과 소리를 확인해 주세요.");
         else if(state==State.CANCEL&&f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))
             change(State.READY,"정지 응답을 받았습니다. 반주기 화면과 소리를 확인해 주세요.");
@@ -196,6 +206,10 @@ public final class Session implements Closeable {
         try{write(Wire.queue());}catch(IOException e){fail("예약 목록 요청을 보내지 못했습니다. 곡 시작 명령은 보내지 않았습니다.");throw e;}
     }
     private void advanceFailed(String message){listener.queue(Collections.emptyList(),message,false);change(State.READY,message);}
-    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
+    private void updatePlayback(int song,boolean known){
+        if(playingSong==song&&playbackKnown==known)return;
+        playingSong=song;playbackKnown=known;listener.playback(song,known);
+    }
+    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
     @Override public void close(){fail("연결을 해제했습니다.");}
 }

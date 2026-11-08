@@ -175,6 +175,40 @@ public class MainActivityTest {
             }
         }finally{session.close();set("session",null);}
     }
+    @Test public void closingConnectionClearsCurrentPlaybackAndKeeper()throws Exception{
+        Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
+        Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
+        set("nowPlayingSong",914);set("playbackKnown",true);call("paint");assertTrue((Boolean)field("keeperRequested"));
+        controller.pause().stop();assertTrue((Boolean)field("keeperRequested"));assertEquals(Session.State.READY,session.state());
+        controller.start().resume();command("connect");assertEquals(0,field("nowPlayingSong"));assertFalse((Boolean)field("playbackKnown"));assertFalse((Boolean)field("keeperRequested"));
+    }
+    private void scheduleLoss(String reason)throws Exception{
+        Method m=MainActivity.class.getDeclaredMethod("scheduleRecovery",String.class);m.setAccessible(true);m.invoke(app,reason);
+    }
+    private void verifiedRoom(String room)throws Exception{
+        set("rooms",RoomDirectoryTest.sample());set("roomRequest",room);set("activeRoom",room);
+        ReconnectPolicy p=(ReconnectPolicy)field("recovery");p.start(room);p.connected(room,android.os.SystemClock.elapsedRealtime());
+    }
+    @Test public void recoveryFindsOnlyPreviouslyVerifiedRoomAndNeverIssuesPlay()throws Exception{
+        finishWorker();DirectWifiTest.Fake backend=fakeDiscovery();shadowOf(app).grantPermissions(MainActivity.wifiPermission());verifiedRoom("5");
+        scheduleLoss("[N02] disconnected");assertTrue((Boolean)field("recoveryPending"));assertNull(backend.discovery);
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(1501));assertNotNull(backend.discovery);
+        backend.discovery.accept(true);DirectWifi.Peer five=new DirectWifi.Peer("TJ_P2_TEST_B_4_B","05");
+        backend.peers.accept(java.util.Arrays.asList(new DirectWifi.Peer("TJ_P2_TEST_A_1_B","01"),five));
+        backend.reply(new DirectWifi.Link(false,false,null,null));assertSame(five,backend.selectedPeer);
+        assertFalse(((Diagnostics)field("diagnostics")).report().contains("PLAY_TAPPED"));assertFalse((Boolean)field("commandQueued"));
+    }
+    @Test public void backgroundRecoveryWaitsForReturnAndCanBeCancelled()throws Exception{
+        finishWorker();DirectWifiTest.Fake backend=fakeDiscovery();verifiedRoom("5");controller.pause();
+        scheduleLoss("[N01] timeout");shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(20));assertNull(backend.discovery);
+        controller.resume();assertNotNull(field("recoveryTask"));command("connect");assertFalse((Boolean)field("recoveryPending"));
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(20));assertNull(backend.discovery);
+    }
+    @Test public void changedRoomOrAuthenticationRejectionDoesNotAutoReconnect()throws Exception{
+        finishWorker();DirectWifiTest.Fake backend=fakeDiscovery();verifiedRoom("5");scheduleLoss("[A01] rejected");assertFalse((Boolean)field("recoveryPending"));
+        verifiedRoom("5");scheduleLoss("[N02] closed");set("roomRequest","1");
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2));assertNull(backend.discovery);assertFalse((Boolean)field("recoveryPending"));
+    }
     @Test public void disconnectFromMainSurfaceClearsRoomQueue()throws Exception{
         Session session=new Session(new java.net.Socket(),ProfileStoreTest.sample(),(state,message)->{});
         Field state=Session.class.getDeclaredField("state");state.setAccessible(true);state.set(session,Session.State.READY);set("session",session);
