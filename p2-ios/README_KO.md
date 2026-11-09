@@ -56,6 +56,22 @@ swift test --package-path p2-ios
 
 ## 확인 근거 (2026-11-09)
 
+### 개발 검증 결과
+
+| 확인 항목 | 결과 | 범위 |
+|---|---|---|
+| Swift 프로토콜·개인 기록 테스트 | 18개 통과, 실패 0개 | 모의 P2 응답, 파일 저장·복원·분리 |
+| iPhone Release 빌드 | 컴파일 성공 | arm64, iOS 16 이상, 서명 없음 |
+| iPhone 16 Pro / iOS 18.5 시뮬레이터 | 화면 테스트 1개 통과 | 내 애창곡 열기, 실제 10909번 검색 결과와 가수 확인, 연결 설정 오류 시 미연결 유지 |
+| 기존 자료 보존 | 확인 | 원본 화면·곡 데이터 14개 파일 일치, 검증된 7개 방 포함 |
+| 실제 iPhone ↔ P2 연결·곡 실행 | 미검증 | 현장 네트워크와 실제 장비 필요 |
+| 실제 마이크·카메라·서명된 Keychain | 미검증 | 서명된 앱과 실물 아이폰 필요 |
+| TestFlight / App Store 설치 | 미제공 | Apple 계정·서명·배포 설정 필요 |
+
+[기록된 검증 결과](verification/2026-11-09-summary.json)와 [성공한 Xcode 빌드·테스트 실행](https://github.com/cyberkjh36/neutinamu-song-search/actions/runs/42618996173)에 근거합니다. 시뮬레이터의 서명 없는 빌드는 Keychain 사용 오류가 날 수 있으므로, 이번 화면 테스트는 그 경우에도 연결된 것으로 표시하거나 명령을 보내지 않는지 확인합니다. 실제 곡 재생 테스트를 통과했다는 뜻은 아닙니다.
+
+현장 확인은 **아이폰에서 P2의 무선망에 일반 Wi-Fi로 접속할 수 있는지**부터 진행해야 합니다. 이 확인 전에는 개발자 계정을 결제하거나 손님용 QR을 교체할 필요가 없습니다.
+
 - [Apple: iOS Wi-Fi API 개요](https://developer.apple.com/documentation/technotes/tn3111-ios-wifi-api-overview)
 - [Apple: Wi-Fi 구성](https://developer.apple.com/documentation/networkextension/wi-fi-configuration)
 - [Apple: NEHotspotConfigurationManager](https://developer.apple.com/documentation/networkextension/nehotspotconfigurationmanager)

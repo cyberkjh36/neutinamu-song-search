@@ -1,0 +1,18 @@
+{
+  "title": "Test - NeutinamuRemote",
+  "result": "Passed",
+  "totalTestCount": 1,
+  "passedTests": 1,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "sourceCommit": "9579c5c0d63f4c0d6974ec16571508a46ca71f88",
+  "simulator": "iPhone 16 Pro, iOS 18.5",
+  "coreTestsPassed": 18,
+  "coreTestsFailed": 0,
+  "deviceBuild": "Release iphoneos arm64, unsigned, compile only",
+  "artifactSha256": "9f084e4d8e3950087e53164ca043795e2aeb57ea5f6b0c250a5671e74e9ae981",
+  "workflow": "https://github.com/cyberkjh36/neutinamu-song-search/actions/runs/42618996173",
+  "workflowConclusion": "success",
+  "physicalP2Verified": false,
+  "installableIPA": false
+}
