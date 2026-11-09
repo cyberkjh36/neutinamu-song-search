@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-07T14:38:33.731Z",
+  "updatedAt": "2026-11-09T16:26:17.455Z",
   "countries": [
     "vi"
   ],
@@ -13,6 +13,22 @@
       "url": "https://www.youtube.com/watch?v=cJ0wRxM8b5A",
       "count": 2,
       "lastPlayed": "2026-11-05T09:44:08.4067809Z"
+    },
+    {
+      "country": "vi",
+      "id": "kNdm8AJuxlQ",
+      "title": "Mùa Đông Không Lạnh - Akira Phan [OFFICIAL MV HD]",
+      "url": "https://www.youtube.com/watch?v=kNdm8AJuxlQ",
+      "count": 1,
+      "lastPlayed": "2026-11-09T15:12:09.4029091Z"
+    },
+    {
+      "country": "vi",
+      "id": "5tsFRNrcsSU",
+      "title": "Karaoke Em Sẽ Là Người Ra Đi Tone Nữ | Karaoke Beat Mới | 84",
+      "url": "https://www.youtube.com/watch?v=5tsFRNrcsSU",
+      "count": 1,
+      "lastPlayed": "2026-11-09T15:07:26.3278657Z"
     },
     {
       "country": "vi",

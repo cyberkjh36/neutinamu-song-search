@@ -1,9 +1,82 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-07T14:38:33.731Z",
+  "updatedAt": "2026-11-09T16:26:17.455Z",
   "countries": [
     "zh-CN"
   ],
-  "rows": []
+  "rows": [
+    {
+      "country": "zh-CN",
+      "id": "gy7B8ILXm44",
+      "title": "KARAOKE || TÌNH ĐƠN PHƯƠNG || ĐAN TRƯỜNG",
+      "url": "https://www.youtube.com/watch?v=gy7B8ILXm44",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:26:09.4253791Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "SgSuSiBlzoI",
+      "title": "Tình là gì karaoke beat Tuan hung",
+      "url": "https://www.youtube.com/watch?v=SgSuSiBlzoI",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:20:54.2724272Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "_WgZdBIHEK0",
+      "title": "Đoạn Tái Bút Karaoke Tone Nữ Nhạc Sống - Phối Mới Dễ Hát - Nhật Nguyễn",
+      "url": "https://www.youtube.com/watch?v=_WgZdBIHEK0",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:16:06.8187779Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "8LXu8LrbvgA",
+      "title": "KARAOKE | Ai Chung Tình Được Mãi Tone Nữ Beat Chuẩn",
+      "url": "https://www.youtube.com/watch?v=8LXu8LrbvgA",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:09:52.2092046Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "AL5ao2LWQek",
+      "title": "[ KARAOKE ] Vị Ngọt Đôi Môi | Thanh Thảo & Quang Dũng | Beat Song Ca Hay Nhất",
+      "url": "https://www.youtube.com/watch?v=AL5ao2LWQek",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:07:02.7802792Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "YxP3FjS7Spw",
+      "title": "Vị Ngọt Đôi Môi Karaoke Tone Nam Karaoke Đăng Khôi - Beat Mới",
+      "url": "https://www.youtube.com/watch?v=YxP3FjS7Spw",
+      "count": 1,
+      "lastPlayed": "2026-11-09T16:01:58.8445604Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "cV_GFnWxfyg",
+      "title": "Gục Ngã Vì Yêu Karaoke Tone Nam Karaoke 9999 - Beat Mới",
+      "url": "https://www.youtube.com/watch?v=cV_GFnWxfyg",
+      "count": 1,
+      "lastPlayed": "2026-11-09T15:56:22.9812967Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "IUXp_Lp-ikY",
+      "title": "Karaoke Những Lời Dối Gian Tone Nữ Beat Chuẩn | 84",
+      "url": "https://www.youtube.com/watch?v=IUXp_Lp-ikY",
+      "count": 1,
+      "lastPlayed": "2026-11-09T15:29:18.1275504Z"
+    },
+    {
+      "country": "zh-CN",
+      "id": "CFw-Lpx8cvc",
+      "title": "Karaoke Mùa Đông Không Lạnh Tone Nam | Karaoke Beat | 84",
+      "url": "https://www.youtube.com/watch?v=CFw-Lpx8cvc",
+      "count": 1,
+      "lastPlayed": "2026-11-09T15:21:52.5360207Z"
+    }
+  ]
 }
