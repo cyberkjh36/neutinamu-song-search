@@ -1,0 +1,356 @@
+[
+  {
+    "rank": 1,
+    "code": "31829",
+    "title": "빵빵",
+    "artist": "박상철"
+  },
+  {
+    "rank": 2,
+    "code": "80548",
+    "title": "사랑은 늘 도망가(신사와아가씨OST)",
+    "artist": "임영웅"
+  },
+  {
+    "rank": 3,
+    "code": "31308",
+    "title": "사랑의 배터리",
+    "artist": "홍진영"
+  },
+  {
+    "rank": 4,
+    "code": "33791",
+    "title": "초혼",
+    "artist": "장윤정"
+  },
+  {
+    "rank": 5,
+    "code": "37195",
+    "title": "안동역에서",
+    "artist": "진성"
+  },
+  {
+    "rank": 6,
+    "code": "3665",
+    "title": "당돌한 여자",
+    "artist": "서주경"
+  },
+  {
+    "rank": 7,
+    "code": "91927",
+    "title": "평행선",
+    "artist": "문희옥"
+  },
+  {
+    "rank": 8,
+    "code": "15454",
+    "title": "사랑아",
+    "artist": "장윤정"
+  },
+  {
+    "rank": 9,
+    "code": "54955",
+    "title": "막걸리 한잔",
+    "artist": "영탁"
+  },
+  {
+    "rank": 10,
+    "code": "37173",
+    "title": "아모르 파티",
+    "artist": "김연자"
+  },
+  {
+    "rank": 11,
+    "code": "29460",
+    "title": "보릿고개",
+    "artist": "진성"
+  },
+  {
+    "rank": 12,
+    "code": "3568",
+    "title": "그 집 앞",
+    "artist": "이재성"
+  },
+  {
+    "rank": 13,
+    "code": "19749",
+    "title": "날 봐, 귀순",
+    "artist": "대성"
+  },
+  {
+    "rank": 14,
+    "code": "911",
+    "title": "남행열차",
+    "artist": "김수희"
+  },
+  {
+    "rank": 15,
+    "code": "1842",
+    "title": "붉은 노을",
+    "artist": "이문세"
+  },
+  {
+    "rank": 16,
+    "code": "8720",
+    "title": "천상재회",
+    "artist": "최진희"
+  },
+  {
+    "rank": 17,
+    "code": "36502",
+    "title": "미운 사랑",
+    "artist": "진미령"
+  },
+  {
+    "rank": 18,
+    "code": "36367",
+    "title": "오라버니",
+    "artist": "금잔디"
+  },
+  {
+    "rank": 19,
+    "code": "8693",
+    "title": "둥지",
+    "artist": "남진"
+  },
+  {
+    "rank": 20,
+    "code": "53814",
+    "title": "한잔해",
+    "artist": "박군"
+  },
+  {
+    "rank": 21,
+    "code": "14662",
+    "title": "우연히",
+    "artist": "우연이"
+  },
+  {
+    "rank": 22,
+    "code": "39797",
+    "title": "바램",
+    "artist": "노사연"
+  },
+  {
+    "rank": 23,
+    "code": "2487",
+    "title": "낭만에 대하여",
+    "artist": "최백호"
+  },
+  {
+    "rank": 24,
+    "code": "15263",
+    "title": "홍시(울엄마)",
+    "artist": "나훈아"
+  },
+  {
+    "rank": 25,
+    "code": "1481",
+    "title": "그 겨울의 찻집",
+    "artist": "조용필"
+  },
+  {
+    "rank": 26,
+    "code": "96520",
+    "title": "고맙소",
+    "artist": "조항조"
+  },
+  {
+    "rank": 27,
+    "code": "14712",
+    "title": "무조건",
+    "artist": "박상철"
+  },
+  {
+    "rank": 28,
+    "code": "53854",
+    "title": "사랑 참",
+    "artist": "장윤정"
+  },
+  {
+    "rank": 29,
+    "code": "3880",
+    "title": "바람의 노래",
+    "artist": "조용필"
+  },
+  {
+    "rank": 30,
+    "code": "53644",
+    "title": "목포행 완행열차",
+    "artist": "장윤정"
+  },
+  {
+    "rank": 31,
+    "code": "1486",
+    "title": "사랑밖엔 난 몰라",
+    "artist": "심수봉"
+  },
+  {
+    "rank": 32,
+    "code": "999",
+    "title": "아득히 먼 곳",
+    "artist": "이승재"
+  },
+  {
+    "rank": 33,
+    "code": "10136",
+    "title": "땡벌",
+    "artist": "강진"
+  },
+  {
+    "rank": 34,
+    "code": "4736",
+    "title": "꽃바람 여인",
+    "artist": "조승구"
+  },
+  {
+    "rank": 35,
+    "code": "54904",
+    "title": "진또배기",
+    "artist": "이찬원"
+  },
+  {
+    "rank": 36,
+    "code": "15008",
+    "title": "자기야",
+    "artist": "박주희"
+  },
+  {
+    "rank": 37,
+    "code": "11385",
+    "title": "귀거래사(죽도록사랑해 삽입곡)",
+    "artist": "김신우"
+  },
+  {
+    "rank": 38,
+    "code": "1882",
+    "title": "갈색추억",
+    "artist": "한혜진"
+  },
+  {
+    "rank": 39,
+    "code": "237",
+    "title": "해후",
+    "artist": "최성수"
+  },
+  {
+    "rank": 40,
+    "code": "89525",
+    "title": "시절인연(꼰대인턴OST)",
+    "artist": "이찬원"
+  },
+  {
+    "rank": 41,
+    "code": "315",
+    "title": "영영",
+    "artist": "나훈아"
+  },
+  {
+    "rank": 42,
+    "code": "16305",
+    "title": "거짓말",
+    "artist": "조항조"
+  },
+  {
+    "rank": 43,
+    "code": "3533",
+    "title": "문밖에 있는 그대",
+    "artist": "박강성"
+  },
+  {
+    "rank": 44,
+    "code": "45787",
+    "title": "보약같은 친구",
+    "artist": "진시몬"
+  },
+  {
+    "rank": 45,
+    "code": "17554",
+    "title": "황진이",
+    "artist": "박상철"
+  },
+  {
+    "rank": 46,
+    "code": "1868",
+    "title": "모나리자",
+    "artist": "조용필"
+  },
+  {
+    "rank": 47,
+    "code": "2006",
+    "title": "꿈의 대화",
+    "artist": "이범용,한명훈"
+  },
+  {
+    "rank": 48,
+    "code": "502",
+    "title": "내 하나의 사람은 가고",
+    "artist": "임희숙"
+  },
+  {
+    "rank": 49,
+    "code": "4323",
+    "title": "남자라는 이유로",
+    "artist": "조항조"
+  },
+  {
+    "rank": 50,
+    "code": "4930",
+    "title": "기다리는 아픔",
+    "artist": "조용필"
+  },
+  {
+    "rank": 51,
+    "code": "76523",
+    "title": "별빛 같은 나의 사랑아",
+    "artist": "임영웅"
+  },
+  {
+    "rank": 63,
+    "code": "1427",
+    "title": "애모",
+    "artist": "김수희"
+  },
+  {
+    "rank": 66,
+    "code": "8093",
+    "title": "백만송이 장미",
+    "artist": "심수봉"
+  },
+  {
+    "rank": 68,
+    "code": "693",
+    "title": "꿈",
+    "artist": "조용필"
+  },
+  {
+    "rank": 72,
+    "code": "777",
+    "title": "칠갑산",
+    "artist": "주병선"
+  },
+  {
+    "rank": 73,
+    "code": "3457",
+    "title": "고향역",
+    "artist": "나훈아"
+  },
+  {
+    "rank": 77,
+    "code": "4947",
+    "title": "천년바위",
+    "artist": "박정식"
+  },
+  {
+    "rank": 90,
+    "code": "615",
+    "title": "만남",
+    "artist": "노사연"
+  },
+  {
+    "rank": 98,
+    "code": "38067",
+    "title": "연모",
+    "artist": "박우철"
+  }
+]

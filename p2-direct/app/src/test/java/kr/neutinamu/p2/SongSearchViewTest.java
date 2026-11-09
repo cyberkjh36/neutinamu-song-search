@@ -69,6 +69,17 @@ public class SongSearchViewTest {
         WebSettings s=search.view.getSettings();assertFalse(s.getAllowFileAccess());assertFalse(s.getAllowContentAccess());assertFalse(s.getAllowUniversalAccessFromFileURLs());
         assertEquals(WebSettings.MIXED_CONTENT_NEVER_ALLOW,s.getMixedContentMode());
     }
+    @Test public void bundledFavoritesAreAvailableOfflineThroughTheExistingAssetBoundary()throws Exception{
+        for(String name:new String[]{"favorites-data.js","favorites-ui.js","favorites.css"}){
+            Uri uri=Uri.parse("https://appassets.androidplatform.net/search/"+name);
+            assertEquals("song-search/"+name,SongSearchView.assetPath(uri));
+            android.webkit.WebResourceResponse response=search.resource(uri);
+            assertEquals(200,response.getStatusCode());
+            assertEquals(name.endsWith(".css")?"text/css":"application/javascript",response.getMimeType());
+            assertTrue(response.getData().read()!=-1);
+        }
+        assertTrue(calls.isEmpty());
+    }
     @Test public void reservationBridgeValidatesNumbersAndOnlyExplicitQueueRequest(){
         search.handle("{\"command\":\"reserve\",\"number\":\"10909\"}");search.handle("{\"command\":\"queue\"}");
         assertEquals(Arrays.asList("reserve:10909","queue"),calls);calls.clear();

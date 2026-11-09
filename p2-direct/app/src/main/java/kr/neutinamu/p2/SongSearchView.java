@@ -17,7 +17,7 @@ final class SongSearchView {
     static final String HOME="https://appassets.androidplatform.net/search/index.html";
     static final int VOICE=71,IMPORT=72,EXPORT=73;
     static final int MAX_CSV=16*1024*1024;
-    private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
+    private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","favorites-data.js","favorites-ui.js","favorites.css","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
     interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh(); }
     interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
