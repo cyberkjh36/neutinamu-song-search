@@ -58,23 +58,49 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    await page.screenshot({path:dir+'/favorites-home-'+width+'.png'});
   }
-  // Selecting a curated song uses its exact version/artist, without playback or reservation.
+  // Disconnected requests stay in the list and do not send a command.
   await page.locator('#favoriteShortcuts [data-category=age5060]').click();
+  assert.equal(await page.locator('.favorite-song-select').first().textContent(),'＋ 예약');
   await page.locator('.favorite-song[data-code="10092"]').click();
-  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='10092');
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent.includes('먼저 P2에 연결'));
+  assert.equal(await page.locator('#favoritesPanel').isVisible(),true);
   assert.equal(await page.locator('#heroArtist').textContent(),'김광석');
   assert.equal(await page.evaluate(()=>commands.length),initialCommands);
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'연결됨',busy:false,connected:true}));
-  await page.locator('#nativeReserve').click();await page.evaluate(()=>document.getElementById('nativeReserve').click());
+  // Double taps reserve the exact artist/version once; never play or stop.
+  await page.evaluate(()=>{const b=document.querySelector('.favorite-song[data-code="10092"]');b.click();b.click();});
+  await page.waitForFunction(()=>document.getElementById('favoritesPanel').hidden);
   assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='reserve')),[{command:'reserve',number:'10092'}]);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>['play','cancel','next'].includes(x.command)).length),0);
+  assert.ok((await page.locator('#nativeAction').textContent()).includes('예약 요청 중'));
+  await page.locator('#favoriteShortcuts [data-category=age3040]').click();
+  await page.locator('.favorite-song[data-code="14515"]').click();
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent.includes('이전 요청'));
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='reserve').length),1);
+  // A connection loss cannot dispatch another reservation.
+  await page.evaluate(()=>onP2NativeState({label:'연결 끊김',message:'연결 끊김',busy:false,connected:false}));
+  await page.locator('.favorite-song[data-code="14515"]').click();
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent.includes('먼저 P2에 연결'));
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='reserve').length),1);
+  await page.locator('#favoritesClose').click();
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'예약됨',busy:false,connected:true}));
-  // A pending speech result cannot overwrite a newer selection.
+  // Closing while song data is being read cancels the pending tap.
+  await page.locator('#favoriteShortcuts [data-category=age3040]').click();
+  await page.evaluate(()=>{window.originalFavoriteSearch=search;window.search=async()=>{await new Promise(resolve=>window.releaseFavoriteSearch=resolve);await originalFavoriteSearch();};document.querySelector('.favorite-song[data-code="14515"]').click();});
+  await page.locator('#favoritesClose').click();
+  await page.evaluate(async()=>{releaseFavoriteSearch();await new Promise(resolve=>setTimeout(resolve,100));window.search=originalFavoriteSearch;});
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='reserve').length),1);
+  assert.ok((await page.evaluate(()=>P2Remote.reserveSelected('914'))).includes('곡 정보를'));
+  // A pending speech result cannot overwrite a newer favorite reservation.
   await page.locator('#voiceBtn').click();
   await page.locator('#favoriteShortcuts [data-category=age3040]').click();
   await page.locator('.favorite-song[data-code="14515"]').click();
-  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='14515');
+  await page.waitForFunction(()=>document.getElementById('favoritesPanel').hidden);
   await page.evaluate(()=>onP2NativeVoice(['조용필 꿈'],''));
   assert.equal(await page.locator('#heroNumber').textContent(),'14515');
+  assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='reserve')),[{command:'reserve',number:'10092'},{command:'reserve',number:'14515'}]);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),0);
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'예약 완료',busy:false,connected:true}));
   await page.locator('#nativePlay').click();
   assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='play')),[{command:'play',number:'14515'}]);
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'요청 완료',busy:false,connected:true}));
@@ -84,6 +110,6 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
   assert.equal(await page.locator('#favoritesPanel').isVisible(),false);
   await page.locator('#nativeQueueClose').click();
   assert.deepEqual(errors,[]);
-  console.log('PASS favorites: 150 catalog-backed entries, offline categories, title/artist/initial/number filtering, literal queries, exact version selection, stale voice protection, explicit play/reserve and unchanged reservation list, 320/360/430px layouts.');
+  console.log('PASS favorites: 150 catalog-backed entries, offline categories, title/artist/initial/number filtering, literal queries, one-tap exact-song reservation, duplicate/busy/disconnected/mismatched-song guards, close cancellation, stale voice protection and unchanged playback/reservation list, 320/360/430px layouts.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
