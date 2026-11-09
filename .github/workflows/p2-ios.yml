@@ -1,0 +1,38 @@
+name: P2 iPhone development build
+on:
+  push:
+    branches: [codex/p2-ios-port]
+    paths: ['p2-ios/**', '.github/workflows/p2-ios.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify protocol and private history
+        run: swift test --package-path p2-ios
+      - name: Prepare verified venue rooms and existing UI
+        run: |
+          curl --fail --location --retry 2 --max-time 120 https://cyberkjh36.github.io/neutinamu-song-search/downloads/Neutinamu_P2_Room_QR_0.11.15.apk --output "$RUNNER_TEMP/rooms-source.apk"
+          python3 p2-ios/tools/prepare.py --rooms-from-apk "$RUNNER_TEMP/rooms-source.apk"
+          python3 p2-ios/tools/project.py
+      - name: Compile unsigned iPhone device app
+        run: |
+          xcodebuild -project p2-ios/NeutinamuRemote.xcodeproj -scheme NeutinamuRemote -configuration Release -destination 'generic/platform=iOS' -derivedDataPath p2-ios/build/device CODE_SIGNING_ALLOWED=NO build > p2-ios/build-device.log 2>&1 || { tail -150 p2-ios/build-device.log; exit 1; }
+      - name: Run iPhone simulator UI tests
+        run: |
+          device_id=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if "iPhone" in x["name"]))')
+          xcodebuild -project p2-ios/NeutinamuRemote.xcodeproj -scheme NeutinamuRemote -configuration Debug -destination "platform=iOS Simulator,id=$device_id" -derivedDataPath p2-ios/build/simulator -resultBundlePath p2-ios/build/ui.xcresult CODE_SIGNING_ALLOWED=NO test > p2-ios/build-ui.log 2>&1 || { tail -180 p2-ios/build-ui.log; exit 1; }
+          xcrun xcresulttool export attachments --path p2-ios/build/ui.xcresult --output-path p2-ios/build/screenshots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Neutinamu-iPhone-Development-Unsigned-Not-Installable
+          path: |
+            p2-ios/build/device/Build/Products/Release-iphoneos/*.app
+            p2-ios/build/screenshots
+            p2-ios/build/*.xcresult
+            p2-ios/build-*.log
+          retention-days: 30

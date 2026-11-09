@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleDisplayName</key><string>느티나무 리모컨</string>
+<key>CFBundleName</key><string>NeutinamuRemote</string>
+<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>0.11.15</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>LSRequiresIPhoneOS</key><true/>
+<key>UILaunchScreen</key><dict/>
+<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+<key>UIUserInterfaceStyle</key><string>Dark</string>
+<key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>kr.neutinamu.p2.room</string><key>CFBundleURLSchemes</key><array><string>neutinamu-p2</string></array></dict></array>
+<key>NSMicrophoneUsageDescription</key><string>말씀하신 노래 제목이나 가수를 검색할 때 마이크를 사용합니다.</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>노래 제목이나 가수를 글자로 바꾸어 검색합니다. 음성 인식은 Apple 서비스와 인터넷을 사용할 수 있습니다.</string>
+<key>NSCameraUsageDescription</key><string>방에 붙어 있는 QR코드를 읽어 해당 방을 선택합니다.</string>
+<key>NSLocalNetworkUsageDescription</key><string>같은 무선망에서 선택한 방의 P2 반주기에 실행·예약 명령을 보냅니다.</string>
+</dict></plist>

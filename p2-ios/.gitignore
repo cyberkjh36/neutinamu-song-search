@@ -1,0 +1,8 @@
+.build/
+build/
+Prepared/
+*.xcuserstate
+xcuserdata/
+*.xcarchive/
+*.ipa
+*.app/
