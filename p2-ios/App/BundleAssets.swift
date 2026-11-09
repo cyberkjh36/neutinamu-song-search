@@ -9,7 +9,8 @@ final class BundleAssets: NSObject, WKURLSchemeHandler {
               let file = Bundle.main.url(forResource:url.lastPathComponent,withExtension:nil,subdirectory:"Web"), let data = try? Data(contentsOf:file) else { task.didFailWithError(URLError(.resourceUnavailable)); return }
         let ext = url.pathExtension
         let mime = ext == "html" ? "text/html" : ["js","mjs"].contains(ext) ? "application/javascript" : ext == "css" ? "text/css" : ext == "png" ? "image/png" : ext == "svg" ? "image/svg+xml" : "text/csv"
-        task.didReceive(URLResponse(url:url,mimeType:mime,expectedContentLength:data.count,textEncodingName:"utf-8")); task.didReceive(data); task.didFinish()
+        guard let response = HTTPURLResponse(url:url,statusCode:200,httpVersion:"HTTP/1.1",headerFields:["Content-Type":mime + "; charset=utf-8","Content-Length":String(data.count),"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"]) else { task.didFailWithError(URLError(.badServerResponse)); return }
+        task.didReceive(response); task.didReceive(data); task.didFinish()
     }
     func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
 }
