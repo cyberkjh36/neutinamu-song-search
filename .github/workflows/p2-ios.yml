@@ -5,6 +5,9 @@ on:
     paths: ['p2-ios/**', '.github/workflows/p2-ios.yml']
 permissions:
   contents: read
+concurrency:
+  group: p2-ios-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: macos-15
@@ -12,7 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify protocol and private history
-        run: swift test --package-path p2-ios
+        run: |
+          set -o pipefail
+          swift test --package-path p2-ios 2>&1 | tee p2-ios/test-core.log
       - name: Prepare verified venue rooms and existing UI
         run: |
           curl --fail --location --retry 2 --max-time 120 https://cyberkjh36.github.io/neutinamu-song-search/downloads/Neutinamu_P2_Room_QR_0.11.15.apk --output "$RUNNER_TEMP/rooms-source.apk"
@@ -35,4 +40,5 @@ jobs:
             p2-ios/build/screenshots
             p2-ios/build/*.xcresult
             p2-ios/build-*.log
+            p2-ios/test-core.log
           retention-days: 30

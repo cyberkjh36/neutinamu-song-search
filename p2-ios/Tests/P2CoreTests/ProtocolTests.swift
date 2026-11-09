@@ -2,11 +2,11 @@ import XCTest
 @testable import P2Core
 
 final class ProtocolTests: XCTestCase {
-    let name = "TJ_P2_P0200000001_1_B"
-    func profile() throws -> GuestProfile { try GuestProfile(deviceName:name,clientID:"02:11:22:33:44:55") }
+    let deviceName = "TJ_P2_P0200000001_1_B"
+    func profile() throws -> GuestProfile { try GuestProfile(deviceName:deviceName,clientID:"02:11:22:33:44:55") }
     func identity() -> Frame { Wire.frame(3100,Array("P2AP0200000001".utf8) + [UInt8](repeating:0,count:52)) }
     func queue(_ songs: [Int], tag: UInt8 = 0, broadcast: Bool = false) -> Frame {
-        let b = [UInt8(songs.count)] + songs.flatMap { Wire.integer(UInt32($0)) + [tag,0,0,0,0] }
+        let b: [UInt8] = [UInt8(songs.count)] + songs.flatMap { song -> [UInt8] in Wire.integer(UInt32(song)) + [tag,0,0,0,0] }
         return Wire.frame(broadcast ? 4220 : 4200,(broadcast ? [UInt8](repeating:0,count:7) : []) + b)
     }
     func playing(_ song: Int) -> Frame { Wire.frame(4300,Wire.integer(UInt32(song)) + [0]) }
