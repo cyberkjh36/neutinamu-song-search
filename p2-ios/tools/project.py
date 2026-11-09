@@ -39,7 +39,7 @@ dependency=obj('dependency','{isa=PBXTargetDependency;target='+app+';}')
 test=obj('testtarget','{isa=PBXNativeTarget;buildConfigurationList='+test_conf+';buildPhases='+refs([test_sources])+';buildRules=();dependencies='+refs([dependency])+';name=RemoteUITests;productName=RemoteUITests;productReference='+test_product+';productType="com.apple.product-type.bundle.ui-testing";}')
 project=obj('project','{isa=PBXProject;attributes={LastUpgradeCheck=1600;TargetAttributes={'+app+'={CreatedOnToolsVersion=16.0;};'+test+'={CreatedOnToolsVersion=16.0;TestTargetID='+app+';};};};buildConfigurationList='+configs('project',{})+';compatibilityVersion="Xcode 14.0";developmentRegion=ko;knownRegions=(ko,en,Base);mainGroup='+main_group+';productRefGroup='+products+';projectDirPath="";projectRoot="";targets='+refs([app,test])+';}')
 out=ROOT/'NeutinamuRemote.xcodeproj';out.mkdir(exist_ok=True)
-(out/'project.pbxproj').write_text('// !$*UTF8*$!\n{archiveVersion=1;classes={};objectVersion=56;objects={\n'+''.join(k+'='+v+'\n' for k,v in sorted(objects.items()))+'};rootObject='+project+';}\n')
+(out/'project.pbxproj').write_text('// !$*UTF8*$!\n{archiveVersion=1;classes={};objectVersion=56;objects={\n'+''.join(k+'='+v+';\n' for k,v in sorted(objects.items()))+'};rootObject='+project+';}\n')
 scheme=out/'xcshareddata/xcschemes';scheme.mkdir(parents=True,exist_ok=True)
 def buildref(i,name): return f'<BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="{i}" BuildableName="{name}" BlueprintName="{name.split(".")[0]}" ReferencedContainer="container:NeutinamuRemote.xcodeproj"/>'
 (scheme/'NeutinamuRemote.xcscheme').write_text(f'''<?xml version="1.0" encoding="UTF-8"?>

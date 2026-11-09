@@ -30,6 +30,6 @@ final class QRScanner: UIViewController, AVCaptureMetadataOutputObjectsDelegate 
     }
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput objects: [AVMetadataObject], from connection: AVCaptureConnection) {
         guard !finished, let text = (objects.first as? AVMetadataMachineReadableCodeObject)?.stringValue, let url = URL(string:text), Rooms.parseLink(url) != nil else { return }
-        finished = true; dismiss(animated:true) { [weak self] in self?.selected?(url) }
+        finished = true; let callback = selected; dismiss(animated:true) { callback?(url) }
     }
 }
