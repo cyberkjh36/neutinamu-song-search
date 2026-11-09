@@ -14,11 +14,15 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
  try{
   const page=await browser.newPage({viewport:{width:360,height:800},deviceScaleFactor:1,isMobile:true,hasTouch:true});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(()=>{window.commands=[];window.NeutiP2={command(raw){commands.push(JSON.parse(raw));}};});
+  await page.addInitScript(()=>{window.commands=[];window.NeutiP2={command(raw){
+   const command=JSON.parse(raw);commands.push(command);
+   if(command.command==='personalRemove')localStorage.setItem('personal-fixture',JSON.stringify(JSON.parse(localStorage.getItem('personal-fixture')||'[]').filter(row=>String(row.number)!==command.number)));
+   if(['personalSongs','personalRemove'].includes(command.command))setTimeout(()=>window.onP2NativePersonalSongs({songs:JSON.parse(localStorage.getItem('personal-fixture')||'[]'),error:''}),0);
+  }};});
   await page.goto('http://127.0.0.1:'+server.address().port+'/search/index.html');
   await page.waitForFunction(()=>!document.getElementById('searchBtn').disabled&&document.getElementById('dbCount').textContent.includes('76,617'));
   const dir=process.env.CHECK_OUTPUT||path.join(root,'p2-direct/app/build/reports/p2-ui');fs.mkdirSync(dir,{recursive:true});
-  assert.equal(await page.locator('#favoriteShortcuts button').count(),3);
+  assert.equal(await page.locator('#favoriteShortcuts button').count(),4);
   const initialCommands=await page.evaluate(()=>commands.length);
   // These bundled categories do not require a working internet connection or a P2 connection.
   await page.context().setOffline(true);
@@ -109,7 +113,46 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
   await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList li').length===2);
   assert.equal(await page.locator('#favoritesPanel').isVisible(),false);
   await page.locator('#nativeQueueClose').click();
+  // Personal history is requested locally, works offline and does not run a song on open.
+  await page.evaluate(()=>onP2NativeState({label:'연결 전',message:'',busy:false,connected:false}));
+  await page.locator('#favoriteShortcuts [data-category=mine]').click();
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent==='내 애창곡 0곡');
+  assert.ok((await page.locator('#favoritesEmpty').textContent()).includes('아직 저장된 곡이 없습니다'));
+  assert.equal(await page.locator('.favorites-source').isVisible(),false);
+  assert.equal(await page.locator('#personalHint').isVisible(),true);
+  await page.evaluate(()=>onP2NativePlayback({number:914,known:true}));
+  assert.equal(await page.locator('.favorite-song').count(),0,'Another phone playback never creates personal history in the UI');
+  await page.evaluate(()=>{const songs=[{number:914,lastPlayed:2000},{number:14515,lastPlayed:1000}];localStorage.setItem('personal-fixture',JSON.stringify(songs));onP2NativePersonalSongs({songs,error:''});});
+  await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===2);
+  assert.equal(await page.locator('.favorite-song[data-code="914"] .favorite-song-artist').textContent(),'조용필');
+  for(const width of [320,360,430]){await page.setViewportSize({width,height:800});await page.screenshot({path:dir+'/personal-favorites-'+width+'.png'});assert.ok(await page.locator('.favorites-sheet').evaluate(el=>el.scrollWidth<=el.clientWidth+1));}
+  await page.locator('#favoritesFilter').fill('ㅇㄱㅅ');assert.equal(await page.locator('.favorite-song').count(),1);
+  await page.locator('.favorite-song[data-code="14515"]').click();
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent.includes('먼저 P2에 연결'));
+  const beforePersonalReserve=await page.evaluate(()=>commands.filter(c=>c.command==='reserve').length);
+  await page.evaluate(()=>onP2NativeState({label:'연결됨',message:'',busy:false,connected:true}));
+  await page.locator('.favorite-song[data-code="14515"]').click();await page.waitForFunction(()=>document.getElementById('favoritesPanel').hidden);
+  assert.equal(await page.evaluate(()=>commands.filter(c=>c.command==='reserve').length),beforePersonalReserve+1);
+  assert.equal(await page.evaluate(()=>commands.filter(c=>c.command==='reserve').at(-1).number),'14515');
+  await page.evaluate(()=>onP2NativeState({label:'연결됨',message:'예약됨',busy:false,connected:true}));
+  await page.locator('#favoriteShortcuts [data-category=mine]').click();await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===2);
+  const beforeDelete=await page.evaluate(()=>commands.filter(c=>['play','cancel','queueCancel','reserve','next'].includes(c.command)).length);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('.personal-remove').first().click();
+  await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===1);
+  assert.equal(await page.evaluate(()=>commands.filter(c=>['play','cancel','queueCancel','reserve','next'].includes(c.command)).length),beforeDelete);
+  assert.equal(await page.locator('.favorite-song').getAttribute('data-code'),'14515');
+  await page.context().setOffline(false);await page.reload();await page.waitForFunction(()=>!document.getElementById('searchBtn').disabled);await page.context().setOffline(true);
+  await page.locator('#favoriteShortcuts [data-category=mine]').click();await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===1);
+  assert.equal(await page.locator('.favorite-song').getAttribute('data-code'),'14515');
+  const many=[...new Map(data.groups.flatMap(g=>g.songs).map(s=>[s.code,s])).values()].slice(0,60).map((s,i)=>({number:Number(s.code),lastPlayed:1000+i}));
+  await page.evaluate(songs=>onP2NativePersonalSongs({songs,error:''}),many);await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===50);
+  await page.locator('#favoritesMore').click();assert.equal(await page.locator('.favorite-song').count(),60);
+  assert.equal(await page.locator('#favoritesMore').isVisible(),false);
+  await page.evaluate(()=>onP2NativePersonalSongs({songs:[],error:'저장된 내 애창곡을 읽지 못했습니다.'}));
+  await page.waitForFunction(()=>document.getElementById('favoritesCount').textContent.includes('읽지 못했습니다'));
+  assert.equal(await page.locator('.favorite-song').count(),60,'Read failure does not silently erase visible history');
+  await page.locator('#favoritesClose').click();
   assert.deepEqual(errors,[]);
-  console.log('PASS favorites: 150 catalog-backed entries, offline categories, title/artist/initial/number filtering, literal queries, one-tap exact-song reservation, duplicate/busy/disconnected/mismatched-song guards, close cancellation, stale voice protection and unchanged playback/reservation list, 320/360/430px layouts.');
+  console.log('PASS favorites: 150 catalog-backed entries, offline categories, title/artist/initial/number filtering, literal queries, one-tap exact-song reservation, duplicate/busy/disconnected/mismatched-song guards, close cancellation, stale voice protection and unchanged playback/reservation list, personal offline history, exact titles, delete isolation, reload, pagination and 320/360/430px layouts.');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

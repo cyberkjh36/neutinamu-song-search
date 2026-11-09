@@ -43,7 +43,7 @@ public final class MainActivity extends Activity {
     private String queueMessage="예약 목록을 열면 반주기의 예약 순서를 확인합니다.";
     private final Diagnostics diagnostics=new Diagnostics(BuildConfig.VERSION_NAME,Build.VERSION.SDK_INT);
     private String connectionMessage="방 QR을 스캔하거나 ‘주변 P2 찾기’에서 방을 선택하세요.";
-    private CaptureProfile profile;private ProfileStore profileStore;
+    private CaptureProfile profile;private ProfileStore profileStore;private PersonalSongsStore personalSongs;
     private TextView profileStatus,connectionBanner;
     private TextView status;
     private ScrollView scroll;private FrameLayout screens;private SongSearchView songSearch;
@@ -68,7 +68,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        profileStore=new ProfileStore(this);
+        profileStore=new ProfileStore(this);personalSongs=new PersonalSongsStore(this);
         try(Reader in=new InputStreamReader(getAssets().open("p2-rooms.txt"),"UTF-8")){rooms=RoomDirectory.read(in);}
         catch(IOException e){diagnostics.event("ROOM_DIRECTORY_UNAVAILABLE");}
         scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(bg);
@@ -152,6 +152,8 @@ public final class MainActivity extends Activity {
             public void queue(){queueCommand(false,0);}
             public void cancel(){if(ensureControlReady(false))dispatch(false,0);paint();}
             public void refresh(){paint();}
+            public void personalSongs(){showPersonalSongs();}
+            public void removePersonalSong(int number){try{personalSongs.remove(number);showPersonalSongs();}catch(IOException|RuntimeException e){songSearch.personalSongs(new org.json.JSONArray(),"내 애창곡을 지우지 못했습니다. 다시 시도해 주세요.");}}
         });
         screens.addView(songSearch.view,new FrameLayout.LayoutParams(-1,-1));
         songSearch.view.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(0,insets.getSystemWindowInsetTop(),0,insets.getSystemWindowInsetBottom());return insets;});
@@ -443,6 +445,11 @@ public final class MainActivity extends Activity {
                             if(state==Session.State.CLOSED){recoveryActive=false;scheduleRecovery(message);}
                         });
                     }
+                    @Override public void personalSong(int song){ui(()->{
+                        if(session!=holder[0])return;
+                        try{personalSongs.record(song,System.currentTimeMillis());showPersonalSongs();}
+                        catch(IOException|RuntimeException e){songSearch.personalSongs(new org.json.JSONArray(),"내 애창곡을 저장하지 못했습니다. 휴대폰 저장공간을 확인해 주세요.");}
+                    });}
                     @Override public void frame(boolean outgoing,int command,int length,Long scalar){diagnostics.frame(outgoing,command,length,scalar);}
                     @Override public void queue(List<Integer> songs,String message,boolean valid){ui(()->{
                         if(session!=holder[0])return;queueSongs=songs;queueMessage=message;queueValid=valid;paint();
@@ -579,6 +586,11 @@ public final class MainActivity extends Activity {
             });}
             finally{ui(()->{commandQueued=false;paint();});}
         });
+    }
+    private void showPersonalSongs(){
+        if(songSearch==null)return;
+        try{songSearch.personalSongs(personalSongs.list(),"");}
+        catch(IOException|RuntimeException e){songSearch.personalSongs(new org.json.JSONArray(),"저장된 내 애창곡을 읽지 못했습니다. 기존 기록은 지우지 않았습니다.");}
     }
     private void paint(){
         if(status==null)return;Session active=session;Session.State s=active==null?Session.State.CLOSED:active.state();

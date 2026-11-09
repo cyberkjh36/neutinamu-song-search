@@ -34,3 +34,12 @@
 .favorites-source summary{min-height:44px;cursor:pointer;font-size:16px}
 @media(max-width:340px){#favoritesTitle{font-size:23px}.favorites-sheet{padding:12px}.favorites-heading{top:-12px}.favorite-song{padding:16px 12px}.favorite-song-title{font-size:26px}#favoriteShortcuts strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){#favoritesPanel *{scroll-behavior:auto}}
+
+#favoriteShortcuts button[data-category=mine]{grid-column:1/-1;flex-direction:row;min-height:72px;gap:12px;background:#183f39;border-color:#578d79;color:#d5f8df}
+#favoriteShortcuts button[data-category=mine] strong{font-size:23px}
+#favoriteShortcuts button[data-category=mine] span{font-size:15px}
+#favoritesTabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+#favoritesMore{width:100%;min-height:54px;font-size:20px;background:#234653}
+#favoritesMore[hidden],#personalHint[hidden],.favorites-source[hidden]{display:none}
+#personalHint{font-size:15px;line-height:1.7;color:#bcd0d6;border-top:1px solid #42606e;padding-top:16px}
+.personal-remove{display:block;width:100%;min-height:48px;margin-top:6px;background:transparent;color:#cbdce3;border:1px solid #426776;border-radius:12px;font-size:16px}

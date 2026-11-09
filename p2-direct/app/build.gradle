@@ -6,8 +6,8 @@ android {
         applicationId 'kr.neutinamu.p2.direct'
         minSdk 26
         targetSdk 35
-        versionCode 28
-        versionName '0.11.14-favorites-reserve'
+        versionCode 29
+        versionName '0.11.15-personal-favorites'
     }
     buildFeatures { buildConfig true }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }

@@ -14,6 +14,7 @@ public final class Session implements Closeable {
         default void frame(boolean outgoing,int command,int bodyLength,Long scalar) {}
         default void queue(List<Integer> songs,String message,boolean valid) {}
         default void playback(int song,boolean known) {}
+        default void personalSong(int song) {}
     }
     private final Socket socket;private final CaptureProfile profile;private final Listener listener;
     private State state=State.AUTH;private long deadline,lastReceived;private int wanted;
@@ -24,6 +25,8 @@ public final class Session implements Closeable {
     private Wire.QueueSnapshot expectedQueue;
     private Wire.QueueSnapshot lastQueue,removeBefore;private int removeSong,removeIndex;
     private int playingSong;private boolean playbackKnown;
+    private final java.util.Set<Integer> ownReservations=new java.util.HashSet<>();
+    private long playbackRevision,personalRevision=-1;
     public Session(Socket socket,CaptureProfile profile,Listener listener)throws IOException {
         this(socket,profile,listener,10000,60000);
     }
@@ -126,6 +129,7 @@ public final class Session implements Closeable {
                 listener.changed(state,"예약곡 시작 응답을 받았습니다. "+wanted+"번 재생 확인을 기다립니다…");return;
             }
             if(reportedSong!=null&&reportedSong>0&&reportedSong==wanted){
+                personalSong(wanted);
                 change(State.ADVANCE_VERIFY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 남은 예약 순서를 확인합니다…");write(Wire.queue());return;
             }
         }
@@ -148,7 +152,9 @@ public final class Session implements Closeable {
             }
             lastQueue=snapshot;
             String message="P2 예약곡 "+songs.size()+"곡 · 반주기에서 받은 순서입니다.";
-            if(state==State.QUEUE&&reservedSong>0&&songs.contains(reservedSong))message=reservedSong+"번이 P2 예약 목록에 있습니다. · 총 "+songs.size()+"곡";
+            if(state==State.QUEUE&&reservedSong>0&&songs.contains(reservedSong)){
+                ownReservations.add(reservedSong);message=reservedSong+"번이 P2 예약 목록에 있습니다. · 총 "+songs.size()+"곡";
+            }
             listener.queue(songs,message,true);
             if(f.code==4200&&removing()){
                 if(state==State.REMOVE_QUEUE){
@@ -159,6 +165,7 @@ public final class Session implements Closeable {
                     write(Wire.removeReserved(songs.size(),removeSong,removeIndex));return;
                 }
                 if(state==State.REMOVE_VERIFY){
+                    if(removeBefore.without(removeIndex).sameOrder(snapshot))ownReservations.remove(removeSong);
                     String result=removeBefore.without(removeIndex).sameOrder(snapshot)?
                         removeSong+"번 예약 취소 완료 · 남은 예약 "+songs.size()+"곡":
                         "[R24] 취소 응답은 받았지만 남은 목록이 예상과 다릅니다. 표시된 반주기 목록을 확인해 주세요.";
@@ -218,8 +225,9 @@ public final class Session implements Closeable {
             // Progress must not reset the command deadline or imply playback success.
             listener.changed(state,"[P10] 시작 요청 응답을 받았습니다. 응답값="+(scalar==null?"형식 미확인":scalar)+" · 실제 재생 확인을 기다립니다…");
         }
-        if(state==State.PLAY&&reportedSong!=null&&reportedSong>0&&reportedSong==wanted)
-            change(State.READY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 실제 화면과 소리를 확인해 주세요.");
+        if(state==State.PLAY&&reportedSong!=null&&reportedSong>0&&reportedSong==wanted){
+            personalSong(wanted);change(State.READY,"P2에서 "+wanted+"번 재생 상태를 받았습니다. 실제 화면과 소리를 확인해 주세요.");
+        }
         else if(state==State.CANCEL&&f.code==4100&&f.bodyType()==1&&Arrays.equals(f.body,Wire.integer(12)))
             change(State.READY,"정지 응답을 받았습니다. 반주기 화면과 소리를 확인해 주세요.");
     }
@@ -286,8 +294,13 @@ public final class Session implements Closeable {
     private void advanceFailed(String message){clearAdvance();listener.queue(Collections.emptyList(),message,false);change(State.READY,message);}
     private void updatePlayback(int song,boolean known){
         if(playingSong==song&&playbackKnown==known)return;
-        playingSong=song;playbackKnown=known;listener.playback(song,known);
+        playingSong=song;playbackKnown=known;++playbackRevision;listener.playback(song,known);
+        if(known&&song>0&&ownReservations.remove(song))personalSong(song);
     }
-    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;clearAdvance();clearRemoval();lastQueue=null;updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
+    private void personalSong(int song){
+        if(!playbackKnown||playingSong!=song||personalRevision==playbackRevision)return;
+        personalRevision=playbackRevision;ownReservations.remove(song);listener.personalSong(song);
+    }
+    private synchronized void fail(String message){if(state==State.CLOSED)return;state=State.CLOSED;ownReservations.clear();clearAdvance();clearRemoval();lastQueue=null;updatePlayback(0,false);try{socket.close();}catch(IOException ignored){}listener.changed(state,message);}
     @Override public void close(){fail("연결을 해제했습니다.");}
 }

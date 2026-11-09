@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}
+        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}public void personalSongs(){calls.add("personalSongs");}public void removePersonalSong(int n){calls.add("personalRemove:"+n);}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -86,6 +86,14 @@ public class SongSearchViewTest {
         for(String n:new String[]{"0","-1","0010909","10909x","999999999","1.5","1e4"})search.handle("{\"command\":\"reserve\",\"number\":\""+n+"\"}");
         assertFalse(calls.stream().anyMatch(s->s.startsWith("reserve:")));
         search.handle("{\"command\":\"deleteQueue\"}");assertFalse(calls.contains("queue"));
+    }
+    @Test public void personalHistoryCommandsAreLocalAndRemovalValidatesNumbers(){
+        search.handle("{\"command\":\"personalSongs\"}");
+        search.handle("{\"command\":\"personalRemove\",\"number\":\"914\"}");
+        assertEquals(Arrays.asList("personalSongs","personalRemove:914"),calls);calls.clear();
+        for(String n:new String[]{"0","-1","0914","914x","100000000","1.5"})search.handle("{\"command\":\"personalRemove\",\"number\":\""+n+"\"}");
+        assertTrue(calls.isEmpty());
+        search.personalSongs(new org.json.JSONArray(),"");assertTrue(shadowOf(search.view).getLastEvaluatedJavascript().contains("onP2NativePersonalSongs"));
     }
     @Test public void microphoneOpensAndroidSpeechActivityOnlyOnceAndCanRetryAfterCancel(){
         search.handle("{\"command\":\"voice\"}");Intent started=shadowOf(activity).getNextStartedActivity();

@@ -18,7 +18,7 @@ final class SongSearchView {
     static final int VOICE=71,IMPORT=72,EXPORT=73;
     static final int MAX_CSV=16*1024*1024;
     private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","favorites-data.js","favorites-ui.js","favorites.css","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
-    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh(); }
+    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh();default void personalSongs(){}default void removePersonalSong(int number){} }
     interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
     private final Activity activity;private final Host host;private final ExecutorService files=Executors.newSingleThreadExecutor();
@@ -82,6 +82,8 @@ final class SongSearchView {
                 case "find":host.find();break;
                 case "next":host.next();break;
                 case "status":host.refresh();break;
+                case "personalSongs":host.personalSongs();break;
+                case "personalRemove":String saved=request.optString("number");if(saved.matches("[1-9][0-9]{0,7}"))host.removePersonalSong(Integer.parseInt(saved));break;
                 case "play":case "reserve":String n=request.optString("number");if(!n.matches("[1-9][0-9]{0,7}")){fileMessage("올바른 곡번호를 선택해 주세요.");host.refresh();return;}if(command.equals("play"))host.play(Integer.parseInt(n));else host.reserve(Integer.parseInt(n));break;
                 case "queuePlay":case "queueCancel":
                     String number=request.optString("number"),position=request.optString("index");
@@ -156,6 +158,9 @@ final class SongSearchView {
     void playback(int song,boolean known){
         boolean valid=known&&song>=0&&song<=99999999;
         try{js("onP2NativePlayback",new JSONArray().put(new JSONObject().put("number",valid?song:0).put("known",valid)));}catch(JSONException ignored){}
+    }
+    void personalSongs(JSONArray songs,String error){
+        try{js("onP2NativePersonalSongs",new JSONArray().put(new JSONObject().put("songs",songs).put("error",error)));}catch(JSONException ignored){}
     }
     void openQueue(){js("onP2NativeQueueOpen",new JSONArray());}
     private void js(String function,JSONArray arguments){if(!closed)view.evaluateJavascript("window."+function+"&&window."+function+".apply(null,"+arguments.toString().replace("\u2028","\\u2028").replace("\u2029","\\u2029")+")",null);}
