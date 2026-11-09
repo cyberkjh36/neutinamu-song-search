@@ -23,6 +23,7 @@ import Network
         let connection = NWConnection(host:NWEndpoint.Host(config.host),port:7070,using:parameters)
         socket = connection; stateChanged("Wi-Fi로 P2에 연결하고 있습니다…")
         connection.stateUpdateHandler = { [weak self, weak connection] state in
+            Task { @MainActor in
             guard let self, let connection, self.socket === connection else { return }
             switch state {
             case .ready:
@@ -53,6 +54,7 @@ import Network
             case .failed: self.fail("P2에 연결하지 못했습니다. 로컬 네트워크 허용과 P2 Wi-Fi 연결을 확인해 주세요.")
             default: break
             }
+            }
         }
         let timeout = DispatchWorkItem { [weak self, weak connection] in
             guard let self, let connection, self.socket === connection, self.connecting else { return }
@@ -63,12 +65,14 @@ import Network
     }
     private func receive(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength:1,maximumLength:8192) { [weak self, weak connection] data,_,complete,error in
+            Task { @MainActor in
             guard let self, let connection, self.socket === connection else { return }
             do {
                 if let data { for frame in try self.decoder.feed(Array(data)) { try self.session?.receive(frame) } }
                 if complete || error != nil { self.fail("P2 연결이 끊겼습니다. 다시 연결해 주세요."); return }
                 if self.socket === connection { self.receive(connection) }
             } catch { self.fail("P2 응답 형식을 확인하지 못해 연결을 종료했습니다.") }
+            }
         }
     }
     private func cancelSocket() { deadline?.cancel(); deadline = nil; timer?.invalidate(); timer = nil; connecting = false; let old = socket; socket = nil; old?.stateUpdateHandler = nil; old?.cancel() }
