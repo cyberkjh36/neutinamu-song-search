@@ -47,14 +47,18 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
  $('remote-tv').addEventListener('click',async()=>{
   if($('remote-tv').disabled||pending)return;
   const g=connection.generation;
-  if(!retries.has('tv'))retries.set('tv',requestId());
+  const checkOnly=retries.has('tv');
+  if(!checkOnly)retries.set('tv',requestId());
   pending=true;controlStatus='working';render();
   try{
-   const status=await connection.setTvInput(retries.get('tv'));
+   const status=await connection.setTvInput(retries.get('tv'),checkOnly);
    if(g!==connection.generation)return;
    retries.delete('tv');
    controlStatus={confirmed:'tvConfirmed',sent:'tvSent',rejected:'failed'}[status]||'tvUnknown';
-  }catch{if(g===connection.generation)controlStatus='tvUnknown';}
+  }catch(e){if(g===connection.generation){
+   if(checkOnly && e.code==='timeout')retries.delete('tv');
+   controlStatus='tvUnknown';
+  }}
   finally{if(g===connection.generation)pending=false;render();}
  });
  function show(catalog,keepButtons=false){

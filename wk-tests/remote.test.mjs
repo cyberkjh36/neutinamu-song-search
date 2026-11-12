@@ -75,3 +75,19 @@ test('touch control is hidden on old rooms, ignores double taps and keeps retrie
  h.connection.setTvInput=async r=>{requests.push(r);return 'confirmed';};
  await b.fire('click');assert.equal(requests[1],requests[2]);assert.equal(msg.textContent,REMOTE_TEXT['ko-KR'].tvConfirmed);
 });
+
+test('queued HDMI requests are polled read-only and an uncertain manual retry only asks for the result',async()=>{
+ const calls=[];
+ const c=new KaraokeConnection(null,()=>{},{fetch:async(_,options)=>{
+  const b=JSON.parse(options.body);calls.push(b.op);
+  if(b.op==='join')return Response.json({ok:true,server:'PC',capabilities:{p2HdmiInput:1}});
+  const status=b.op==='setTvInput'?'queued':'sent';
+  return Response.json({ok:true,request:b.request,input:'HDMI_INPUT',status});
+ }});
+ try{
+  await c.connect('23456789','Phone');
+  assert.equal(await c.setTvInput(nonce),'sent');
+  assert.equal(await c.setTvInput(nonce,true),'sent');
+  assert.deepEqual(calls,['join','setTvInput','tvInputResult','tvInputResult']);
+ }finally{await c.disconnect();}
+});

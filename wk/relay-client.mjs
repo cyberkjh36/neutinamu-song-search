@@ -35,7 +35,14 @@ export class KaraokeConnection {
   heartbeat(generation){
     this.timer=setTimeout(async()=>{
       if(generation!==this.generation)return;
-      try{await this.call('ping',{},generation);if(generation===this.generation)this.heartbeat(generation);}
+      try{
+        const reply=await this.call('ping',{},generation);
+        if(generation===this.generation){
+          const available=reply.capabilities?.p2HdmiInput===1;
+          if(available!==this.tvInputSupported){this.tvInputSupported=available;this.change(this.state);}
+          this.heartbeat(generation);
+        }
+      }
       catch(e){if(generation===this.generation){await this.disconnect();this.set('error',e.code);}}
     },this.pingMs);
   }
@@ -63,7 +70,7 @@ export class KaraokeConnection {
       }
     }
   }
-  async setTvInput(request){
+  async setTvInput(request,checkOnly=false){
     if(!this.tvInputSupported) throw failure('upgrade');
     if(this.state!=='ready') throw failure('busy');
     if(typeof request!=='string'||!/^[a-f0-9]{32}$/.test(request)) throw failure('invalid');
@@ -72,10 +79,17 @@ export class KaraokeConnection {
     try {
       // The room host must deduplicate (room, phone, request). Only a read-back
       // of the selected P2 input warrants 'confirmed'; a send alone is 'sent'.
-      const reply=await this.call('setTvInput',{request,input:'HDMI_INPUT'},generation);
-      if(reply.request!==request||reply.input!=='HDMI_INPUT'||
-         !['confirmed','sent','rejected'].includes(reply.status)) throw failure('response');
-      return reply.status;
+      const payload={request,input:'HDMI_INPUT'};
+      let reply=await this.call(checkOnly?'tvInputResult':'setTvInput',payload,generation);
+      const deadline=Date.now()+10000;
+      for(;;){
+        if(reply.request!==request||reply.input!==payload.input)throw failure('response');
+        if(['confirmed','sent','rejected'].includes(reply.status))return reply.status;
+        if(!['queued','processing'].includes(reply.status)||Date.now()>=deadline)throw failure('timeout');
+        await this.wait(300);
+        if(generation!==this.generation)throw failure('disconnected');
+        reply=await this.call('tvInputResult',payload,generation);
+      }
     } finally {
       if(generation===this.generation && this.state==='sending') this.set('ready');
     }
