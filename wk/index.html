@@ -10,7 +10,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://i.ytimg.com; connect-src 'self' https://world-karaoke-connect.almondjoy11.chatgpt.site; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>세계가라오케 · Android · iPhone 음성검색</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=3.8">
+  <link rel="stylesheet" href="style.css?v=3.10">
   <link rel="stylesheet" href="keyboard/keyboard.css?v=3.4.1">
 </head>
 <body>
@@ -58,6 +58,7 @@
       <button id="remote-play" type="button" disabled><span class="remote-icon" aria-hidden="true">▶</span><span id="remote-play-label">재생</span></button>
       <button id="remote-pause" type="button" disabled><span class="remote-icon" aria-hidden="true">Ⅱ</span><span id="remote-pause-label">일시정지</span></button>
       <button id="remote-next" type="button" disabled><span class="remote-icon" aria-hidden="true">▶▶</span><span id="remote-next-label">다음곡</span></button>
+      <button id="remote-tv" type="button" disabled hidden><span class="remote-icon" aria-hidden="true">📺</span><span id="remote-tv-label">TV연결</span></button>
     </div>
     <p id="remote-help">예약곡을 시작하거나 이어 재생하고, 일시정지하거나 다음곡으로 넘어갑니다.</p>
     <p id="remote-feedback" class="feedback" role="status" aria-live="polite"></p>
@@ -160,7 +161,7 @@
   </div>
   <div class="country-keyboard-footer"><button id="country-keyboard-native" type="button">휴대폰 키보드</button><button id="country-keyboard-search" type="button" disabled>검색</button></div>
 </section>
-<script type="module" src="app.mjs?v=3.9"></script>
+<script type="module" src="app.mjs?v=3.10"></script>
 </body>
 </html>
 

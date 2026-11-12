@@ -1,0 +1,21 @@
+name: Check room PC Wi-Fi diagnostic
+on:
+  push:
+    branches: ['codex/wk-tv-room-control']
+    paths: ['tools/p2-windows/**', '.github/workflows/wk-tv-check.yml']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Windows diagnostic output
+        shell: pwsh
+        run: |
+          $out = cmd.exe /D /C "tools\p2-windows\P2_WiFi_Check.cmd --test" | Out-String
+          foreach ($pattern in @('WIFI_INTERFACE=(FOUND|NOT_CONFIRMED)','ETHERNET_LINK=(UP|NOT_SEEN|UNKNOWN)','TJ_NETWORK=(VISIBLE|NOT_CONFIRMED)')) {
+            if ($out -notmatch $pattern) { throw "Missing diagnostic result matching $pattern" }
+          }
+          if ($out -match '(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') { throw 'Unexpected adapter identifier in output' }

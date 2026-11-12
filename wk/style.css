@@ -83,3 +83,6 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 #language-label{display:inline-block;vertical-align:middle}
 .remote-actions button span:not(.remote-icon){min-width:0;max-width:100%}
 #remote-title{display:block}
+
+.remote-actions #remote-tv {grid-column:1 / -1;flex-direction:row;min-height:50px}
+.remote-actions #remote-tv[hidden] {display:none}

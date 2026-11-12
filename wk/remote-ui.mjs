@@ -1,4 +1,4 @@
-import {REMOTE_TEXT} from './ui-text.mjs?v=3.9';
+import {REMOTE_TEXT} from './ui-text.mjs?v=3.10';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
@@ -19,8 +19,12 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   status.hidden=!status.textContent;
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
-  $('remote-feedback').textContent=!connected()?w.connect:!connection.controlSupported?w.upgrade:controlStatus?w[controlStatus]:'';
-  $('remote-feedback').classList.toggle('error',['failed','uncertain'].includes(controlStatus));
+  const tv=$('remote-tv');
+  tv.hidden=!connection.tvInputSupported;
+  tv.disabled=tv.hidden||off;
+  $('remote-tv-label').textContent=w.tv;
+  $('remote-feedback').textContent=!connected()?w.connect:controlStatus?w[controlStatus]:!connection.controlSupported?w.upgrade:'';
+  $('remote-feedback').classList.toggle('error',['failed','uncertain','tvUnknown'].includes(controlStatus));
   $('favorites-open').textContent=w.favorites;$('favorites-open').disabled=browseOff;
   $('favorites-open').setAttribute('aria-expanded',String(!$('favorites-panel').hidden));
   $('favorites-hint').textContent=!connected()?w.connect:!connection.favoritesSupported?w.upgrade:w.hint;
@@ -38,6 +42,19 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   const g=connection.generation;pending=true;controlStatus='working';if(!retries.has(action))retries.set(action,requestId());render();
   try{const result=await connection.control(action,retries.get(action),getLanguage());if(g!==connection.generation)return;retries.delete(action);controlStatus=result.ok?'done':'failed';}
   catch(e){if(g===connection.generation)controlStatus=e.code==='upgrade'?'upgrade':'uncertain';}
+  finally{if(g===connection.generation)pending=false;render();}
+ });
+ $('remote-tv').addEventListener('click',async()=>{
+  if($('remote-tv').disabled||pending)return;
+  const g=connection.generation;
+  if(!retries.has('tv'))retries.set('tv',requestId());
+  pending=true;controlStatus='working';render();
+  try{
+   const status=await connection.setTvInput(retries.get('tv'));
+   if(g!==connection.generation)return;
+   retries.delete('tv');
+   controlStatus={confirmed:'tvConfirmed',sent:'tvSent',rejected:'failed'}[status]||'tvUnknown';
+  }catch{if(g===connection.generation)controlStatus='tvUnknown';}
   finally{if(g===connection.generation)pending=false;render();}
  });
  function show(catalog,keepButtons=false){
