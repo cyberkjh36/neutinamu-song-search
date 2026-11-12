@@ -19,3 +19,42 @@ jobs:
             if ($out -notmatch $pattern) { throw "Missing diagnostic result matching $pattern" }
           }
           if ($out -match '(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') { throw 'Unexpected adapter identifier in output' }
+      - name: Build the Windows room link tool
+        run: dotnet build tools/p2-windows/RoomLink.csproj -c Release -o output
+      - name: Exercise startup and controls on Windows
+        shell: pwsh
+        run: |
+          $test = Start-Process -FilePath (Resolve-Path output/P2_Room_Link_Test.exe) -ArgumentList '--self-test' -PassThru
+          if (!$test.WaitForExit(30000)) { $test.Kill(); throw 'Windows UI check timed out' }
+          if ($test.ExitCode -ne 0) { throw "Windows UI check failed: $($test.ExitCode)" }
+      - name: Package the room PC test
+        shell: pwsh
+        run: |
+          Remove-Item output/*.pdb -ErrorAction SilentlyContinue
+          Copy-Item tools/p2-windows/P2_WiFi_Check.cmd output/
+          Compress-Archive -Path output/* -DestinationPath P2_Room_PC_Test.zip -CompressionLevel Optimal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: P2_Room_PC_Test
+          path: P2_Room_PC_Test.zip
+          retention-days: 30
+
+  publish-test-zip:
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: P2_Room_PC_Test
+          path: field-test
+      - name: Publish the tested ZIP to the development branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- field-test/P2_Room_PC_Test.zip
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Package the tested Windows P2 room link tool'
+          git push origin HEAD:refs/heads/codex/wk-tv-room-control
