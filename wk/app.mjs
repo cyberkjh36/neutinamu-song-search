@@ -2,7 +2,8 @@ import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PE
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.8';
+import {createRemoteUi} from './remote-ui.mjs?v=3.9';
+import {createFavoritesCache} from './favorites-cache.mjs?v=3.9';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
 import { KaraokeConnection } from './relay-client.mjs?v=3.6';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
@@ -135,6 +136,7 @@ function refreshControls() {
   renderSafariHandoff();
   phoneKeyboard?.refresh();
 }
+const favoriteCache = createFavoritesCache({onChange:()=>remoteUi?.render()});
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
   if (state === 'ready' && detail) serverName = detail;
@@ -148,7 +150,8 @@ const secure = location.protocol === 'https:' || location.hostname === 'localhos
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
-remoteUi=createRemoteUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>phoneKeyboard?.refresh()});
+remoteUi=createRemoteUi({connection,cache:favoriteCache,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>phoneKeyboard?.refresh()});
+void favoriteCache.restore();
 playlistUi=createPlaylistUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
 phoneKeyboard=createNativeKeyboard({getLanguage:()=>currentLanguage.code,blocked:()=>Boolean(voice?.active)||busy});
 for (const language of LANGUAGES) {
@@ -257,7 +260,9 @@ $('connect').addEventListener('click', () => {
   if ($('connect').disabled) return;
   const attempt = ++connectionAttempt;
   feedback('connecting');
-  connection.connect($('code').value.trim(), currentLanguage.name).catch(error => {
+  connection.connect($('code').value.trim(), currentLanguage.name).then(() => {
+    if (attempt === connectionAttempt) void favoriteCache.refresh();
+  }).catch(error => {
     if (attempt !== connectionAttempt) return;
     connectionError = error?.code || 'connect'; renderConnection(); showError(error); refreshControls();
   });

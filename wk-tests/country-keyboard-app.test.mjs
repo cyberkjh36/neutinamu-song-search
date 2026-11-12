@@ -83,5 +83,38 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
   await t.test('playback controls retain their protocol',async()=>{
    $('remote-next').click();await wait(()=>calls.some(c=>c.op==='search'&&/:next$/.test(c.text)));await wait(()=>!$('remote-next').disabled);assert.equal(calls.filter(c=>c.op==='search'&&/:next$/.test(c.text)).length,1);
   });
+  await t.test('every PC join downloads all countries without opening favorites, and cached pages reserve on the current PC',async()=>{
+   const {IDBFactory}=await import('fake-indexeddb');
+   globalThis.indexedDB=new IDBFactory();
+   const file=JSON.parse(await readFile(new URL('../data/favorites/all.json',import.meta.url)));
+   const initial={...file,updatedAt:'2030-01-01T00:00:00Z'};
+   const extra={country:'ko',id:'NEWtest1234',title:'재접속 시험곡',count:999999,lastPlayed:'2030-01-02T00:00:00Z'};
+   const relay=globalThis.fetch, releases=[];
+   globalThis.fetch=(url,options)=>options.method==='POST'?relay(url,options):new Promise(resolve=>releases.push(data=>resolve(Response.json(data))));
+   try{
+    const start=async()=>{$('disconnect').click();$('connect').click();await wait(()=>!$('remote-play').disabled);};
+    choose('ko-KR');
+    await start();await wait(()=>releases.length===1);
+    assert.equal($('favorites-panel').hidden,true);
+    releases[0](initial);
+    await wait(()=>$('favorites-storage').textContent.includes(String(initial.rows.length)));
+    assert.match($('favorites-storage').textContent,/휴대폰에 저장된/);
+    await start();await wait(()=>releases.length===2);
+    const before=calls.filter(c=>c.op==='search').length;
+    $('favorites-open').click();
+    assert.ok($('favorites-list').children.length>0);
+    releases[1]({...initial,updatedAt:'2030-01-02T00:00:00Z',rows:[extra,...initial.rows]});
+    await wait(()=>$('favorites-list').children[0]?.children[1].children[0].textContent===extra.title);
+    typeNative('favorites-query','재접속');$('favorites-search').click();
+    assert.equal($('favorites-list').children.length,1);
+    assert.equal(calls.filter(c=>c.op==='search').length,before);
+    $('favorites-list').children[0].click();
+    await wait(()=>calls.some(c=>c.op==='search'&&c.text.includes(':NEWtest1234:재접속 시험곡')));
+    await wait(()=>!$('remote-play').disabled);
+    $('disconnect').click();$('favorites-open').click();
+    assert.ok($('favorites-list').children[0].disabled);
+    assert.equal(releases.length,2);
+   }finally{globalThis.fetch=relay;delete globalThis.indexedDB;}
+  });
  }finally{await events.fire('pagehide');}
 });

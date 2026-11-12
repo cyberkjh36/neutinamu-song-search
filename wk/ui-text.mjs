@@ -3,7 +3,7 @@
 import {LANGUAGES as SOURCE_LANGUAGES} from './labels.mjs?v=2.1';
 import {MESSAGES as SOURCE_MESSAGES} from './network-text.mjs?v=2.1';
 import {BROWSE_TEXT as SOURCE_BROWSE} from './browse-text.mjs?v=3.0';
-import {REMOTE_TEXT as SOURCE_REMOTE} from './remote-text.mjs?v=3.2';
+import {REMOTE_TEXT as SOURCE_REMOTE} from './remote-text.mjs?v=3.9';
 import {PLAYLIST_TEXT as SOURCE_PLAYLIST} from './playlist-text.mjs?v=3.5';
 import {QUEUE_TEXT as SOURCE_QUEUE} from './queue-text.mjs?v=2.9';
 import {CHROME_TEXT as SOURCE_CHROME} from './chrome-text.mjs?v=2.2';
