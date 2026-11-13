@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-13T10:21:06.155Z",
+  "updatedAt": "2026-11-13T18:00:35.283Z",
   "countries": [
     "ko"
   ],
@@ -104,6 +104,14 @@
     },
     {
       "country": "ko",
+      "id": "1cKc1rkZwf8",
+      "title": "PSY - 예술이야(IT'S ART) M/V",
+      "url": "https://www.youtube.com/watch?v=1cKc1rkZwf8",
+      "count": 4,
+      "lastPlayed": "2026-11-13T15:02:15.3716318Z"
+    },
+    {
+      "country": "ko",
       "id": "EAWHtXQpYX4",
       "title": "사랑 안해 (사랑 안해)",
       "url": "https://www.youtube.com/watch?v=EAWHtXQpYX4",
@@ -149,14 +157,6 @@
       "url": "https://www.youtube.com/watch?v=rGouJKSg6ao",
       "count": 4,
       "lastPlayed": "2026-10-30T12:52:59.7695296Z"
-    },
-    {
-      "country": "ko",
-      "id": "1cKc1rkZwf8",
-      "title": "PSY - 예술이야(IT'S ART) M/V",
-      "url": "https://www.youtube.com/watch?v=1cKc1rkZwf8",
-      "count": 3,
-      "lastPlayed": "2026-11-04T07:14:17.7525170Z"
     },
     {
       "country": "ko",
@@ -269,6 +269,38 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "O71zRU_sj4k",
+      "title": "세대를 아우르는 하모니🎵 이문세x김윤희 - 휘파람 | #판타스틱듀오 #FantasticDuo #SBSENTER",
+      "url": "https://www.youtube.com/watch?v=O71zRU_sj4k",
+      "count": 1,
+      "lastPlayed": "2026-11-13T15:30:57.5551638Z"
+    },
+    {
+      "country": "ko",
+      "id": "HD8HWD0Yo5g",
+      "title": "응급실(Emergency Room )(드라마'쾌걸춘향') - izi (KY.45117) / KY Karaoke",
+      "url": "https://www.youtube.com/watch?v=HD8HWD0Yo5g",
+      "count": 1,
+      "lastPlayed": "2026-11-13T15:24:36.2226049Z"
+    },
+    {
+      "country": "ko",
+      "id": "yfxS3tSgr7Y",
+      "title": "[TJ노래방] 슬픈연가 - 조은 / TJ Karaoke",
+      "url": "https://www.youtube.com/watch?v=yfxS3tSgr7Y",
+      "count": 1,
+      "lastPlayed": "2026-11-13T15:14:25.0229668Z"
+    },
+    {
+      "country": "ko",
+      "id": "BcOlMcpvYRI",
+      "title": "เหงา คิดถึง รอ - เสก โลโซ【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=BcOlMcpvYRI",
+      "count": 1,
+      "lastPlayed": "2026-11-13T13:10:59.8797789Z"
     },
     {
       "country": "ko",
