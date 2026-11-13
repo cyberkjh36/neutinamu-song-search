@@ -1,0 +1,50 @@
+name: P2 standalone device
+on:
+  push:
+    paths: ['p2-standalone/**', '.github/workflows/p2-standalone.yml']
+  pull_request:
+    paths: ['p2-standalone/**', '.github/workflows/p2-standalone.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Test command handling
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -Ip2-standalone/include p2-standalone/tests/core_test.cpp -o /tmp/p2-core-test
+          /tmp/p2-core-test
+      - name: Install pinned build tools
+        run: python -m pip install platformio==6.1.18 cryptography==45.0.7 certifi==2025.8.3
+      - name: Compile ESP32 firmware
+        run: pio run -d p2-standalone
+      - name: Check setup screen
+        run: |
+          npm install --prefix "$RUNNER_TEMP/p2-ui" --no-audit --no-fund playwright@1.56.1
+          "$RUNNER_TEMP/p2-ui/node_modules/.bin/playwright" install --with-deps chromium
+          mkdir -p p2-ui-screenshots
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/p2-ui/node_modules/playwright" P2_SCREENSHOTS="$GITHUB_WORKSPACE/p2-ui-screenshots" node p2-standalone/tests/setup_ui.cjs
+      - name: Package flash images
+        run: |
+          mkdir -p p2-device-build
+          cp p2-standalone/.pio/build/esp32dev/firmware.bin p2-device-build/
+          cp p2-standalone/.pio/build/esp32dev/bootloader.bin p2-device-build/
+          cp p2-standalone/.pio/build/esp32dev/partitions.bin p2-device-build/
+          cp "$HOME/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" p2-device-build/
+          cp p2-standalone/README_KO.md p2-device-build/
+          cp p2-standalone/FLASH_KO.txt p2-standalone/THIRD_PARTY.md p2-device-build/
+          git rev-parse HEAD > p2-device-build/SOURCE_COMMIT.txt
+          sha256sum p2-device-build/*.bin > p2-device-build/SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: P2-ESP32-EXPERIMENTAL
+          path: p2-device-build
+          retention-days: 30
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: P2-setup-screen-check
+          path: p2-ui-screenshots
+          retention-days: 7
