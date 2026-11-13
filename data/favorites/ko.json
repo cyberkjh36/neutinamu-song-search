@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-12T14:30:54.063Z",
+  "updatedAt": "2026-11-13T10:21:06.155Z",
   "countries": [
     "ko"
   ],
@@ -27,16 +27,16 @@
       "id": "rZ4ztl-HcMM",
       "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
       "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 10,
-      "lastPlayed": "2026-11-04T06:25:53.8048951Z"
+      "count": 11,
+      "lastPlayed": "2026-11-13T09:47:34.6210155Z"
     },
     {
       "country": "ko",
       "id": "zxVNnheiJ9M",
       "title": "코요태(Koyote) - 비몽 [뮤직플러스] | KBS 20020406 방송",
       "url": "https://www.youtube.com/watch?v=zxVNnheiJ9M",
-      "count": 9,
-      "lastPlayed": "2026-11-04T06:34:17.3540359Z"
+      "count": 10,
+      "lastPlayed": "2026-11-13T09:51:40.5154469Z"
     },
     {
       "country": "ko",
@@ -51,8 +51,16 @@
       "id": "biXhgq7zrSg",
       "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
       "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
+      "count": 8,
+      "lastPlayed": "2026-11-13T09:55:12.9171249Z"
+    },
+    {
+      "country": "ko",
+      "id": "tkgXCFQRyO8",
+      "title": "전유진(チョンユジン) - 모란동백(牡丹椿)｜한일톱텐쇼 45회",
+      "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
       "count": 7,
-      "lastPlayed": "2026-11-04T06:37:57.2449099Z"
+      "lastPlayed": "2026-11-13T09:59:51.3174674Z"
     },
     {
       "country": "ko",
@@ -64,11 +72,11 @@
     },
     {
       "country": "ko",
-      "id": "tkgXCFQRyO8",
-      "title": "전유진(チョンユジン) - 모란동백(牡丹椿)｜한일톱텐쇼 45회",
-      "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
+      "id": "CKrybgx_l3E",
+      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
+      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
       "count": 6,
-      "lastPlayed": "2026-11-04T06:42:42.2209054Z"
+      "lastPlayed": "2026-11-13T10:03:29.1537727Z"
     },
     {
       "country": "ko",
@@ -85,14 +93,6 @@
       "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
       "count": 5,
       "lastPlayed": "2026-11-04T06:46:19.6948191Z"
-    },
-    {
-      "country": "ko",
-      "id": "CKrybgx_l3E",
-      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
-      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
-      "count": 5,
-      "lastPlayed": "2026-11-01T08:30:03.4788119Z"
     },
     {
       "country": "ko",
@@ -192,6 +192,22 @@
     },
     {
       "country": "ko",
+      "id": "_bXarqHwbkY",
+      "title": "스탠딩 에그(Standing Egg) - 오래된 노래 / 가사(Lyrics)",
+      "url": "https://www.youtube.com/watch?v=_bXarqHwbkY",
+      "count": 2,
+      "lastPlayed": "2026-11-13T10:20:37.1793652Z"
+    },
+    {
+      "country": "ko",
+      "id": "23cipSExADA",
+      "title": "เพราะพี่รักจริง - หนึ่ง บีเคแบนด์ [OFFICIAL MV]",
+      "url": "https://www.youtube.com/watch?v=23cipSExADA",
+      "count": 2,
+      "lastPlayed": "2026-11-13T09:58:57.2626856Z"
+    },
+    {
+      "country": "ko",
       "id": "HrtgKlDOUkY",
       "title": "채희 - 바람의 소원 / 임영웅 추천곡 ♬가을에 듣기 좋은곡 WISH OF THE WIND (가요베스트 2018)",
       "url": "https://www.youtube.com/watch?v=HrtgKlDOUkY",
@@ -256,6 +272,30 @@
     },
     {
       "country": "ko",
+      "id": "rsnm_qSPivg",
+      "title": "[ROCK] 김수철 - 별리",
+      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
+      "count": 1,
+      "lastPlayed": "2026-11-13T10:14:58.2713191Z"
+    },
+    {
+      "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 1,
+      "lastPlayed": "2026-11-13T10:06:55.5916689Z"
+    },
+    {
+      "country": "ko",
+      "id": "AS9ufKuQIVs",
+      "title": "เขามัทรี - เอ็กซ์ ศุภกฤต - จอนนี่มิวสิค [ Official MV ]",
+      "url": "https://www.youtube.com/watch?v=AS9ufKuQIVs",
+      "count": 1,
+      "lastPlayed": "2026-11-13T10:03:04.9341058Z"
+    },
+    {
+      "country": "ko",
       "id": "iBs2ORAIMzQ",
       "title": "오늘 자 오현규 2골 1어시 ㄷㄷㄷ #SPOTVUEL",
       "url": "https://www.youtube.com/watch?v=iBs2ORAIMzQ",
@@ -317,14 +357,6 @@
       "url": "https://www.youtube.com/watch?v=J_067MeuFUw",
       "count": 1,
       "lastPlayed": "2026-11-01T09:06:20.6176474Z"
-    },
-    {
-      "country": "ko",
-      "id": "_bXarqHwbkY",
-      "title": "스탠딩 에그(Standing Egg) - 오래된 노래 / 가사(Lyrics)",
-      "url": "https://www.youtube.com/watch?v=_bXarqHwbkY",
-      "count": 1,
-      "lastPlayed": "2026-11-01T07:46:27.8693010Z"
     },
     {
       "country": "ko",
