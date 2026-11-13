@@ -20,6 +20,12 @@ try { $install.Invoke($null,@($target)); throw 'Unrecognized change was accepted
 if ($changed -ne (Get-FileHash $config).Hash) { throw 'Unrecognized change was overwritten' }
 [IO.File]::WriteAllBytes($config, $installed)
 $fixturePath = (Resolve-Path fixture-output).Path
+# Replace one metadata string of equal length in the test-only assembly.
+$fixtureDll = Join-Path $fixturePath 'LauncherFixture.dll'
+$latin = [Text.Encoding]::GetEncoding(28591)
+$image = $latin.GetString([IO.File]::ReadAllBytes($fixtureDll))
+if ($image.IndexOf("OpenGuestPanel") -lt 0) { throw 'Test entry missing' }
+[IO.File]::WriteAllBytes($fixtureDll, $latin.GetBytes($image.Replace('OpenGuestPanel','<.ctor>b__22_8')))
 $fixtureConfig = Join-Path $fixturePath 'LauncherFixture.runtimeconfig.json'
 $c = Get-Content -Raw $fixtureConfig | ConvertFrom-Json
 $c.runtimeOptions.configProperties | Add-Member -NotePropertyName STARTUP_HOOKS -NotePropertyValue $hook

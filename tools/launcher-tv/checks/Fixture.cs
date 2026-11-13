@@ -14,6 +14,18 @@ static class Fixture
 sealed class KaraokeForm : Form
 {
     readonly TableLayoutPanel header = new TableLayoutPanel { ColumnCount = 3 };
+    internal sealed class InternetSearchForm : Form { }
+    Form phoneSearch;
+    bool hostStarted;
+    // The Windows check renames this test-only method in the fixture metadata
+    // to the actual .83 click handler's compiler-generated name.
+    void OpenGuestPanel(object sender, EventArgs args)
+    {
+        phoneSearch = new InternetSearchForm();
+        phoneSearch.Shown += (_, _) => hostStarted = true;
+        phoneSearch.Show();
+    }
+
     public KaraokeForm()
     {
         var root = new TableLayoutPanel();
@@ -37,6 +49,8 @@ sealed class KaraokeForm : Form
                 if (button != null && child != null) break;
             }
             if (child == null || child.MainWindowTitle != "월드유튜브 · TV연결 설정" || button == null) throw new Exception("startup or TV button missing");
+            if (!hostStarted || phoneSearch == null || phoneSearch.IsDisposed || phoneSearch.Visible)
+                throw new Exception("The phone host was not started and hidden");
             File.WriteAllText("tv-child.pid", child.Id.ToString());
             child.CloseMainWindow();
             await Task.Delay(1200);
