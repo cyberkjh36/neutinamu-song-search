@@ -24,7 +24,14 @@ namespace Neutinamu.RoomLink
             }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new RoomForm());
+            bool first;
+            using(var instance=new Mutex(false,@"Local\Neutinamu.P2.RoomLink.FieldTest",out first)){
+                if(!first){
+                    MessageBox.Show("이미 열린 방 PC 연결 시험 창을 사용해 주세요.","느티나무 P2");
+                    return 0;
+                }
+                Application.Run(new RoomForm());
+            }
             return 0;
         }
     }
@@ -65,6 +72,8 @@ namespace Neutinamu.RoomLink
         const int TestSeconds=75;
         string phase;
         bool approvalSeen, approvalOutstanding, userStopped;
+        PairRecovery recovery;
+        Task<DevicePairingResult> outstandingWindowsPair;
         SynchronizationContext ui;
 
         bool selfTestPassed;
@@ -111,7 +120,7 @@ namespace Neutinamu.RoomLink
         internal RoomForm(bool smoke = false)
         {
 
-            Text = "느티나무 P2 · 방 PC 연결 시험 0.3";
+            Text = "느티나무 P2 · 방 PC 연결 시험 0.4";
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(590, 480);
             Size = new Size(720, 575);
@@ -155,7 +164,7 @@ namespace Neutinamu.RoomLink
                 selfTestPassed &= result.Text.Contains("WFD_PEER=") && !testing;
                 var wlan = await Task.Run(()=>WifiSurvey.ReadAsync(false, closing.Token));
                 selfTestPassed &= wlan.Report().Contains("TJ_WIFI=") && !String.IsNullOrEmpty(wlan.NextStep());
-                selfTestPassed &= PairApproval.CheckControls() && await TestTimeoutBehavior();
+                selfTestPassed &= PairApproval.CheckControls() && await TestTimeoutBehavior() && await PairRecovery.Check();
                 Close();
             };
         }
@@ -312,11 +321,27 @@ namespace Neutinamu.RoomLink
                 ? approvalSeen ? "승인 요청을 받았습니다. 시험 창의 안내와 해당 방 TV를 확인해 주세요."
                                : "승인 요청을 기다리는 중입니다. 요청이 도착하면 시험 프로그램에 표시됩니다."
                 : "페어링한 반주기와 무선 연결을 확인하는 중입니다.";
+            if(phase=="PAIR" && recovery?.Waiting==true)
+                message="Windows의 기존 연결 작업을 확인하고 있습니다. 새 승인 요청은 아직 보내지 않습니다.";
+            else if(phase=="PAIR" && recovery?.Requests==2 && !approvalSeen)
+                message="기존 연결을 확인한 뒤 한 번 더 요청했습니다. 승인 요청을 기다리는 중입니다.";
             int remaining=Math.Max(0,TestSeconds-(int)elapsed.Elapsed.TotalSeconds);
             result.Text=message+Environment.NewLine+"남은 시간 "+remaining+"초  ·  시험 중지 가능";
         }
 
-        async Task<DevicePairingResult> RequestPair(Peer peer,CancellationToken token)
+        static async Task<PairState> InspectPeer(DeviceInformation selected,CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            try{
+                var query=DeviceInformation.CreateFromIdAsync(selected.Id,new string[0],selected.Kind).AsTask(token);
+                var info=await PairWait.Until(query,token);
+                if(info==null || !String.Equals(info.Id,selected.Id,StringComparison.OrdinalIgnoreCase))return PairState.Unknown;
+                return info.Pairing.IsPaired ? PairState.Paired : info.Pairing.CanPair ? PairState.Available : PairState.NotReady;
+            }catch(OperationCanceledException){throw;}
+             catch(Exception){return PairState.Unknown;}
+        }
+
+        async Task<DevicePairingResultStatus> RequestPair(Peer peer,CancellationToken token)
         {
             var custom=peer.Info.Pairing.Custom;
             var config=new WiFiDirectConnectionParameters();
@@ -353,8 +378,14 @@ namespace Neutinamu.RoomLink
             };
             custom.PairingRequested+=handler;
             try {
-                var task=custom.PairAsync(kinds,DevicePairingProtectionLevel.Default,config).AsTask(token);
-                return await PairWait.Until(task,token);
+                token.ThrowIfCancellationRequested();
+                var operation=custom.PairAsync(kinds,DevicePairingProtectionLevel.Default,config);
+                var task=operation.AsTask();
+                outstandingWindowsPair=task;
+                using(token.Register(()=>{try{operation.Cancel();}catch(Exception){}})){
+                    var result=await PairWait.Until(task,token);
+                    return result.Status;
+                }
             } finally { custom.PairingRequested-=handler; }
         }
 
@@ -363,20 +394,30 @@ namespace Neutinamu.RoomLink
         {
             var peer=list.SelectedItem as Peer;
             if(testing || peer==null)return;
+            if(outstandingWindowsPair!=null && !outstandingWindowsPair.IsCompleted){
+                result.Text="WFD_PAIR=PREVIOUS_REQUEST_PENDING\r\n이 창에서 보낸 이전 요청을 Windows가 마무리하고 있습니다. 잠시 뒤 다시 눌러 주세요.";
+                return;
+            }
             if(MessageBox.Show(this,"이 방 반주기의 이름과 일치합니까?\r\n\r\n"+peer.Label,
                 "시험할 반주기 확인",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
             StopDiscovery();CancelSurvey();ui=SynchronizationContext.Current;
             testing=true;search.Enabled=connect.Enabled=list.Enabled=settings.Enabled=false;stopTest.Visible=true;
-            approvalSeen=approvalOutstanding=userStopped=false;promptError=null;phase="PAIR";elapsed.Restart();
+            approvalSeen=approvalOutstanding=userStopped=false;promptError=null;recovery=new PairRecovery();phase="PAIR";elapsed.Restart();
             using(var timeout=CancellationTokenSource.CreateLinkedTokenSource(closing.Token)){
                 activeAttempt=timeout;timeout.CancelAfter(TimeSpan.FromSeconds(TestSeconds));
                 progress.Start();RenderProgress();
                 try {
-                    if(!peer.PairedInterface && !peer.Info.Pairing.IsPaired){
-                        var pair=await RequestPair(peer,timeout.Token);
-                        if(pair.Status!=DevicePairingResultStatus.Paired && pair.Status!=DevicePairingResultStatus.AlreadyPaired){
-                            result.Text="WFD_PAIR="+pair.Status+"\r\nPAIR_REQUEST="+(approvalSeen?"RECEIVED":"NOT_RECEIVED")+
-                                "\r\n결과 복사를 눌러 보내주세요.";return;
+                    if(!peer.PairedInterface){
+                        var status=await recovery.Run(
+                            t=>InspectPeer(peer.Info,t),
+                            t=>RequestPair(peer,t),
+                            t=>Task.Delay(1500,t),timeout.Token);
+                        if(status!=DevicePairingResultStatus.Paired && status!=DevicePairingResultStatus.AlreadyPaired){
+                            string help=status==DevicePairingResultStatus.OperationAlreadyInProgress
+                                ? "Windows가 여전히 이 장치의 연결 또는 해제 작업을 처리 중입니다. 열린 시험 창과 장치 추가 창을 닫고 1분 뒤 한 번만 다시 시험해 주세요."
+                                : "결과 복사를 눌러 보내주세요.";
+                            result.Text="WFD_PAIR="+status+"\r\nPAIR_REQUEST="+(approvalSeen?"RECEIVED":"NOT_RECEIVED")+
+                                "\r\nPAIR_ATTEMPTS="+recovery.Requests+"  BUSY_CHECKS="+recovery.BusyChecks+"\r\n"+help;return;
                         }
                     }
                     phase="LINK";RenderProgress();
