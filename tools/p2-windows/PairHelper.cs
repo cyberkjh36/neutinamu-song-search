@@ -117,9 +117,17 @@ namespace Neutinamu.RoomLink
                 phase="LINK";Console.WriteLine("PHASE LINK");Console.Out.Flush();
                 using(var device=await WiFiDirectDevice.FromIdAsync(id)){
                     if(device==null || device.ConnectionStatus!=WiFiDirectConnectionStatus.Connected)return "WFD_LINK=NOT_CONNECTED";
+                    var endpoints=device.GetConnectionEndpointPairs();
                     bool hasEndpoint=false;
-                    foreach(var ep in device.GetConnectionEndpointPairs())if(ep.RemoteHostName!=null && ep.LocalHostName!=null){hasEndpoint=true;break;}
-                    return "WFD_LINK=CONNECTED\r\nENDPOINT_PAIR="+(hasEndpoint?"PRESENT":"MISSING")+"\r\n무선 연결 시험 결과입니다. HDMI 전환은 별도 단계입니다.";
+                    foreach(var endpoint in endpoints)
+                        if(endpoint.LocalHostName!=null && endpoint.RemoteHostName!=null){hasEndpoint=true;break;}
+                    if(!hasEndpoint)return "WFD_LINK=CONNECTED\r\nENDPOINT_PAIR=MISSING\r\nP2_REMOTE_TCP=NOT_TESTED";
+                    phase="REMOTE";Console.WriteLine("PHASE REMOTE");Console.Out.Flush();
+                    try{
+                        return await RemotePort.Check(RemotePort.Resolve(endpoints),()=>device.ConnectionStatus==WiFiDirectConnectionStatus.Connected);
+                    }catch(Exception ex){
+                        return RemotePort.LinkPrefix+"ERROR 0x"+ex.HResult.ToString("X8");
+                    }
                 }
             }catch(Exception ex){return "WFD_"+phase+"=ERROR 0x"+ex.HResult.ToString("X8")+"\r\nPAIR_REQUEST="+(requested?"RECEIVED":"NOT_RECEIVED");}
         }

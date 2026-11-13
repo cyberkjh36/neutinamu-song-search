@@ -123,7 +123,7 @@ namespace Neutinamu.RoomLink
         internal RoomForm(bool smoke = false)
         {
 
-            Text = "느티나무 P2 · 방 PC 연결 시험 0.5";
+            Text = "느티나무 P2 · 방 PC 연결 시험 0.6";
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(590, 480);
             Size = new Size(720, 575);
@@ -169,7 +169,7 @@ namespace Neutinamu.RoomLink
                 selfTestPassed &= result.Text.Contains("WFD_PEER=") && !testing;
                 var wlan = await Task.Run(()=>WifiSurvey.ReadAsync(false, closing.Token));
                 selfTestPassed &= wlan.Report().Contains("TJ_WIFI=") && !String.IsNullOrEmpty(wlan.NextStep());
-                selfTestPassed &= await PairRecovery.Check() && await TestFrozenWorker();
+                selfTestPassed &= await PairRecovery.Check() && await RemotePort.SelfTest() && await TestFrozenWorker();
                 Close();
             };
         }
@@ -306,6 +306,7 @@ namespace Neutinamu.RoomLink
 
         string EndReport(string outcome)
         {
+            if(phase=="REMOTE")return RemotePort.LinkPrefix+outcome+"\r\n결과 복사를 눌러 보내 주세요.";
             return "WFD_"+phase+"="+outcome+"\r\nPAIR_REQUEST="+(approvalSeen?"RECEIVED":"NOT_RECEIVED")+
                 "\r\nAPPROVAL_CLICKED="+(approvedHere?"YES":"NO")+"\r\n결과 복사를 눌러 보내주세요.";
         }
@@ -316,7 +317,8 @@ namespace Neutinamu.RoomLink
             int left=limitMs-(int)elapsed.ElapsedMilliseconds;
             if(left<=0){FinishWorker(EndReport("TIMEOUT"));return;}
             string message;
-            if(phase=="LINK")message="승인을 마쳤습니다. 반주기와의 무선 연결을 확인합니다.";
+            if(phase=="REMOTE")message="P2 리모컨 서비스에 접속하는 중입니다. 입력 전환 명령은 보내지 않습니다.";
+            else if(phase=="LINK")message="승인을 마쳤습니다. 반주기와의 무선 연결을 확인합니다.";
             else if(approval.Visible)message="승인 요청이 왔습니다. 이 창의 ‘연결 승인’을 눌러 주세요.";
             else if(approvedHere)message="승인을 눌렀습니다. Windows와 반주기의 응답을 기다립니다.";
             else if(phase=="BUSY")message="Windows가 기존 연결 작업을 처리하는 동안 기다립니다.";
@@ -340,6 +342,7 @@ namespace Neutinamu.RoomLink
             string mode=simulateHang?"--self-test-stalled-child":"--pair-worker";
             int parentId;
             using(var parent=Process.GetCurrentProcess())parentId=parent.Id;
+            if(!simulateHang)limitMs=75000;
             var ps=new ProcessStartInfo(Application.ExecutablePath,mode+" "+parentId){
                 UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,
                 StandardOutputEncoding=Encoding.UTF8
@@ -374,7 +377,8 @@ namespace Neutinamu.RoomLink
                     }
                     if(line.StartsWith("PHASE ",StringComparison.Ordinal)){
                         var next=line.Substring(6);
-                        if(next=="LINK" || next=="BUSY")phase=next;
+                        if(next=="REMOTE" && phase!="REMOTE"){phase=next;limitMs=15000;elapsed.Restart();}
+                        else if(next=="LINK" || next=="BUSY")phase=next;
                     }else if(line.StartsWith("PROMPT ",StringComparison.Ordinal)){
                         var fields=line.Split(' ');
                         if(fields.Length!=3 || !Enum.TryParse(fields[1],out DevicePairingKinds kind) ||
