@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>WorldKaraoke.TvLink</AssemblyName>
+    <Version>0.9.0</Version>
+  </PropertyGroup>
+</Project>

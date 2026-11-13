@@ -1,0 +1,61 @@
+name: Build launcher TV update
+on:
+  push:
+    branches: ['codex/wk-tv-room-control']
+    paths: ['tools/p2-windows/**', 'tools/launcher-tv/**', '.github/workflows/wk-launcher-tv.yml']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build room companion, launcher integration and single-file update
+        shell: pwsh
+        run: |
+          dotnet build tools/p2-windows/RoomLink.csproj -c Release -o output
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build tools/launcher-tv/hook/Hook.csproj -c Release -o output
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build tools/launcher-tv/setup/Setup.csproj -c Release -o setup-output "-p:PayloadDir=$PWD\output"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build tools/launcher-tv/checks/Fixture.csproj -c Release -o fixture-output
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Exercise the P2 companion on Windows
+        shell: pwsh
+        run: |
+          $p = Start-Process output/P2_Room_Link_Test.exe -ArgumentList '--self-test' -RedirectStandardError self-test.err -PassThru
+          if (!$p.WaitForExit(40000)) { $p.Kill(); throw 'Timed out' }
+          if ($p.ExitCode -ne 0) { Get-Content self-test.err; throw 'P2 self-test failed' }
+      - name: Verify installation, startup, settings and shutdown
+        shell: powershell
+        run: '& ./tools/launcher-tv/checks/verify.ps1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WorldKaraoke-TV-Update
+          path: setup-output/WorldKaraoke_TV_Update.exe
+          retention-days: 30
+  publish:
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: WorldKaraoke-TV-Update
+          path: field-test
+      - name: Publish verified update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f field-test/WorldKaraoke_TV_Update.exe
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Publish verified World Karaoke TV integration update'
+          git pull --rebase origin codex/wk-tv-room-control
+          git push origin HEAD:refs/heads/codex/wk-tv-room-control

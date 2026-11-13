@@ -1,0 +1,35 @@
+﻿$ErrorActionPreference = 'Stop'
+$target = (New-Item -ItemType Directory 'test room 한글').FullName
+$config = Join-Path $target 'WorldKaraokeYouTubeLauncher.runtimeconfig.json'
+Copy-Item tools/launcher-tv/checks/launcher-config.sample $config
+$setup = [Reflection.Assembly]::LoadFrom((Resolve-Path 'setup-output/WorldKaraoke_TV_Update.exe').Path)
+$install = $setup.GetType('Setup').GetMethod('Install', [Reflection.BindingFlags]'Static,NonPublic')
+$install.Invoke($null, @($target))
+$once = (Get-FileHash $config).Hash
+$install.Invoke($null, @($target))
+if ((Get-FileHash $config).Hash -ne $once) { throw 'Update was not idempotent' }
+if ((Get-FileHash "$config.before-tv-link").Hash -ne (Get-FileHash tools/launcher-tv/checks/launcher-config.sample).Hash) { throw 'Original config was not preserved' }
+$updated = Get-Content -Raw -Encoding UTF8 $config | ConvertFrom-Json
+$hook = $updated.runtimeOptions.configProperties.STARTUP_HOOKS
+if (!(Test-Path $hook)) { throw 'Hook missing' }
+$installed = [IO.File]::ReadAllBytes($config)
+$updated.runtimeOptions.tfm = 'changed'
+[IO.File]::WriteAllText($config, ($updated | ConvertTo-Json -Depth 10))
+$changed = (Get-FileHash $config).Hash
+try { $install.Invoke($null,@($target)); throw 'Unrecognized change was accepted' } catch [System.Management.Automation.MethodInvocationException] { }
+if ($changed -ne (Get-FileHash $config).Hash) { throw 'Unrecognized change was overwritten' }
+[IO.File]::WriteAllBytes($config, $installed)
+$fixturePath = (Resolve-Path fixture-output).Path
+$fixtureConfig = Join-Path $fixturePath 'LauncherFixture.runtimeconfig.json'
+$c = Get-Content -Raw $fixtureConfig | ConvertFrom-Json
+$c.runtimeOptions.configProperties | Add-Member -NotePropertyName STARTUP_HOOKS -NotePropertyValue $hook
+[IO.File]::WriteAllText($fixtureConfig, ($c | ConvertTo-Json -Depth 9))
+$process = Start-Process (Join-Path $fixturePath 'LauncherFixture.exe') -WorkingDirectory $target -PassThru
+if (!$process.WaitForExit(35000)) { $process.Kill(); throw 'Launcher integration timed out' }
+if (!(Test-Path (Join-Path $target 'tv-fixture.ok'))) {
+    Get-Content (Join-Path $target 'tv-fixture.error') -ErrorAction SilentlyContinue
+    throw 'Launch / settings / hide / second click check failed'
+}
+$childId = [int](Get-Content (Join-Path $target 'tv-child.pid'))
+Start-Sleep -Seconds 3
+if (Get-Process -Id $childId -ErrorAction SilentlyContinue) { throw 'Companion survived launcher exit' }

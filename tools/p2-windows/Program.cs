@@ -29,15 +29,26 @@ namespace Neutinamu.RoomLink
             }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            bool integrated = args.Length == 2 && args[0] == "--launcher";
+            using (var owner = integrated && Int32.TryParse(args[1],out int id) ? FindOwner(id) : null)
+            using (var request = owner == null ? null : EventWaitHandle.OpenExisting(@"Local\WorldKaraoke.TvSettings." + owner.Id))
+            {
+            if (integrated && owner == null) return 2;
             bool first;
             using(var instance=new Mutex(false,@"Local\Neutinamu.P2.RoomLink.FieldTest",out first)){
                 if(!first){
-                    MessageBox.Show("이미 열린 방 PC 연결 시험 창을 사용해 주세요.","느티나무 P2");
+                    MessageBox.Show("이미 TV연결이 실행 중입니다. 기존 손님 TV연결 창을 종료하고 런처의 TV 버튼을 눌러 주세요.","느티나무 P2");
                     return 0;
                 }
-                Application.Run(new RoomForm());
+                Application.Run(new RoomForm(false, owner, request));
+            }
             }
             return 0;
+        }
+        static Process FindOwner(int id)
+        {
+            try { return Process.GetProcessById(id); }
+            catch (ArgumentException) { return null; }
         }
     }
 
@@ -50,7 +61,7 @@ namespace Neutinamu.RoomLink
         public override string ToString() { return Label; }
     }
 
-    sealed class RoomForm : Form
+    sealed partial class RoomForm : Form
     {
         readonly ListBox list = new ListBox { Dock = DockStyle.Fill };
         readonly Button search = new Button { Text = "반주기 찾기", AutoSize = true };
@@ -128,6 +139,8 @@ namespace Neutinamu.RoomLink
                 Match("DIRECT-ab-printer") || !WifiSurvey.LayoutMatchesWindows() || Match("HomeWiFi") || Match("near-DIRECT-TJ-X") || Match(null)) return false;
             if(!GuestRelay.ValidJob(new string('a',32),"VIDEO") || GuestRelay.ValidJob(new string('a',32),"PLAY") ||
                GuestRelay.ValidJob("bad","SELECT"))return false;
+            if (!SameRoom("TJ_P2_1234567_7_B","TJ_P2_P0201234567_7_B") ||
+                SameRoom("TJ_P2_1234567_7_B","TJ_P2_7654321_7_B") || SameRoom(null,"other")) return false;
             var sample = new WifiSurvey { InterfacesRead=true };
             if (!sample.NextStep().Contains("USB") || !sample.Report().Contains("TJ_WIFI=UNKNOWN")) return false;
             sample.Adapters.Add("TEST"); sample.NetworksRead=true;
@@ -145,10 +158,10 @@ namespace Neutinamu.RoomLink
             }
         }
 
-        internal RoomForm(bool smoke = false)
+        internal RoomForm(bool smoke = false, Process owner = null, EventWaitHandle request = null)
         {
 
-            Text = "느티나무 P2 · 손님 TV연결 0.8";
+            Text = "느티나무 P2 · 손님 TV연결 0.9";
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(590, 480);
             Size = new Size(720, 575);
@@ -171,8 +184,9 @@ namespace Neutinamu.RoomLink
             layout.Controls.Add(keys,0,4);layout.Controls.Add(result,0,5);
             Controls.Add(layout);
             result.Text = "동글과 드라이버를 준비한 방 PC에서 실행하세요. 인터넷은 유선 LAN을 계속 사용합니다. 연결 시험 후 손님 리모컨 등록과 방 확인이 끝나면 영상선택 버튼이 열립니다.";
-            search.Click += (s,e) => StartDiscovery();
+            search.Click += (s,e) => { autoResume=false; StartDiscovery(); };
             stopTest.Click += (s,e) => {
+                autoResume=false;
                 var report=phase=="VIDEO_READY" ? "GUEST=READY\r\nTV_MENU=ENDED" : EndReport("CANCELLED");
                 FinishWorker(report);
             };
@@ -190,7 +204,13 @@ namespace Neutinamu.RoomLink
             list.SelectedIndexChanged += (s,e) => connect.Enabled = !testing && list.SelectedItem is Peer;
             connect.Click += (s,e) => TestLink();
             discoveryTimer.Tick += (s,e) => FinishDiscovery();
-            FormClosing += (s,e) => { FinishWorker(null);closing.Cancel(); CancelSurvey(); StopDiscovery(); };
+            if (owner != null) BindLauncher(owner, request);
+            FormClosing += (s,e) => {
+                if (launcher != null && !launcherEnded && e.CloseReason == CloseReason.UserClosing) {
+                    e.Cancel=true; Hide(); return;
+                }
+                launcherTimer?.Stop(); FinishWorker(null);closing.Cancel(); CancelSurvey(); StopDiscovery();
+            };
             if (smoke) Shown += async (s,e) => {
                 selfTestPassed = search.Enabled && !connect.Enabled && list.Items.Count == 0 && result.ReadOnly;
                 StartDiscovery(false);
@@ -378,6 +398,7 @@ namespace Neutinamu.RoomLink
             if(testing || peer==null)return;
             if(MessageBox.Show(this,"이 방 반주기의 이름과 일치합니까?\r\n\r\n"+peer.Label,
                 "시험할 반주기 확인",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)!=DialogResult.Yes)return;
+            autoResume=false;
             StopDiscovery();CancelSurvey();
             StartWorker(peer.Info.Id,peer.Label,peer.PairedInterface,false);
         }
@@ -394,6 +415,7 @@ namespace Neutinamu.RoomLink
                 StandardOutputEncoding=Encoding.UTF8
             };
             var child=new Process{StartInfo=ps};
+            connectingLabel=label;
             testing=true;worker=child;peerLabel=label;phase="PAIR";approvalSeen=approvedHere=false;
             stopTest.Visible=true;search.Enabled=list.Enabled=settings.Enabled=connect.Enabled=false;
             elapsed.Restart();progress.Start();RenderProgress();
@@ -424,7 +446,7 @@ namespace Neutinamu.RoomLink
                     if(line.StartsWith("PHASE ",StringComparison.Ordinal)){
                         var next=line.Substring(6);
                         if(next=="VIDEO_READY" && phase=="GUEST"){
-                            phase=next;elapsed.Restart();keys.Enabled=keys.Visible=true;stopTest.Text="연결 종료";
+                            phase=next;RememberConnectedRoom();elapsed.Restart();keys.Enabled=keys.Visible=true;stopTest.Text="연결 종료";
                             GuestRelay host=null;
                             host=new GuestRelay(SendGuestKey,status=>{
                                 if(guestRelay==host && testing){guestStatus=status;RenderProgress();}
@@ -446,6 +468,7 @@ namespace Neutinamu.RoomLink
                             FinishWorker(EndReport("UNSUPPORTED_PROMPT"));return;
                         }
                         approvalSeen=true;
+                        if(launcher!=null)ShowSettings();
                     }
                     RenderProgress();
                 }
@@ -455,6 +478,7 @@ namespace Neutinamu.RoomLink
         void FinishWorker(string report)
         {
             if(!testing)return;
+            retryAt=DateTime.UtcNow.AddSeconds(20);
             var old=worker;worker=null;testing=false;
             var host=guestRelay;guestRelay=null;host?.Stop();guestStatus=null;
             guestAcknowledgement?.TrySetResult(false);guestAcknowledgement=null;stopTest.Text="시험 중지";
@@ -494,7 +518,7 @@ namespace Neutinamu.RoomLink
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { discoveryTimer.Dispose(); progress.Dispose(); closing.Dispose(); }
+            if (disposing) { launcherTimer?.Dispose(); discoveryTimer.Dispose(); progress.Dispose(); closing.Dispose(); }
             base.Dispose(disposing);
         }
     }

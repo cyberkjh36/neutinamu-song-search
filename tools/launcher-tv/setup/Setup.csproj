@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>WorldKaraoke_TV_Update</AssemblyName>
+    <Version>0.9.0</Version>
+    <Product>월드유튜브 런처 TV연결 업데이트</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+    <EmbeddedResource Include="$(PayloadDir)\WorldKaraoke.TvLink.dll;$(PayloadDir)\P2_Room_Link_Test.exe;$(PayloadDir)\P2_Room_Link_Test.exe.config">
+      <LogicalName>%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>
