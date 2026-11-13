@@ -5,8 +5,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <LangVersion>latest</LangVersion>
     <AssemblyName>WorldKaraoke_TV_Update</AssemblyName>
-    <Version>0.9.0</Version>
-    <Product>월드유튜브 런처 TV연결 업데이트</Product>
+    <Version>0.10.0</Version>
+    <Product>월드유튜브 런처 TV연결 · 블루투스 번호 고정 업데이트</Product>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Web.Extensions" />

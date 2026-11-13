@@ -3,6 +3,22 @@ $target = (New-Item -ItemType Directory 'test room 한글').FullName
 $config = Join-Path $target 'WorldKaraokeYouTubeLauncher.runtimeconfig.json'
 Copy-Item tools/launcher-tv/checks/launcher-config.sample $config
 $setup = [Reflection.Assembly]::LoadFrom((Resolve-Path 'setup-output/WorldKaraoke_TV_Update.exe').Path)
+$btType = $setup.GetType('BluetoothCode')
+$btFlags = [Reflection.BindingFlags]'Static,NonPublic'
+$generate = $btType.GetMethod('NewCode', $btFlags)
+$valid = $btType.GetMethod('Valid', $btFlags)
+1..32 | ForEach-Object {
+    if ($generate.Invoke($null,@()) -notmatch '^[1-9][0-9]{5}$') { throw 'Invalid generated Bluetooth code' }
+}
+foreach ($bad in @('12345','1234567','012345','ABC123','１２３４５６')) {
+    if ($valid.Invoke($null,@($bad))) { throw 'Malformed Bluetooth code accepted' }
+}
+$apply = $btType.GetMethod('Apply', $btFlags)
+$inputs = [object[]]::new(2)
+$inputs[0] = [byte[]]::new(357376)
+$inputs[1] = '123456'
+try { $apply.Invoke($null,$inputs); throw 'Unsupported launcher build accepted' }
+catch [System.Management.Automation.MethodInvocationException] { }
 $install = $setup.GetType('Setup').GetMethod('Install', [Reflection.BindingFlags]'Static,NonPublic')
 $install.Invoke($null, @($target))
 $once = (Get-FileHash $config).Hash

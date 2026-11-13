@@ -13,9 +13,8 @@ using Microsoft.Win32;
 
 internal static class Setup
 {
-    const string Caption = "월드유튜브 런처 · TV연결 업데이트";
+    const string Caption = "월드유튜브 런처 · TV연결 · 블루투스 번호 고정 업데이트";
     const string MainName = "WorldKaraokeYouTubeLauncher";
-    const string MainHash = "cb576b719cce0f9fc477e43d2694c4571fc612acc5dbc50d50e6da9f6bcc5371";
     internal const string RuntimeHash = "6b9ee3cd3e3fb77d663625028b4825d76249b26cab7bbf508e53755b2d982b70";
     const string CloudHash = "495f9425a278fd5abe3cd8e6254cc934517a7f20d45c1e3a93b0981742325ca7";
     const string Hook = "WorldKaraoke.TvLink.dll";
@@ -40,16 +39,28 @@ internal static class Setup
                 }
             }
             string app = Path.Combine(Path.GetFullPath(root), "app");
-            if (!CheckFile(Path.Combine(app, MainName + ".dll"), MainHash) || !CheckFile(Path.Combine(app, "WorldKaraoke.CloudFavorites.dll"), CloudHash))
+            if (!CheckFile(Path.Combine(app, "WorldKaraoke.CloudFavorites.dll"), CloudHash))
                 throw new InvalidOperationException("이 업데이트는 월드유튜브 런처 1.3.57.83 설치본에 적용할 수 있습니다.");
             using (var instance = new Mutex(false, @"Local\WorldKaraoke.TvUpdate", out bool first))
             {
                 if (!first) return 1;
+                var settingsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "WorldKaraokeLauncher", "bluetooth-code.txt");
+                var number = BluetoothCode.Existing(app, settingsFile);
+                if (number == null)
+                {
+                    using (var dialog = new NumberDialog())
+                    {
+                        if (dialog.ShowDialog() != DialogResult.OK) return 1;
+                        number = dialog.Code;
+                    }
+                }
                 while (IsOpen(app))
                     if (MessageBox.Show("월드유튜브 런처와 기존 손님 TV연결 0.8 창을 종료한 뒤 ‘다시 시도’를 눌러 주세요.", Caption, MessageBoxButtons.RetryCancel) != DialogResult.Retry) return 1;
                 Install(app);
+                BluetoothCode.Install(app, settingsFile, number);
             }
-            MessageBox.Show("업데이트를 마쳤습니다. 평소 쓰던 WORLD KARAOKE 아이콘을 실행해 주세요.", Caption);
+            MessageBox.Show("블루투스 연결번호를 저장했습니다. 평소 쓰던 WORLD KARAOKE 아이콘을 실행해 주세요.", Caption);
             return 0;
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, Caption, MessageBoxButtons.OK, MessageBoxIcon.Error); return 1; }
@@ -121,7 +132,7 @@ internal static class Setup
         return Json.Serialize(data) == Json.Serialize(Json.DeserializeObject(originalText));
     }
 
-    static void WriteAtomically(string path, byte[] data)
+    internal static void WriteAtomically(string path, byte[] data)
     {
         var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
