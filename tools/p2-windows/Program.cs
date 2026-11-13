@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.WiFiDirect;
-using Windows.Foundation;
 
 namespace Neutinamu.RoomLink
 {
@@ -329,7 +328,7 @@ namespace Neutinamu.RoomLink
                 config.PreferenceOrderedConfigurationMethods.Add(method);
                 kinds|=WiFiDirectConnectionParameters.GetDevicePairingKinds(method);
             }
-            TypedEventHandler<DeviceInformationCustomPairing,DevicePairingRequestedEventArgs> handler=(sender,args)=>{
+            Windows.Foundation.TypedEventHandler<DeviceInformationCustomPairing,DevicePairingRequestedEventArgs> handler=(sender,args)=>{
                 var defer=args.GetDeferral();
                 try {
                     ui.Post(async ignored=>{
