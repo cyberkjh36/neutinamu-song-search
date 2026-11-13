@@ -46,12 +46,31 @@ $fixtureConfig = Join-Path $fixturePath 'LauncherFixture.runtimeconfig.json'
 $c = Get-Content -Raw $fixtureConfig | ConvertFrom-Json
 $c.runtimeOptions.configProperties | Add-Member -NotePropertyName STARTUP_HOOKS -NotePropertyValue $hook
 [IO.File]::WriteAllText($fixtureConfig, ($c | ConvertTo-Json -Depth 9))
-$process = Start-Process (Join-Path $fixturePath 'LauncherFixture.exe') -WorkingDirectory $target -PassThru
-if (!$process.WaitForExit(35000)) { $process.Kill(); throw 'Launcher integration timed out' }
-if (!(Test-Path (Join-Path $target 'tv-fixture.ok'))) {
-    Get-Content (Join-Path $target 'tv-fixture.error') -ErrorAction SilentlyContinue
-    throw 'Launch / settings / hide / second click check failed'
+function Test-Launcher {
+    Remove-Item (Join-Path $target 'tv-fixture.ok') -ErrorAction SilentlyContinue
+    $process = Start-Process (Join-Path $fixturePath 'LauncherFixture.exe') -WorkingDirectory $target -PassThru
+    if (!$process.WaitForExit(35000)) { $process.Kill(); throw 'Launcher integration timed out' }
+    if (!(Test-Path (Join-Path $target 'tv-fixture.ok'))) {
+        Get-Content (Join-Path $target 'tv-fixture.error') -ErrorAction SilentlyContinue
+        throw 'Launch / settings / hide / second click check failed'
+    }
+    $childId = [int](Get-Content (Join-Path $target 'tv-child.pid'))
+    Start-Sleep -Seconds 3
+    if (Get-Process -Id $childId -ErrorAction SilentlyContinue) { throw 'Companion survived launcher exit' }
 }
-$childId = [int](Get-Content (Join-Path $target 'tv-child.pid'))
-Start-Sleep -Seconds 3
-if (Get-Process -Id $childId -ErrorAction SilentlyContinue) { throw 'Companion survived launcher exit' }
+Test-Launcher
+# A .09 room only has ConfirmedP2. Test that migration starts silently with no
+# radio on the runner and still lets the operator explicitly open the TV panel.
+$reg = 'HKCU:\Software\WorldKaraokeLauncher\TvLink'
+New-Item -Path $reg -Force | Out-Null
+New-ItemProperty -Path $reg -Name ConfirmedP2 -PropertyType String -Value 'TJ_P2_1234567_7_B' -Force | Out-Null
+$env:WK_CHECK_REMEMBERED = '1'
+try {
+    Test-Launcher
+    # A removed or unavailable endpoint also stays in the background.
+    New-ItemProperty -Path $reg -Name ConfirmedEndpoint -PropertyType MultiString -Value @('TJ_P2_1234567_7_B', 'missing-test-endpoint', 'AEP') -Force | Out-Null
+    Test-Launcher
+} finally {
+    Remove-Item Env:\WK_CHECK_REMEMBERED -ErrorAction SilentlyContinue
+    Remove-Item $reg -Recurse
+}

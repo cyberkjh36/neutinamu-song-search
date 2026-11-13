@@ -34,14 +34,35 @@ namespace Neutinamu.RoomLink
             using (var request = owner == null ? null : FindRequest(owner.Id))
             {
                 if (integrated && (owner == null || request == null)) return 2;
-                using (var instance = new Mutex(false, @"Local\Neutinamu.P2.RoomLink.FieldTest", out bool first))
+                // On a quick launcher restart the previous companion is still exiting.
+                for (int attempt = 0; ; attempt++)
                 {
-                    if (!first)
+                    using (var instance = new Mutex(false, @"Local\Neutinamu.P2.RoomLink.FieldTest", out bool first))
                     {
-                        MessageBox.Show("이미 TV연결이 실행 중입니다. 기존 손님 TV연결 창을 종료하고 런처의 TV 버튼을 눌러 주세요.", "느티나무 P2");
-                        return 0;
+                        if (first)
+                        {
+                            using (var form = new RoomForm())
+                            {
+                                if (integrated) form.RunWithLauncher(owner, request);
+                                else Application.Run(form);
+                            }
+                            break;
+                        }
                     }
-                    Application.Run(new RoomForm(false, owner, request));
+                    if (!integrated)
+                    {
+                        MessageBox.Show("이미 TV연결이 실행 중입니다. 런처의 TV 버튼으로 설정을 열어 주세요.", "느티나무 P2");
+                        break;
+                    }
+                    if (owner.HasExited) break;
+                    if (request.WaitOne(250))
+                    {
+                        if (attempt < 8) { request.Set(); Thread.Sleep(250); }
+                        else
+                        {
+                            MessageBox.Show("기존 손님 TV연결 프로그램을 종료하면 런처가 자동으로 이어서 연결합니다.", "월드유튜브 TV연결");
+                        }
+                    }
                 }
             }
             return 0;
@@ -147,6 +168,8 @@ namespace Neutinamu.RoomLink
             if(!GuestRelay.ValidJob(new string('a',32),"VIDEO") || GuestRelay.ValidJob(new string('a',32),"PLAY") ||
                GuestRelay.ValidJob("bad","SELECT"))return false;
             if (!SameRoom("TJ_P2_1234567_7_B","TJ_P2_P0201234567_7_B") ||
+                !SameRoom("TJ_P2_1000644_7_B","DIRECT-TJ-2A1P0201000644") ||
+                SameRoom("TJ_P2_1000644_7_B","DIRECT-TJ-2A1P0201000645") ||
                 SameRoom("TJ_P2_1234567_7_B","TJ_P2_7654321_7_B") || SameRoom(null,"other")) return false;
             var sample = new WifiSurvey { InterfacesRead=true };
             if (!sample.NextStep().Contains("USB") || !sample.Report().Contains("TJ_WIFI=UNKNOWN")) return false;
@@ -165,7 +188,7 @@ namespace Neutinamu.RoomLink
             }
         }
 
-        internal RoomForm(bool smoke = false, Process owner = null, EventWaitHandle request = null)
+        internal RoomForm(bool smoke = false)
         {
 
             Text = "느티나무 P2 · 손님 TV연결 0.9";
@@ -211,7 +234,6 @@ namespace Neutinamu.RoomLink
             list.SelectedIndexChanged += (s,e) => connect.Enabled = !testing && list.SelectedItem is Peer;
             connect.Click += (s,e) => TestLink();
             discoveryTimer.Tick += (s,e) => FinishDiscovery();
-            if (owner != null) BindLauncher(owner, request);
             FormClosing += (s,e) => {
                 if (launcher != null && !launcherEnded && e.CloseReason == CloseReason.UserClosing) {
                     e.Cancel=true; Hide(); return;
@@ -385,7 +407,7 @@ namespace Neutinamu.RoomLink
             if(phase!="VIDEO_READY" && left<=0){FinishWorker(EndReport("TIMEOUT"));return;}
             string message;
             if(phase=="VIDEO_READY"){
-                result.Text=(guestStatus??"손님용 TV연결 준비 중")+Environment.NewLine+"이 방의 P2 리모컨이 연결됐습니다. 영상선택 → TV에서 HDMI INPUT으로 이동 → 선택을 누르세요."+
+                result.Text=(saveError==null?"":saveError+Environment.NewLine)+(guestStatus??"손님용 TV연결 준비 중")+Environment.NewLine+"이 방의 P2 리모컨이 연결됐습니다. 영상선택 → TV에서 HDMI INPUT으로 이동 → 선택을 누르세요."+
                     (lastKey==null?"":"\r\n마지막 버튼 신호를 보냈습니다. 실제 전환은 TV를 확인하세요.");
                 return;
             }
@@ -410,7 +432,7 @@ namespace Neutinamu.RoomLink
             StartWorker(peer.Info.Id,peer.Label,peer.PairedInterface,false);
         }
 
-        void StartWorker(string id,string label,bool paired,bool simulateHang)
+        void StartWorker(string id,string label,bool paired,bool simulateHang,bool resumeOnly=false)
         {
             if(testing)return;
             string mode=simulateHang?"--self-test-stalled-child":"--pair-worker";
@@ -422,14 +444,14 @@ namespace Neutinamu.RoomLink
                 StandardOutputEncoding=Encoding.UTF8
             };
             var child=new Process{StartInfo=ps};
-            connectingLabel=label;
+            connectingId=id; connectingInterface=paired;
             testing=true;worker=child;peerLabel=label;phase="PAIR";approvalSeen=approvedHere=false;
             stopTest.Visible=true;search.Enabled=list.Enabled=settings.Enabled=connect.Enabled=false;
             elapsed.Restart();progress.Start();RenderProgress();
             try{
                 child.Start();
                 _=ReadWorker(child);
-                Send(child,"START "+(paired?"INTERFACE":"AEP")+" "+PairHelper.Encode(id)+" "+PairHelper.Encode(label));
+                Send(child,"START "+(paired?"INTERFACE":resumeOnly?"RESUME_AEP":"AEP")+" "+PairHelper.Encode(id)+" "+PairHelper.Encode(label));
             }catch(Exception ex){FinishWorker("WFD_TEST=START_ERROR 0x"+ex.HResult.ToString("X8"));}
         }
 

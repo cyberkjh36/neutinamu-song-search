@@ -52,7 +52,8 @@ namespace Neutinamu.RoomLink
                 Console.WriteLine("PHASE APPROVED");Console.Out.Flush();
                 Thread.Sleep(Timeout.Infinite); // self-test worker only; no device calls
             }
-            var kind=fields[1]=="AEP" ? DeviceInformationKind.AssociationEndpoint :
+            bool resumeOnly=fields[1]=="RESUME_AEP";
+            var kind=(fields[1]=="AEP" || resumeOnly) ? DeviceInformationKind.AssociationEndpoint :
                      fields[1]=="INTERFACE" ? DeviceInformationKind.DeviceInterface : throw new FormatException();
             string id=Decode(fields[2]);
             string chosenName=Decode(fields[3]);
@@ -65,7 +66,9 @@ namespace Neutinamu.RoomLink
             int promptBusy=0;
             string phase="PAIR";
             try{
-                if(kind==DeviceInformationKind.AssociationEndpoint){
+                if(resumeOnly && !selected.Pairing.IsPaired)
+                    return "WFD_PAIR=NEEDS_APPROVAL\r\n런처의 TV 버튼에서 이 방 반주기를 선택하고 다시 연결해 주세요.";
+                if(kind==DeviceInformationKind.AssociationEndpoint && !resumeOnly){
                     var status=await recovery.Run(async token=>{
                         var info=await lookup();
                         if(info==null || !String.Equals(info.Id,id,StringComparison.OrdinalIgnoreCase))return PairState.Unknown;

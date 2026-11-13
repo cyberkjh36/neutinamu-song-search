@@ -21,7 +21,9 @@ namespace Neutinamu.RoomLink
         internal static string DeviceSerial(string label)
         {
             var m=Regex.Match((label??"").Trim(),@"^TJ_P2_(?:P020)?([0-9]{7})_[0-9]+_B$",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
-            return m.Success?"P020"+m.Groups[1].Value:null;
+            if (m.Success) return "P020"+m.Groups[1].Value;
+            var direct=Regex.Match((label??"").Trim(),@"^DIRECT-(?:[A-Z0-9]{2}-)?TJ-2A1(P020[0-9]{7})$",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
+            return direct.Success?direct.Groups[1].Value.ToUpperInvariant():null;
         }
 
         static string CurrentAddress(IPAddress local)
