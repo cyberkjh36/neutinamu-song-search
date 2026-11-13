@@ -2,7 +2,7 @@ import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PE
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.11';
+import {createRemoteUi} from './remote-ui.mjs?v=3.12';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.9';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
 import { KaraokeConnection } from './relay-client.mjs?v=3.11';

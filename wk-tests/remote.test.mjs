@@ -63,9 +63,11 @@ test('generic success, wrong acknowledgements and stale rooms cannot confirm a T
  }finally{await c.disconnect();}
 });
 
-test('touch control is hidden on old rooms, ignores double taps and keeps retries distinct from confirmation',async()=>{
+test('TV remains visible on old rooms, ignores double taps and keeps retries distinct from confirmation',async()=>{
  const h=harness(),b=h.$('remote-tv'),msg=h.$('remote-feedback');
- assert.ok(b.hidden&&b.disabled);h.connection.tvInputSupported=true;h.ui.render();assert.ok(!b.hidden&&!b.disabled);
+ assert.ok(!b.hidden&&b.disabled);
+ assert.equal(h.$('tv-availability').textContent,REMOTE_TEXT['ko-KR'].tvRoomWait);
+ h.connection.tvInputSupported=true;h.ui.render();assert.ok(!b.hidden&&!b.disabled);
  let release;const requests=[];
  h.connection.setTvInput=r=>{requests.push(r);return new Promise(resolve=>release=resolve);};
  const first=b.fire('click');await b.fire('click');assert.equal(requests.length,1);
@@ -90,4 +92,18 @@ test('queued HDMI requests are polled read-only and an uncertain manual retry on
   assert.equal(await c.setTvInput(nonce,true),'sent');
   assert.deepEqual(calls,['join','setTvInput','tvInputResult','tvInputResult']);
  }finally{await c.disconnect();}
+});
+
+test('TV control is present in QR HTML before JS; old room, loss of readiness and disconnect keep its label visible',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const html=await readFile(new URL('../wk/index.html',import.meta.url),'utf8');
+ const tag=html.match(/<button id="remote-tv"[^>]*>/)[0];
+ assert.ok(!/\bhidden\b/.test(tag));assert.match(tag,/aria-describedby="tv-availability"/);
+ const h=harness(),button=h.$('remote-tv'),status=h.$('tv-availability');
+ h.connection.state='idle';h.ui.render();assert.ok(!button.hidden&&button.disabled);assert.equal(status.textContent,REMOTE_TEXT['ko-KR'].connect);
+ await button.fire('click');assert.equal(h.calls.length,0);
+ h.connection.state='ready';h.ui.render();assert.equal(status.textContent,REMOTE_TEXT['ko-KR'].tvRoomWait);
+ h.connection.tvInputSupported=h.connection.tvMenuSupported=true;h.ui.render();assert.ok(!button.hidden&&!button.disabled);assert.ok(status.hidden);
+ h.connection.tvMenuSupported=h.connection.tvInputSupported=false;h.ui.render();assert.ok(!button.hidden&&button.disabled&&!status.hidden);
+ assert.ok(h.$('tv-menu').hidden);
 });

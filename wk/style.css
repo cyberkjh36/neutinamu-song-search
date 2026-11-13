@@ -85,7 +85,9 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 #remote-title{display:block}
 
 .remote-actions #remote-tv {grid-column:1 / -1;flex-direction:row;min-height:50px}
-.remote-actions #remote-tv[hidden] {display:none}
+.remote-actions #remote-tv:disabled {opacity:1;color:#eef5f5;background:#42575a;border-color:#61787c}
+#tv-availability {margin:8px 0 0}
+#tv-availability[hidden] {display:none}
 
 #tv-menu[hidden]{display:none}
 .tv-menu-actions{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:8px}

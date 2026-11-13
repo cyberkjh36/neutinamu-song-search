@@ -1,4 +1,4 @@
-import {REMOTE_TEXT} from './ui-text.mjs?v=3.11';
+import {REMOTE_TEXT} from './ui-text.mjs?v=3.12';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
@@ -20,8 +20,11 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
   const tv=$('remote-tv');
-  tv.hidden=!connection.tvInputSupported;
-  tv.disabled=tv.hidden||off;
+  tv.disabled=!connection.tvInputSupported||off;
+  const availability=$('tv-availability');
+  const tvHint=connected()?(connection.tvInputSupported?'':w.tvRoomWait):w.connect;
+  if(availability.textContent!==tvHint)availability.textContent=tvHint;
+  availability.hidden=!tvHint;
   $('remote-tv-label').textContent=w.tv;
   if(!connection.tvMenuSupported)menuOpen=false;
   $('tv-menu').hidden=!menuOpen;

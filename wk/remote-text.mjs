@@ -51,9 +51,22 @@ const menuWords={
  'zh-CN':['用方向键移到电视上的 HDMI INPUT，再点选择。','选择','指令已发送，请查看电视。'],
  'ja-JP':['テレビの HDMI INPUT に矢印を合わせて「選択」を押してください。','選択','信号を送りました。テレビをご確認ください。']
 };
+const tvRoomWait={
+ 'ko-KR':'PC 연결됨 · 이 방의 TV연결 준비 중입니다. 계속 회색이면 직원을 불러 주세요.',
+ 'th-TH':'เชื่อมต่อ PC แล้ว กำลังรอให้ทีวีห้องนี้พร้อม หากปุ่มยังเป็นสีเทา โปรดเรียกพนักงาน',
+ 'fil-PH':'Nakakonekta na sa PC. Hinihintay ang TV ng kuwarto. Kung kulay abo pa rin ang button, tawagin ang staff.',
+ 'vi-VN':'Đã kết nối PC. Đang chờ TV của phòng. Nếu nút vẫn màu xám, hãy gọi nhân viên.',
+ 'ne-NP':'पीसी जोडिएको छ। कोठाको टिभी तयार हुन बाँकी छ। बटन खैरो नै रहेमा कर्मचारीलाई बोलाउनुहोस्।',
+ 'mn-MN':'PC холбогдсон. Өрөөний зурагт бэлэн болохыг хүлээж байна. Товч саарал хэвээр байвал ажилтанд хандана уу.',
+ 'id-ID':'PC terhubung. Menunggu TV ruangan siap. Jika tombol tetap abu-abu, panggil petugas.',
+ 'lo-LA':'ເຊື່ອມຕໍ່ PC ແລ້ວ. ກຳລັງລໍຖ້າ TV ຂອງຫ້ອງ. ຖ້າປຸ່ມຍັງເປັນສີເທົາ ໃຫ້ເອີ້ນພະນັກງານ.',
+ 'my-MM':'PC ချိတ်ဆက်ပြီးပါပြီ။ အခန်းရှိ TV အဆင်သင့်ဖြစ်ရန် စောင့်နေသည်။ ခလုတ် မီးခိုးရောင်ဖြစ်နေသေးပါက ဝန်ထမ်းကို ခေါ်ပါ။',
+ 'zh-CN':'已连接电脑，正在等待本房间的电视就绪。若按钮一直是灰色，请联系工作人员。',
+ 'ja-JP':'PC に接続しました。この部屋のテレビの準備を待っています。ボタンが灰色のままならスタッフにお知らせください。'
+};
 export const REMOTE_TEXT = Object.fromEntries(Object.entries(rows).map(([lang,values]) => [lang, {
  ...Object.fromEntries(keys.map((key,i)=>[key,values[i]])),
  saved:storageText[lang][0], temporary:storageText[lang][1],
- tvMenuHelp:menuWords[lang][0], tvSelect:menuWords[lang][1], tvKeySent:menuWords[lang][2],
+ tvRoomWait:tvRoomWait[lang], tvMenuHelp:menuWords[lang][0], tvSelect:menuWords[lang][1], tvKeySent:menuWords[lang][2],
  tv:tvText[lang][0], tvConfirmed:tvText[lang][1], tvSent:tvText[lang][2], tvUnknown:tvText[lang][3]
 }]));

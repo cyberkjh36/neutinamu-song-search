@@ -119,7 +119,7 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
    }finally{globalThis.fetch=relay;delete globalThis.indexedDB;}
   });
   await t.test('TV control uses the existing browser room without an external guest app',async()=>{
-   assert.equal($('remote-tv').hidden,true);
+   assert.equal($('remote-tv').hidden,false);assert.equal($('remote-tv').disabled,true);
    roomTv=true;$('connect').click();await wait(()=>!$('remote-tv').hidden&&!$('remote-tv').disabled);
    choose('ko-KR');assert.equal($('remote-tv-label').textContent,'TV연결');
    $('remote-tv').click();await wait(()=>/버튼 신호를 보냈습니다/.test($('remote-feedback').textContent));
@@ -132,7 +132,7 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
     assert.equal(calls.filter(c=>c.op==='setTvInput').at(-1).input,action.toUpperCase());
    }
    assert.equal(calls.filter(c=>c.op==='setTvInput').length,4);
-   $('disconnect').click();assert.equal($('remote-tv').hidden,true);
+   $('disconnect').click();assert.equal($('remote-tv').hidden,false);assert.equal($('remote-tv').disabled,true);
   });
  }finally{await events.fire('pagehide');}
 });
