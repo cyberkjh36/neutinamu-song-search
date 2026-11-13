@@ -66,12 +66,12 @@ namespace Neutinamu.RoomLink
             return routes.OrderBy(r=>r.Local.AddressFamily==AddressFamily.InterNetwork?0:1).ToList();
         }
 
-        static async Task<string> Connect(IPAddress local,IPAddress remote,int port,int timeoutMs)
+        static async Task<string> Connect(IPAddress local,IPAddress remote,int port,int timeoutMs,Func<TcpClient,Task<string>> onConnected=null)
         {
             using(var socket=new TcpClient(local.AddressFamily))
             using(var timer=new CancellationTokenSource()){
                 // Use the local Wi-Fi Direct address for the device the user selected.
-                // Closing after the TCP handshake intentionally sends no application bytes.
+                // Only the chosen route may carry the guest session.
                 try{
                     socket.Client.Bind(new IPEndPoint(local,0));
                     var connect=socket.ConnectAsync(remote,port);
@@ -82,7 +82,9 @@ namespace Neutinamu.RoomLink
                         return "TIMEOUT";
                     }
                     await connect;
-                    return TransportReached;
+                    if(onConnected==null)return TransportReached;
+                    try{return TransportReached+"\r\n"+await onConnected(socket);}
+                    catch(Exception ex){return TransportReached+"\r\nTV_MENU=SESSION_ENDED 0x"+ex.HResult.ToString("X8");}
                 }catch(SocketException ex){
                     switch(ex.SocketErrorCode){
                         case SocketError.ConnectionRefused:return "REFUSED";
@@ -100,14 +102,18 @@ namespace Neutinamu.RoomLink
             try{await task.ConfigureAwait(false);}catch(Exception){}
         }
 
-        internal static async Task<string> Check(IEnumerable<DirectRoute> routes,Func<bool> stillConnected)
+        internal static async Task<string> Check(IEnumerable<DirectRoute> routes,Func<bool> stillConnected,string chosenName=null)
         {
             var results=new List<string>();
             foreach(var route in routes){
                 if(!stillConnected())return "WFD_LINK=DISCONNECTED\r\nP2_REMOTE_TCP=INCOMPLETE";
-                string outcome=await Connect(route.Local,route.Remote,P2RemotePort,4000);
-                if(outcome==TransportReached)return LinkPrefix+outcome+
-                    "\r\n리모컨 서비스 포트에 접속했습니다. 이 시험에서 등록 및 HDMI 전환 명령은 보내지 않습니다.";
+                Func<TcpClient,Task<string>> begin=null;
+                if(chosenName!=null)begin=socket=>{
+                    Console.WriteLine("PHASE GUEST");Console.Out.Flush();
+                    return VideoRemote.Open(socket,route.Local,chosenName,stillConnected);
+                };
+                string outcome=await Connect(route.Local,route.Remote,P2RemotePort,4000,begin);
+                if(outcome.StartsWith(TransportReached,StringComparison.Ordinal))return LinkPrefix+outcome;
                 if(!results.Contains(outcome))results.Add(outcome);
             }
             if(!stillConnected())return "WFD_LINK=DISCONNECTED\r\nP2_REMOTE_TCP=INCOMPLETE";

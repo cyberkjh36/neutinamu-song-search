@@ -74,6 +74,16 @@ namespace Neutinamu.RoomLink
         readonly System.Windows.Forms.Timer progress=new System.Windows.Forms.Timer { Interval=250 };
         readonly Stopwatch elapsed=new Stopwatch();
         readonly ApprovalPanel approval=new ApprovalPanel();
+        readonly FlowLayoutPanel keys=new FlowLayoutPanel {AutoSize=true, Dock=DockStyle.Fill, Visible=false};
+        string keyPending, lastKey;
+        void AddKey(string label,string key){
+            var button=new Button{Text=label,AutoSize=true};
+            button.Click+=(s,e)=>{
+                if(!testing || phase!="VIDEO_READY" || keyPending!=null)return;
+                keyPending=key;keys.Enabled=false;Send(worker,"KEY "+key);
+            };
+            keys.Controls.Add(button);
+        }
         Process worker;
         string phase, peerLabel;
         bool approvalSeen, approvedHere;
@@ -123,12 +133,12 @@ namespace Neutinamu.RoomLink
         internal RoomForm(bool smoke = false)
         {
 
-            Text = "느티나무 P2 · 방 PC 연결 시험 0.6";
+            Text = "느티나무 P2 · 방 PC 연결 시험 0.7";
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(590, 480);
             Size = new Size(720, 575);
             Font = new Font("Malgun Gothic", 11);
-            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 5, ColumnCount = 1 };
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 6, ColumnCount = 1 };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
@@ -140,12 +150,17 @@ namespace Neutinamu.RoomLink
             var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0, 8, 0, 8) };
             buttons.Controls.AddRange(new Control[] { search, connect, stopTest, settings, copy });
             layout.Controls.Add(buttons, 0, 2);
+            layout.RowStyles.Insert(4,new RowStyle(SizeType.AutoSize));
             layout.Controls.Add(approval, 0, 3);
-            layout.Controls.Add(result, 0, 4);
+            AddKey("영상선택","VIDEO");AddKey("◀ 왼쪽","LEFT");AddKey("오른쪽 ▶","RIGHT");AddKey("선택","SELECT");
+            layout.Controls.Add(keys,0,4);layout.Controls.Add(result,0,5);
             Controls.Add(layout);
-            result.Text = "동글과 드라이버를 준비한 방 PC에서 실행하세요. 인터넷은 유선 LAN을 계속 사용합니다. 이 도구는 Windows의 무선 연결을 시험하며 TV 메뉴나 예약곡을 조작하지 않습니다.";
+            result.Text = "동글과 드라이버를 준비한 방 PC에서 실행하세요. 인터넷은 유선 LAN을 계속 사용합니다. 연결 시험 후 손님 리모컨 등록과 방 확인이 끝나면 영상선택 버튼이 열립니다.";
             search.Click += (s,e) => StartDiscovery();
-            stopTest.Click += (s,e) => FinishWorker(EndReport("CANCELLED"));
+            stopTest.Click += (s,e) => {
+                var report=phase=="VIDEO_READY" ? "GUEST=READY\r\nTV_MENU=ENDED" : EndReport("CANCELLED");
+                FinishWorker(report);
+            };
             progress.Tick+=(s,e)=>RenderProgress();
             settings.Click += (s,e) => {
                 try { Process.Start(new ProcessStartInfo("ms-settings:network-wifi") { UseShellExecute=true }); }
@@ -172,6 +187,7 @@ namespace Neutinamu.RoomLink
                 try{
                     if(!selfTestPassed)throw new Exception("startup or discovery checks");
                     if(!await PairRecovery.Check())throw new Exception("pair recovery");
+                    if(!await VideoRemote.SelfTest())throw new Exception("guest TV menu checks");
                     if(!await RemotePort.SelfTest())throw new Exception("remote service transport");
                     if(!await TestFrozenWorker())throw new Exception("stalled worker");
                 }catch(Exception ex){
@@ -313,6 +329,8 @@ namespace Neutinamu.RoomLink
 
         string EndReport(string outcome)
         {
+            if(phase=="GUEST")return RemotePort.LinkPrefix+"REACHABLE\r\nGUEST="+outcome;
+            if(phase=="VIDEO_READY")return "GUEST=READY\r\nTV_MENU="+outcome;
             if(phase=="REMOTE")return RemotePort.LinkPrefix+outcome+"\r\n결과 복사를 눌러 보내 주세요.";
             return "WFD_"+phase+"="+outcome+"\r\nPAIR_REQUEST="+(approvalSeen?"RECEIVED":"NOT_RECEIVED")+
                 "\r\nAPPROVAL_CLICKED="+(approvedHere?"YES":"NO")+"\r\n결과 복사를 눌러 보내주세요.";
@@ -324,7 +342,13 @@ namespace Neutinamu.RoomLink
             int left=limitMs-(int)elapsed.ElapsedMilliseconds;
             if(left<=0){FinishWorker(EndReport("TIMEOUT"));return;}
             string message;
-            if(phase=="REMOTE")message="P2 리모컨 서비스에 접속하는 중입니다. 입력 전환 명령은 보내지 않습니다.";
+            if(phase=="VIDEO_READY"){
+                result.Text="이 방의 P2 리모컨이 연결됐습니다. 영상선택 → TV에서 HDMI INPUT으로 이동 → 선택을 누르세요."+
+                    (lastKey==null?"":"\r\n마지막 버튼 신호를 보냈습니다. 실제 전환은 TV를 확인하세요.");
+                return;
+            }
+            if(phase=="GUEST")message="P2 손님 리모컨으로 등록하고 이 방의 반주기인지 확인합니다.";
+            else if(phase=="REMOTE")message="P2 리모컨 서비스에 접속하는 중입니다. 입력 전환 명령은 보내지 않습니다.";
             else if(phase=="LINK")message="승인을 마쳤습니다. 반주기와의 무선 연결을 확인합니다.";
             else if(approval.Visible)message="승인 요청이 왔습니다. 이 창의 ‘연결 승인’을 눌러 주세요.";
             else if(approvedHere)message="승인을 눌렀습니다. Windows와 반주기의 응답을 기다립니다.";
@@ -349,7 +373,7 @@ namespace Neutinamu.RoomLink
             string mode=simulateHang?"--self-test-stalled-child":"--pair-worker";
             int parentId;
             using(var parent=Process.GetCurrentProcess())parentId=parent.Id;
-            if(!simulateHang)limitMs=75000;
+            if(!simulateHang)limitMs=75000;keyPending=lastKey=null;
             var ps=new ProcessStartInfo(Application.ExecutablePath,mode+" "+parentId){
                 UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,
                 StandardOutputEncoding=Encoding.UTF8
@@ -361,7 +385,7 @@ namespace Neutinamu.RoomLink
             try{
                 child.Start();
                 _=ReadWorker(child);
-                Send(child,"START "+(paired?"INTERFACE":"AEP")+" "+PairHelper.Encode(id));
+                Send(child,"START "+(paired?"INTERFACE":"AEP")+" "+PairHelper.Encode(id)+" "+PairHelper.Encode(label));
             }catch(Exception ex){FinishWorker("WFD_TEST=START_ERROR 0x"+ex.HResult.ToString("X8"));}
         }
 
@@ -384,8 +408,13 @@ namespace Neutinamu.RoomLink
                     }
                     if(line.StartsWith("PHASE ",StringComparison.Ordinal)){
                         var next=line.Substring(6);
-                        if(next=="REMOTE" && phase!="REMOTE"){phase=next;limitMs=15000;elapsed.Restart();}
+                        if(next=="VIDEO_READY" && phase=="GUEST"){
+                            phase=next;limitMs=180000;elapsed.Restart();keys.Enabled=keys.Visible=true;
+                        }else if((next=="REMOTE" || next=="GUEST") && next!=phase){phase=next;limitMs=15000;elapsed.Restart();}
                         else if(next=="LINK" || next=="BUSY")phase=next;
+                    }else if(line.StartsWith("KEY_SENT ",StringComparison.Ordinal)){
+                        if(phase!="VIDEO_READY" || line.Substring(9)!=keyPending){FinishWorker(EndReport("UNEXPECTED_REPLY"));return;}
+                        lastKey=keyPending;keyPending=null;keys.Enabled=true;elapsed.Restart();
                     }else if(line.StartsWith("PROMPT ",StringComparison.Ordinal)){
                         var fields=line.Split(' ');
                         if(fields.Length!=3 || !Enum.TryParse(fields[1],out DevicePairingKinds kind) ||
@@ -407,7 +436,7 @@ namespace Neutinamu.RoomLink
         {
             if(!testing)return;
             var old=worker;worker=null;testing=false;
-            progress.Stop();elapsed.Stop();approval.Clear();stopTest.Visible=false;
+            progress.Stop();elapsed.Stop();approval.Clear();stopTest.Visible=false;keys.Visible=false;keyPending=null;
             settings.Enabled=search.Enabled=list.Enabled=true;connect.Enabled=list.SelectedItem is Peer;
             if(report!=null)result.Text=report;
             // Kill only the child created for this attempt. Do not wait for the

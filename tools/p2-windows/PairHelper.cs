@@ -45,7 +45,7 @@ namespace Neutinamu.RoomLink
         {
             var first=await Console.In.ReadLineAsync();
             var fields=(first??"").Split(' ');
-            if(fields.Length!=3 || fields[0]!="START")throw new FormatException();
+            if(fields.Length!=4 || fields[0]!="START")throw new FormatException();
             if(simulateHang){
                 Console.WriteLine("PROMPT ConfirmOnly ");Console.Out.Flush();
                 if((await Console.In.ReadLineAsync())!="ALLOW ")return "WFD_TEST=DECLINED";
@@ -55,6 +55,7 @@ namespace Neutinamu.RoomLink
             var kind=fields[1]=="AEP" ? DeviceInformationKind.AssociationEndpoint :
                      fields[1]=="INTERFACE" ? DeviceInformationKind.DeviceInterface : throw new FormatException();
             string id=Decode(fields[2]);
+            string chosenName=Decode(fields[3]);
             if(id.Length==0 || id.Length>4096)throw new FormatException();
             Func<Task<DeviceInformation>> lookup=async()=>await DeviceInformation.CreateFromIdAsync(id,new string[0],kind);
             var selected=await lookup();
@@ -124,7 +125,7 @@ namespace Neutinamu.RoomLink
                     if(!hasEndpoint)return "WFD_LINK=CONNECTED\r\nENDPOINT_PAIR=MISSING\r\nP2_REMOTE_TCP=NOT_TESTED";
                     phase="REMOTE";Console.WriteLine("PHASE REMOTE");Console.Out.Flush();
                     try{
-                        return await RemotePort.Check(RemotePort.Resolve(endpoints),()=>device.ConnectionStatus==WiFiDirectConnectionStatus.Connected);
+                        return await RemotePort.Check(RemotePort.Resolve(endpoints),()=>device.ConnectionStatus==WiFiDirectConnectionStatus.Connected,chosenName);
                     }catch(Exception ex){
                         return RemotePort.LinkPrefix+"ERROR 0x"+ex.HResult.ToString("X8");
                     }
