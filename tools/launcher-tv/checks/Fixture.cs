@@ -30,8 +30,10 @@ sealed class KaraokeForm : Form
         throw new Exception("Settings visibility did not change. Requested " + visible + ", exited " + child.HasExited);
     }
 
-    [DllImport("user32.dll")]
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     static extern IntPtr FindWindow(string className, string title);
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr window, out int processId);
     const string SettingsTitle = "월드유튜브 · TV연결 설정";
 
     readonly TableLayoutPanel header = new TableLayoutPanel { ColumnCount = 3 };
@@ -69,10 +71,13 @@ sealed class KaraokeForm : Form
                 button = header.Controls.OfType<Button>().SingleOrDefault(b => b.Name == "WorldKaraokeTvSettings");
                 var windowHandle = FindWindow(null, SettingsTitle);
                 if (windowHandle != IntPtr.Zero && (!expectHidden || !IsWindowVisible(windowHandle)))
-                    child = Process.GetProcessesByName("P2_Room_Link_Test").FirstOrDefault(p => !p.HasExited);
+                {
+                    GetWindowThreadProcessId(windowHandle, out int pid);
+                    child = Process.GetProcessById(pid);
+                }
                 if (button != null && child != null) break;
             }
-            if (child == null || button == null) throw new Exception("startup or TV button missing");
+            if (child == null || button == null) throw new Exception($"startup failed: saved={expectHidden}, button={button != null}, processes={Process.GetProcessesByName("P2_Room_Link_Test").Length}, window={FindWindow(null,SettingsTitle)}");
             if (!hostStarted || phoneSearch == null || phoneSearch.IsDisposed || phoneSearch.Visible)
                 throw new Exception("The phone host was not started and hidden");
             File.WriteAllText("tv-child.pid", child.Id.ToString());
