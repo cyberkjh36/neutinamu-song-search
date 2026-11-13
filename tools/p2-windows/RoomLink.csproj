@@ -7,7 +7,7 @@
     <AssemblyName>P2_Room_Link_Test</AssemblyName>
     <RootNamespace>Neutinamu.RoomLink</RootNamespace>
     <AssemblyTitle>느티나무 P2 방 PC 연결 시험</AssemblyTitle>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
