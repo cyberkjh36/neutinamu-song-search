@@ -169,7 +169,14 @@ namespace Neutinamu.RoomLink
                 selfTestPassed &= result.Text.Contains("WFD_PEER=") && !testing;
                 var wlan = await Task.Run(()=>WifiSurvey.ReadAsync(false, closing.Token));
                 selfTestPassed &= wlan.Report().Contains("TJ_WIFI=") && !String.IsNullOrEmpty(wlan.NextStep());
-                selfTestPassed &= await PairRecovery.Check() && await RemotePort.SelfTest() && await TestFrozenWorker();
+                try{
+                    if(!selfTestPassed)throw new Exception("startup or discovery checks");
+                    if(!await PairRecovery.Check())throw new Exception("pair recovery");
+                    if(!await RemotePort.SelfTest())throw new Exception("remote service transport");
+                    if(!await TestFrozenWorker())throw new Exception("stalled worker");
+                }catch(Exception ex){
+                    selfTestPassed=false;Console.Error.WriteLine(ex.ToString());
+                }
                 Close();
             };
         }

@@ -134,7 +134,9 @@ namespace Neutinamu.RoomLink
                     if(count!=0)return false;
                 }
             }finally{listener.Stop();}
-            return await Connect(IPAddress.Loopback,IPAddress.Loopback,port,2000)=="REFUSED";
+            string closed=await Connect(IPAddress.Loopback,IPAddress.Loopback,port,8000);
+            if(closed!="REFUSED" && closed!="TIMEOUT")throw new InvalidOperationException("closed local port: "+closed);
+            return true;
         }
     }
 }

@@ -24,9 +24,9 @@ jobs:
       - name: Exercise startup and controls on Windows
         shell: pwsh
         run: |
-          $test = Start-Process -FilePath (Resolve-Path output/P2_Room_Link_Test.exe) -ArgumentList '--self-test' -PassThru
+          $test = Start-Process -FilePath (Resolve-Path output/P2_Room_Link_Test.exe) -ArgumentList '--self-test' -RedirectStandardError self-test-errors.txt -PassThru
           if (!$test.WaitForExit(30000)) { $test.Kill(); throw 'Windows UI check timed out' }
-          if ($test.ExitCode -ne 0) { throw "Windows UI check failed: $($test.ExitCode)" }
+          if ($test.ExitCode -ne 0) { Get-Content self-test-errors.txt; throw "Windows UI check failed: $($test.ExitCode)" }
       - name: Package the room PC test
         shell: pwsh
         run: |
