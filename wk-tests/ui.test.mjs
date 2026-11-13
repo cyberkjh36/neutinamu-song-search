@@ -66,6 +66,12 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal(sent.length,0);assert.equal($('send').disabled,true);
     });
     await t.test('room input strips nonnumeric characters',()=>{$('code').value='12x3456a789';$('code').fire('input');assert.equal($('code').value,'12345678');});
+    await t.test('localized room digits preserve the eight-digit room and leading zeros',()=>{
+      for(const input of ['๐๑๒๓๔๕๖๗','०१२३४५६७','໐໑໒໓໔໕໖໗','၀၁၂၃၄၅၆၇','０１２３４５６７','᠐᠑᠒᠓᠔᠕᠖᠗']){
+        $('code').value=input;$('code').fire('input');assert.equal($('code').value,'01234567');
+        assert.equal(readHandoff('#room='+encodeURIComponent(input)).room,'01234567');
+      }
+    });
     await t.test('invalid code is shown beside Connect in all eleven languages',async()=>{
       $('code').value='123';$('connect').fire('click');await tick();
       for(const language of LANGUAGES){choose(language.code);assert.equal($('connection-state').textContent,MESSAGES[language.code].errors.pairing);}

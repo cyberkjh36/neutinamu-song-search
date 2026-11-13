@@ -2,12 +2,12 @@ import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PE
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.12';
+import {createRemoteUi} from './remote-ui.mjs?v=3.13';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.9';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
-import { KaraokeConnection } from './relay-client.mjs?v=3.11';
+import { KaraokeConnection } from './relay-client.mjs?v=3.13';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
-import { needsChrome, readHandoff, chromeLinks } from './chrome-handoff.mjs?v=2.3';
+import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
 import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
 
@@ -255,7 +255,7 @@ $('chrome-open').addEventListener('click', event => {
   $('chrome-feedback').hidden = false;
   connectionAttempt++; void connection.disconnect();
 });
-$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g,'').slice(0,8); renderChromeHandoff(); renderSafariHandoff(); });
+$('code').addEventListener('input', () => { $('code').value = roomDigits($('code').value).replace(/\D/g,'').slice(0,8); renderChromeHandoff(); renderSafariHandoff(); });
 $('connect').addEventListener('click', () => {
   if ($('connect').disabled) return;
   const attempt = ++connectionAttempt;

@@ -10,11 +10,19 @@ export function needsChrome(navigator = {}) {
   return otherBrowser || !chrome;
 }
 
+const nativeDigits = ['๐๑๒๓๔๕๖๗๘๙','०१२३४५६७८९','໐໑໒໓໔໕໖໗໘໙','၀၁၂၃၄၅၆၇၈၉','᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙']
+  .join('').split('');
+const digitMap = new Map(nativeDigits.map((digit,index)=>[digit,String(index % 10)]));
+export function roomDigits(value) {
+  return Array.from(String(value ?? '').normalize('NFKC'), ch=>digitMap.get(ch) ?? ch).join('');
+}
+
 export function readHandoff(hash = '') {
-  if (/^#\d{8}$/.test(hash)) return {room:hash.slice(1),language:'',query:''};
+  const plain=roomDigits(hash.slice(1));
+  if (hash.startsWith('#') && /^\d{8}$/.test(plain)) return {room:plain,language:'',query:''};
   const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '');
   return {
-    room:/^\d{8}$/.test(params.get('room') || '') ? params.get('room') : '',
+    room:/^\d{8}$/.test(roomDigits(params.get('room'))) ? roomDigits(params.get('room')) : '',
     language:LOCALES.has(params.get('language')) ? params.get('language') : '',
     query:(params.get('query') || '').replace(/[\u0000-\u001f\u007f-\u009f]/g,'').slice(0,300)
   };

@@ -33,20 +33,29 @@ export class KaraokeConnection {
       this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
   }
-  heartbeat(generation){
+  refreshTvStatus(generation=this.generation){
+    if(generation!==this.generation || !['ready','sending'].includes(this.state))return Promise.reject(failure('disconnected'));
+    if(this.tvStatusRead)return this.tvStatusRead;
+    const read=this.call('ping',{},generation).then(reply=>{
+      if(generation!==this.generation)throw failure('disconnected');
+      const menu=reply.capabilities?.p2TvMenu===1, available=menu||reply.capabilities?.p2HdmiInput===1;
+      if(menu!==this.tvMenuSupported||available!==this.tvInputSupported){
+        this.tvMenuSupported=menu;this.tvInputSupported=available;this.change(this.state);
+      }
+      return available;
+    }).finally(()=>{if(this.tvStatusRead===read)this.tvStatusRead=null;});
+    this.tvStatusRead=read;return read;
+  }
+  heartbeat(generation,misses=0){
     this.timer=setTimeout(async()=>{
       if(generation!==this.generation)return;
-      try{
-        const reply=await this.call('ping',{},generation);
-        if(generation===this.generation){
-          const menu=reply.capabilities?.p2TvMenu===1;
-          const available=menu||reply.capabilities?.p2HdmiInput===1;
-          if(menu!==this.tvMenuSupported||available!==this.tvInputSupported){this.tvMenuSupported=menu;this.tvInputSupported=available;this.change(this.state);}
-          this.heartbeat(generation);
-        }
+      try{await this.refreshTvStatus(generation);if(generation===this.generation)this.heartbeat(generation);}
+      catch(e){
+        if(generation!==this.generation)return;
+        if(['connect','networkTimeout','response'].includes(e.code)&&misses<2){this.heartbeat(generation,misses+1);return;}
+        await this.disconnect();this.set('error',e.code);
       }
-      catch(e){if(generation===this.generation){await this.disconnect();this.set('error',e.code);}}
-    },this.pingMs);
+    },misses?Math.min(2000,this.pingMs):this.pingMs);
   }
   async browse(query,language){
     if(!this.browseSupported)throw failure('upgrade');
@@ -84,7 +93,7 @@ export class KaraokeConnection {
       // of the selected P2 input warrants 'confirmed'; a send alone is 'sent'.
       const payload={request,input};
       let reply=await this.call(checkOnly?'tvInputResult':'setTvInput',payload,generation);
-      const deadline=Date.now()+10000;
+      const deadline=Date.now()+30000;
       for(;;){
         if(reply.request!==request||reply.input!==payload.input)throw failure('response');
         if(['confirmed','sent','rejected'].includes(reply.status))return reply.status;
@@ -150,7 +159,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
+    this.generation++;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

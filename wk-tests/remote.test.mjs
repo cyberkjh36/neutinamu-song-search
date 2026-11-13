@@ -65,7 +65,7 @@ test('generic success, wrong acknowledgements and stale rooms cannot confirm a T
 
 test('TV remains visible on old rooms, ignores double taps and keeps retries distinct from confirmation',async()=>{
  const h=harness(),b=h.$('remote-tv'),msg=h.$('remote-feedback');
- assert.ok(!b.hidden&&b.disabled);
+ assert.ok(!b.hidden&&!b.disabled);
  assert.equal(h.$('tv-availability').textContent,REMOTE_TEXT['ko-KR'].tvRoomWait);
  h.connection.tvInputSupported=true;h.ui.render();assert.ok(!b.hidden&&!b.disabled);
  let release;const requests=[];
@@ -104,6 +104,40 @@ test('TV control is present in QR HTML before JS; old room, loss of readiness an
  await button.fire('click');assert.equal(h.calls.length,0);
  h.connection.state='ready';h.ui.render();assert.equal(status.textContent,REMOTE_TEXT['ko-KR'].tvRoomWait);
  h.connection.tvInputSupported=h.connection.tvMenuSupported=true;h.ui.render();assert.ok(!button.hidden&&!button.disabled);assert.ok(status.hidden);
- h.connection.tvMenuSupported=h.connection.tvInputSupported=false;h.ui.render();assert.ok(!button.hidden&&button.disabled&&!status.hidden);
+ h.connection.tvMenuSupported=h.connection.tvInputSupported=false;h.ui.render();assert.ok(!button.hidden&&!button.disabled&&!status.hidden);
  assert.ok(h.$('tv-menu').hidden);
+});
+
+test('each QR language refreshes a late P2 host on tap and sends the four menu keys once',async t=>{
+ for(const {code} of LANGUAGES)await t.test(code,async()=>{
+  const h=harness(),c=h.connection,seen=[];
+  h.setLanguage(code);
+  c.refreshTvStatus=async()=>{seen.push('ping');c.tvInputSupported=c.tvMenuSupported=true;return true;};
+  c.setTvInput=async(id,readOnly,key)=>{assert.match(id,/^[a-f0-9]{32}$/);assert.equal(readOnly,false);seen.push(key);return 'sent';};
+  for(const id of ['remote-tv','tv-left','tv-right','tv-select'])await h.$(id).fire('click');
+  assert.deepEqual(seen,['ping','VIDEO','LEFT','RIGHT','SELECT']);
+  assert.equal(h.$('remote-tv-label').textContent,REMOTE_TEXT[code].tv);
+  assert.equal(h.$('tv-select').textContent,REMOTE_TEXT[code].tvSelect);
+  assert.equal(h.$('remote-feedback').textContent,REMOTE_TEXT[code].tvKeySent);
+ });
+});
+test('no P2 host means a status check only, even for repeated taps',async()=>{
+ const h=harness();let resolve,reads=0;
+ h.connection.refreshTvStatus=()=>{reads++;return new Promise(r=>resolve=r);};
+ const done=h.$('remote-tv').fire('click');await h.$('remote-tv').fire('click');resolve(false);await done;
+ assert.equal(reads,1);assert.deepEqual(h.calls,[]);assert.ok(h.$('tv-menu').hidden);
+ assert.equal(h.$('remote-feedback').textContent,REMOTE_TEXT['ko-KR'].tvRoomWait);
+});
+test('a transient heartbeat failure recovers the same phone session',async()=>{
+ const calls=[];let pings=0;const c=new KaraokeConnection(null,()=>{},{pingMs:8,fetch:async(_,o)=>{
+  const b=JSON.parse(o.body);calls.push(b);
+  if(b.op==='ping'&&++pings===1)throw new TypeError('temporary network loss');
+  return Response.json({ok:true,server:'PC',...(b.op==='ping'?{capabilities:{p2TvMenu:1}}:{})});
+ }});
+ try{await c.connect('23456789','ไทย');
+  const end=Date.now()+1000;while(!c.tvMenuSupported&&Date.now()<end)await new Promise(r=>setTimeout(r,8));
+  assert.ok(c.tvMenuSupported);assert.equal(c.state,'ready');assert.ok(pings>=2);
+  assert.equal(calls.filter(x=>x.op==='join').length,1);assert.equal(calls.filter(x=>x.op==='leave').length,0);
+  assert.equal(new Set(calls.map(x=>x.key)).size,1);
+ }finally{await c.disconnect();}
 });

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {LANGUAGES} from '../wk/labels.mjs';
-import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.11';
+import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.13';
 
 const titles={
  'ko-KR':'사랑은 늘 도망가', 'th-TH':'เพลงรักของเรา', 'fil-PH':'Awit ng pag-ibig',

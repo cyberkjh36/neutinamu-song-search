@@ -51,22 +51,55 @@ const menuWords={
  'zh-CN':['用方向键移到电视上的 HDMI INPUT，再点选择。','选择','指令已发送，请查看电视。'],
  'ja-JP':['テレビの HDMI INPUT に矢印を合わせて「選択」を押してください。','選択','信号を送りました。テレビをご確認ください。']
 };
-const tvRoomWait={
- 'ko-KR':'PC 연결됨 · 이 방의 TV연결 준비 중입니다. 계속 회색이면 직원을 불러 주세요.',
- 'th-TH':'เชื่อมต่อ PC แล้ว กำลังรอให้ทีวีห้องนี้พร้อม หากปุ่มยังเป็นสีเทา โปรดเรียกพนักงาน',
- 'fil-PH':'Nakakonekta na sa PC. Hinihintay ang TV ng kuwarto. Kung kulay abo pa rin ang button, tawagin ang staff.',
- 'vi-VN':'Đã kết nối PC. Đang chờ TV của phòng. Nếu nút vẫn màu xám, hãy gọi nhân viên.',
- 'ne-NP':'पीसी जोडिएको छ। कोठाको टिभी तयार हुन बाँकी छ। बटन खैरो नै रहेमा कर्मचारीलाई बोलाउनुहोस्।',
- 'mn-MN':'PC холбогдсон. Өрөөний зурагт бэлэн болохыг хүлээж байна. Товч саарал хэвээр байвал ажилтанд хандана уу.',
- 'id-ID':'PC terhubung. Menunggu TV ruangan siap. Jika tombol tetap abu-abu, panggil petugas.',
- 'lo-LA':'ເຊື່ອມຕໍ່ PC ແລ້ວ. ກຳລັງລໍຖ້າ TV ຂອງຫ້ອງ. ຖ້າປຸ່ມຍັງເປັນສີເທົາ ໃຫ້ເອີ້ນພະນັກງານ.',
- 'my-MM':'PC ချိတ်ဆက်ပြီးပါပြီ။ အခန်းရှိ TV အဆင်သင့်ဖြစ်ရန် စောင့်နေသည်။ ခလုတ် မီးခိုးရောင်ဖြစ်နေသေးပါက ဝန်ထမ်းကို ခေါ်ပါ။',
- 'zh-CN':'已连接电脑，正在等待本房间的电视就绪。若按钮一直是灰色，请联系工作人员。',
- 'ja-JP':'PC に接続しました。この部屋のテレビの準備を待っています。ボタンが灰色のままならスタッフにお知らせください。'
+const tvStatusWords={
+ "ko-KR": [
+  "방 PC에서 P2 연결을 확인한 뒤 TV연결을 다시 누르세요.",
+  "다른 TV 명령을 처리 중입니다. 잠시 후 다시 누르세요."
+ ],
+ "th-TH": [
+  "ให้ตรวจสอบการเชื่อมต่อ P2 ที่ PC ในห้อง แล้วแตะ “เชื่อมต่อทีวี” อีกครั้ง",
+  "กำลังประมวลผลคำสั่งทีวีอื่น โปรดรอสักครู่แล้วแตะอีกครั้ง"
+ ],
+ "fil-PH": [
+  "Tingnan sa PC ng kuwarto kung nakakonekta ang P2, saka pindutin muli ang Ikonekta ang TV.",
+  "May ibang utos sa TV. Maghintay sandali at pindutin muli."
+ ],
+ "vi-VN": [
+  "Kiểm tra kết nối P2 trên PC trong phòng, rồi nhấn Kết nối TV lần nữa.",
+  "Đang xử lý lệnh TV khác. Hãy đợi một chút rồi nhấn lại."
+ ],
+ "ne-NP": [
+  "कोठाको पीसीमा P2 जडान जाँचेर फेरि टिभी जोड्नुहोस् थिच्नुहोस्।",
+  "टिभीको अर्को आदेश चल्दै छ। केही बेरपछि फेरि थिच्नुहोस्।"
+ ],
+ "mn-MN": [
+  "Өрөөний компьютерт P2 холбогдсон эсэхийг шалгаад зурагт холбох товчийг дахин дарна уу.",
+  "Зурагтын өөр командыг боловсруулж байна. Түр хүлээгээд дахин дарна уу."
+ ],
+ "id-ID": [
+  "Periksa sambungan P2 di PC ruangan, lalu ketuk Hubungkan TV lagi.",
+  "Perintah TV lain sedang diproses. Tunggu sebentar, lalu ketuk lagi."
+ ],
+ "lo-LA": [
+  "ກວດການເຊື່ອມຕໍ່ P2 ຢູ່ PC ໃນຫ້ອງ ແລ້ວກົດເຊື່ອມຕໍ່ໂທລະພາບອີກຄັ້ງ.",
+  "ກຳລັງດຳເນີນຄຳສັ່ງອື່ນ. ກະລຸນາລໍຖ້າ ແລ້ວກົດອີກຄັ້ງ."
+ ],
+ "my-MM": [
+  "အခန်းထဲရှိ PC တွင် P2 ချိတ်ဆက်ထားကြောင်း စစ်ဆေးပြီး တီဗီချိတ်ဆက်ရန် ထပ်နှိပ်ပါ။",
+  "တီဗီအတွက် အခြားအမိန့်ကို လုပ်ဆောင်နေသည်။ ခဏစောင့်ပြီး ထပ်နှိပ်ပါ။"
+ ],
+ "zh-CN": [
+  "请在包房电脑上检查 P2 连接，再点一次“连接电视”。",
+  "正在处理其他电视指令，请稍后再点一次。"
+ ],
+ "ja-JP": [
+  "部屋のPCでP2の接続を確認してから、もう一度「テレビに接続」を押してください。",
+  "ほかのテレビ操作を処理中です。少し待ってからもう一度押してください。"
+ ]
 };
 export const REMOTE_TEXT = Object.fromEntries(Object.entries(rows).map(([lang,values]) => [lang, {
  ...Object.fromEntries(keys.map((key,i)=>[key,values[i]])),
  saved:storageText[lang][0], temporary:storageText[lang][1],
- tvRoomWait:tvRoomWait[lang], tvMenuHelp:menuWords[lang][0], tvSelect:menuWords[lang][1], tvKeySent:menuWords[lang][2],
+ tvRoomWait:tvStatusWords[lang][0], tvBusy:tvStatusWords[lang][1], tvMenuHelp:menuWords[lang][0], tvSelect:menuWords[lang][1], tvKeySent:menuWords[lang][2],
  tv:tvText[lang][0], tvConfirmed:tvText[lang][1], tvSent:tvText[lang][2], tvUnknown:tvText[lang][3]
 }]));

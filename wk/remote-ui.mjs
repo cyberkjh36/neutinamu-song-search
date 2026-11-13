@@ -1,4 +1,4 @@
-import {REMOTE_TEXT} from './ui-text.mjs?v=3.12';
+import {REMOTE_TEXT} from './ui-text.mjs?v=3.13';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
@@ -20,7 +20,7 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
   const tv=$('remote-tv');
-  tv.disabled=!connection.tvInputSupported||off;
+  tv.disabled=off;
   const availability=$('tv-availability');
   const tvHint=connected()?(connection.tvInputSupported?'':w.tvRoomWait):w.connect;
   if(availability.textContent!==tvHint)availability.textContent=tvHint;
@@ -54,24 +54,34 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   finally{if(g===connection.generation)pending=false;render();}
  });
  async function pressTv(input){
-  if(pending||blocked()||connection.state!=='ready'||!connection.tvInputSupported)return;
-  const g=connection.generation, retryKey='tv:'+input;
-  const checkOnly=retries.has(retryKey);
-  if(!checkOnly)retries.set(retryKey,requestId());
-  if(input==='VIDEO')menuOpen=true;
+  if(pending||blocked()||connection.state!=='ready')return;
+  const g=connection.generation;
+  let retryKey,checkOnly=false;
   pending=true;controlStatus='working';render();
   try{
+   if(!input){
+    if(!connection.tvInputSupported){
+     const available=await connection.refreshTvStatus();
+     if(g!==connection.generation)return;
+     if(!available){controlStatus='tvRoomWait';return;}
+    }
+    input=connection.tvMenuSupported?'VIDEO':'HDMI_INPUT';
+   }
+   retryKey='tv:'+input;
+   checkOnly=retries.has(retryKey);
+   if(!checkOnly)retries.set(retryKey,requestId());
+   if(input==='VIDEO'){menuOpen=true;render();}
    const status=await connection.setTvInput(retries.get(retryKey),checkOnly,input);
    if(g!==connection.generation)return;
    retries.delete(retryKey);
    controlStatus=status==='sent'&&connection.tvMenuSupported?'tvKeySent':({confirmed:'tvConfirmed',sent:'tvSent',rejected:'failed'}[status]||'tvUnknown');
   }catch(e){if(g===connection.generation){
-   if(e.code==='busy' || (checkOnly && e.code==='timeout'))retries.delete(retryKey);
-   controlStatus=e.code==='busy'?'failed':'tvUnknown';
+   if(retryKey&&(e.code==='busy'||(checkOnly&&e.code==='timeout')))retries.delete(retryKey);
+   controlStatus=!retryKey?'tvRoomWait':e.code==='busy'?'tvBusy':'tvUnknown';
   }}
   finally{if(g===connection.generation)pending=false;render();}
  }
- $('remote-tv').addEventListener('click',()=>{if(!$('remote-tv').disabled)return pressTv(connection.tvMenuSupported?'VIDEO':'HDMI_INPUT');});
+ $('remote-tv').addEventListener('click',()=>{if(!$('remote-tv').disabled)return pressTv();});
  for(const action of ['LEFT','RIGHT','SELECT']){
   const button=$('tv-'+action.toLowerCase());
   button.addEventListener('click',()=>{if(!button.disabled)return pressTv(action);});
