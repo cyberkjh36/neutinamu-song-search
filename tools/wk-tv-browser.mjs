@@ -36,6 +36,12 @@ const server=createServer(async(req,res)=>{
     let body=await readFile(path);
     // WebKit sends real CORS preflight requests. Use an isolated HTTP responder
     // on a second port so that both engines check CORS and no live room is used.
+    if(path.endsWith('/index.html')){
+      // Point the test copy's existing connect-src entry at the same test origin.
+      const originalOrigin=new URL(productionRelay).origin;
+      assert.ok(body.includes("connect-src 'self' "+originalOrigin));
+      body=body.toString().replace("connect-src 'self' "+originalOrigin,"connect-src 'self' "+new URL(testRelay).origin);
+    }
     if(path.endsWith('/relay-client.mjs')){
       assert.ok(body.includes(productionRelay));body=body.toString().replace(productionRelay,testRelay);
     }
