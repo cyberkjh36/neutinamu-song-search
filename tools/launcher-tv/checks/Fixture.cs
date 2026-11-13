@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,6 +14,22 @@ static class Fixture
 
 sealed class KaraokeForm : Form
 {
+    [DllImport("user32.dll")]
+    static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern bool PostMessage(IntPtr window, uint message, IntPtr command, IntPtr arg);
+
+    static async Task WaitForVisibility(Process child, IntPtr window, bool visible)
+    {
+        var watch = Stopwatch.StartNew();
+        while (!child.HasExited && watch.Elapsed < TimeSpan.FromSeconds(10))
+        {
+            if (IsWindowVisible(window) == visible) return;
+            await Task.Delay(150);
+        }
+        throw new Exception("Settings visibility did not change. Requested " + visible + ", exited " + child.HasExited);
+    }
+
     readonly TableLayoutPanel header = new TableLayoutPanel { ColumnCount = 3 };
     internal sealed class InternetSearchForm : Form { }
     Form phoneSearch;
@@ -52,15 +69,13 @@ sealed class KaraokeForm : Form
             if (!hostStarted || phoneSearch == null || phoneSearch.IsDisposed || phoneSearch.Visible)
                 throw new Exception("The phone host was not started and hidden");
             File.WriteAllText("tv-child.pid", child.Id.ToString());
-            child.CloseMainWindow();
-            await Task.Delay(1200);
-            child.Refresh();
-            if (child.HasExited || child.MainWindowHandle != IntPtr.Zero) throw new Exception("settings did not hide");
+            var window = child.MainWindowHandle;
+            if (!PostMessage(window, 0x0112, (IntPtr)0xf060, IntPtr.Zero)) throw new Exception("Cannot click close");
+            await WaitForVisibility(child, window, false);
+            if (child.HasExited) throw new Exception("Closing settings ended the companion");
             button.PerformClick();
-            await Task.Delay(1600);
-            child.Refresh();
-            if (child.HasExited || child.MainWindowHandle == IntPtr.Zero ||
-                Process.GetProcessesByName("P2_Room_Link_Test").Length != 1) throw new Exception("settings did not reopen in same instance");
+            await WaitForVisibility(child, window, true);
+            if (child.HasExited || Process.GetProcessesByName("P2_Room_Link_Test").Length != 1) throw new Exception("settings did not reopen in same instance");
             File.WriteAllText("tv-fixture.ok", "ok");
         }
         catch (Exception ex) { File.WriteAllText("tv-fixture.error", ex.ToString()); }

@@ -31,20 +31,27 @@ namespace Neutinamu.RoomLink
             Application.SetCompatibleTextRenderingDefault(false);
             bool integrated = args.Length == 2 && args[0] == "--launcher";
             using (var owner = integrated && Int32.TryParse(args[1],out int id) ? FindOwner(id) : null)
-            using (var request = owner == null ? null : EventWaitHandle.OpenExisting(@"Local\WorldKaraoke.TvSettings." + owner.Id))
+            using (var request = owner == null ? null : FindRequest(owner.Id))
             {
-            if (integrated && owner == null) return 2;
-            bool first;
-            using(var instance=new Mutex(false,@"Local\Neutinamu.P2.RoomLink.FieldTest",out first)){
-                if(!first){
-                    MessageBox.Show("이미 TV연결이 실행 중입니다. 기존 손님 TV연결 창을 종료하고 런처의 TV 버튼을 눌러 주세요.","느티나무 P2");
-                    return 0;
+                if (integrated && (owner == null || request == null)) return 2;
+                using (var instance = new Mutex(false, @"Local\Neutinamu.P2.RoomLink.FieldTest", out bool first))
+                {
+                    if (!first)
+                    {
+                        MessageBox.Show("이미 TV연결이 실행 중입니다. 기존 손님 TV연결 창을 종료하고 런처의 TV 버튼을 눌러 주세요.", "느티나무 P2");
+                        return 0;
+                    }
+                    Application.Run(new RoomForm(false, owner, request));
                 }
-                Application.Run(new RoomForm(false, owner, request));
-            }
             }
             return 0;
         }
+        static EventWaitHandle FindRequest(int id)
+        {
+            try { return EventWaitHandle.OpenExisting(@"Local\WorldKaraoke.TvSettings." + id); }
+            catch (WaitHandleCannotBeOpenedException) { return null; }
+        }
+
         static Process FindOwner(int id)
         {
             try { return Process.GetProcessById(id); }
