@@ -75,7 +75,20 @@ namespace Neutinamu.RoomLink
         readonly Stopwatch elapsed=new Stopwatch();
         readonly ApprovalPanel approval=new ApprovalPanel();
         readonly FlowLayoutPanel keys=new FlowLayoutPanel {AutoSize=true, Dock=DockStyle.Fill, Visible=false};
-        string keyPending, lastKey;
+        string keyPending, lastKey, guestStatus;
+        GuestRelay guestRelay;
+        TaskCompletionSource<bool> guestAcknowledgement;
+        async Task<bool> SendGuestKey(string action,CancellationToken token){
+            if(token.IsCancellationRequested || !testing || phase!="VIDEO_READY" || keyPending!=null)return false;
+            var ack=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            guestAcknowledgement=ack;keyPending=action;keys.Enabled=false;Send(worker,"KEY "+action);
+            try{
+                var finished=await Task.WhenAny(ack.Task,Task.Delay(3500,token));
+                if(finished==ack.Task)return await ack.Task;
+                if(testing)FinishWorker("TV_MENU=KEY_RESULT_UNKNOWN\r\n다시 연결해 주세요.");
+                return false;
+            }finally{if(guestAcknowledgement==ack)guestAcknowledgement=null;}
+        }
         void AddKey(string label,string key){
             var button=new Button{Text=label,AutoSize=true};
             button.Click+=(s,e)=>{
@@ -113,6 +126,8 @@ namespace Neutinamu.RoomLink
             if (!Match("DIRECT-TJ-2 A1P 0000000001") || !Match("TJ_P2_TEST") ||
                 !Match("DIRECT-ab-TJ_P2_test") || !Match(" TJ-P2-room ") || !Match("TJ P2") ||
                 Match("DIRECT-ab-printer") || !WifiSurvey.LayoutMatchesWindows() || Match("HomeWiFi") || Match("near-DIRECT-TJ-X") || Match(null)) return false;
+            if(!GuestRelay.ValidJob(new string('a',32),"VIDEO") || GuestRelay.ValidJob(new string('a',32),"PLAY") ||
+               GuestRelay.ValidJob("bad","SELECT"))return false;
             var sample = new WifiSurvey { InterfacesRead=true };
             if (!sample.NextStep().Contains("USB") || !sample.Report().Contains("TJ_WIFI=UNKNOWN")) return false;
             sample.Adapters.Add("TEST"); sample.NetworksRead=true;
@@ -133,7 +148,7 @@ namespace Neutinamu.RoomLink
         internal RoomForm(bool smoke = false)
         {
 
-            Text = "느티나무 P2 · 방 PC 연결 시험 0.7";
+            Text = "느티나무 P2 · 손님 TV연결 0.8";
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(590, 480);
             Size = new Size(720, 575);
@@ -340,10 +355,10 @@ namespace Neutinamu.RoomLink
         {
             if(!testing)return;
             int left=limitMs-(int)elapsed.ElapsedMilliseconds;
-            if(left<=0){FinishWorker(EndReport("TIMEOUT"));return;}
+            if(phase!="VIDEO_READY" && left<=0){FinishWorker(EndReport("TIMEOUT"));return;}
             string message;
             if(phase=="VIDEO_READY"){
-                result.Text="이 방의 P2 리모컨이 연결됐습니다. 영상선택 → TV에서 HDMI INPUT으로 이동 → 선택을 누르세요."+
+                result.Text=(guestStatus??"손님용 TV연결 준비 중")+Environment.NewLine+"이 방의 P2 리모컨이 연결됐습니다. 영상선택 → TV에서 HDMI INPUT으로 이동 → 선택을 누르세요."+
                     (lastKey==null?"":"\r\n마지막 버튼 신호를 보냈습니다. 실제 전환은 TV를 확인하세요.");
                 return;
             }
@@ -409,12 +424,17 @@ namespace Neutinamu.RoomLink
                     if(line.StartsWith("PHASE ",StringComparison.Ordinal)){
                         var next=line.Substring(6);
                         if(next=="VIDEO_READY" && phase=="GUEST"){
-                            phase=next;limitMs=180000;elapsed.Restart();keys.Enabled=keys.Visible=true;
+                            phase=next;elapsed.Restart();keys.Enabled=keys.Visible=true;stopTest.Text="연결 종료";
+                            GuestRelay host=null;
+                            host=new GuestRelay(SendGuestKey,status=>{
+                                if(guestRelay==host && testing){guestStatus=status;RenderProgress();}
+                            });
+                            guestRelay=host;_=host.Run();
                         }else if((next=="REMOTE" || next=="GUEST") && next!=phase){phase=next;limitMs=15000;elapsed.Restart();}
                         else if(next=="LINK" || next=="BUSY")phase=next;
                     }else if(line.StartsWith("KEY_SENT ",StringComparison.Ordinal)){
                         if(phase!="VIDEO_READY" || line.Substring(9)!=keyPending){FinishWorker(EndReport("UNEXPECTED_REPLY"));return;}
-                        lastKey=keyPending;keyPending=null;keys.Enabled=true;elapsed.Restart();
+                        lastKey=keyPending;keyPending=null;keys.Enabled=true;elapsed.Restart();guestAcknowledgement?.TrySetResult(true);
                     }else if(line.StartsWith("PROMPT ",StringComparison.Ordinal)){
                         var fields=line.Split(' ');
                         if(fields.Length!=3 || !Enum.TryParse(fields[1],out DevicePairingKinds kind) ||
@@ -436,6 +456,8 @@ namespace Neutinamu.RoomLink
         {
             if(!testing)return;
             var old=worker;worker=null;testing=false;
+            var host=guestRelay;guestRelay=null;host?.Stop();guestStatus=null;
+            guestAcknowledgement?.TrySetResult(false);guestAcknowledgement=null;stopTest.Text="시험 중지";
             progress.Stop();elapsed.Stop();approval.Clear();stopTest.Visible=false;keys.Visible=false;keyPending=null;
             settings.Enabled=search.Enabled=list.Enabled=true;connect.Enabled=list.SelectedItem is Peer;
             if(report!=null)result.Text=report;
