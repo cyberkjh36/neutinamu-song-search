@@ -27,13 +27,24 @@ export class KaraokeConnection {
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
-    try{const reply=await this.call('join',{name},generation);this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
+    try{const reply=await this.call('join',{name},generation);
+      this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
+      this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
+      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
   }
   heartbeat(generation){
     this.timer=setTimeout(async()=>{
       if(generation!==this.generation)return;
-      try{await this.call('ping',{},generation);if(generation===this.generation)this.heartbeat(generation);}
+      try{
+        const reply=await this.call('ping',{},generation);
+        if(generation===this.generation){
+          const menu=reply.capabilities?.p2TvMenu===1;
+          const available=menu||reply.capabilities?.p2HdmiInput===1;
+          if(menu!==this.tvMenuSupported||available!==this.tvInputSupported){this.tvMenuSupported=menu;this.tvInputSupported=available;this.change(this.state);}
+          this.heartbeat(generation);
+        }
+      }
       catch(e){if(generation===this.generation){await this.disconnect();this.set('error',e.code);}}
     },this.pingMs);
   }
@@ -59,6 +70,31 @@ export class KaraokeConnection {
         if(generation!==this.generation||this.state!=='sending')throw failure('disconnected');
         this.set('ready');
       }
+    }
+  }
+  async setTvInput(request,checkOnly=false,input='HDMI_INPUT'){
+    if(this.tvMenuSupported ? !['VIDEO','LEFT','RIGHT','SELECT'].includes(input) : input!=='HDMI_INPUT')throw failure('invalid');
+    if(!this.tvInputSupported) throw failure('upgrade');
+    if(this.state!=='ready') throw failure('busy');
+    if(typeof request!=='string'||!/^[a-f0-9]{32}$/.test(request)) throw failure('invalid');
+    const generation=this.generation;
+    this.set('sending');
+    try {
+      // The room host must deduplicate (room, phone, request). Only a read-back
+      // of the selected P2 input warrants 'confirmed'; a send alone is 'sent'.
+      const payload={request,input};
+      let reply=await this.call(checkOnly?'tvInputResult':'setTvInput',payload,generation);
+      const deadline=Date.now()+10000;
+      for(;;){
+        if(reply.request!==request||reply.input!==payload.input)throw failure('response');
+        if(['confirmed','sent','rejected'].includes(reply.status))return reply.status;
+        if(!['queued','processing'].includes(reply.status)||Date.now()>=deadline)throw failure('timeout');
+        await this.wait(300);
+        if(generation!==this.generation)throw failure('disconnected');
+        reply=await this.call('tvInputResult',payload,generation);
+      }
+    } finally {
+      if(generation===this.generation && this.state==='sending') this.set('ready');
     }
   }
   async favorites(query,page,language){
@@ -114,7 +150,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
+    this.generation++;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

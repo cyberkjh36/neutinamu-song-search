@@ -25,7 +25,35 @@ const storageText = {
  'zh-CN':['已保存在手机上的常唱歌曲','仅本次可用的常唱歌曲'],
  'ja-JP':['スマホに保存した愛唱曲','今回のみ利用できる愛唱曲']
 };
+const tvText = {
+ 'ko-KR':['TV연결','TV가 HDMI INPUT으로 전환됐습니다.','전환 신호를 보냈습니다. TV에서 PC 화면을 확인하세요.','전환 결과를 확인할 수 없습니다. TV 화면을 확인하세요.'],
+ 'th-TH':['เชื่อมต่อทีวี','ทีวีเปลี่ยนเป็น HDMI INPUT แล้ว','ส่งสัญญาณแล้ว โปรดดูหน้าจอ PC บนทีวี','ยืนยันผลไม่ได้ โปรดตรวจดูทีวี'],
+ 'fil-PH':['Ikonekta ang TV','Nakalipat na sa HDMI INPUT.','Naipadala ang utos. Tingnan ang screen ng PC sa TV.','Hindi makumpirma ang resulta. Tingnan ang TV.'],
+ 'vi-VN':['Kết nối TV','Đã chuyển sang HDMI INPUT.','Đã gửi lệnh. Hãy kiểm tra hình ảnh PC trên TV.','Chưa xác nhận được kết quả. Hãy kiểm tra TV.'],
+ 'ne-NP':['टिभी जोड्नुहोस्','टिभी HDMI INPUT मा बदलियो।','संकेत पठाइयो। टिभीमा पीसीको स्क्रिन हेर्नुहोस्।','परिणाम पुष्टि भएन। टिभी हेर्नुहोस्।'],
+ 'mn-MN':['Зурагт холбох','HDMI INPUT руу шилжлээ.','Дохио илгээлээ. Зурагтад PC-ийн дэлгэц гарсныг шалгана уу.','Үр дүнг баталгаажуулж чадсангүй. Зурагтаа шалгана уу.'],
+ 'id-ID':['Hubungkan TV','TV telah beralih ke HDMI INPUT.','Sinyal terkirim. Periksa tampilan PC di TV.','Hasil belum terkonfirmasi. Periksa TV.'],
+ 'lo-LA':['ເຊື່ອມຕໍ່ TV','ປ່ຽນເປັນ HDMI INPUT ແລ້ວ','ສົ່ງສັນຍານແລ້ວ. ກວດເບິ່ງຈໍ PC ໃນ TV.','ຍັງຢືນຢັນຜົນບໍ່ໄດ້. ກວດເບິ່ງ TV.'],
+ 'my-MM':['TV ချိတ်ဆက်ရန်','TV သည် HDMI INPUT သို့ ပြောင်းသွားပါပြီ။','အချက်ပြပို့ပြီးပါပြီ။ TV ပေါ်တွင် PC မျက်နှာပြင်ကို စစ်ဆေးပါ။','ရလဒ်ကို အတည်မပြုနိုင်ပါ။ TV ကို စစ်ဆေးပါ။'],
+ 'zh-CN':['连接电视','已切换至 HDMI INPUT。','已发送切换信号，请查看电视是否显示电脑画面。','无法确认切换结果，请查看电视。'],
+ 'ja-JP':['テレビ接続','HDMI INPUT に切り替わりました。','信号を送りました。テレビに PC の画面が映っているか確認してください。','切り替え結果を確認できません。テレビをご確認ください。']
+};
+const menuWords={
+ 'ko-KR':['TV에서 HDMI INPUT에 맞춘 뒤 선택을 누르세요.','선택','버튼 신호를 보냈습니다. TV 화면을 확인하세요.'],
+ 'th-TH':['เลื่อนไปที่ HDMI INPUT บนทีวี แล้วกดเลือก','เลือก','ส่งคำสั่งแล้ว โปรดดูหน้าจอทีวี'],
+ 'fil-PH':['Itapat sa HDMI INPUT sa TV at pindutin ang Piliin.','Piliin','Naipadala ang pindot. Tingnan ang TV.'],
+ 'vi-VN':['Chọn HDMI INPUT trên TV bằng phím mũi tên, rồi nhấn Chọn.','Chọn','Đã gửi lệnh. Hãy kiểm tra TV.'],
+ 'ne-NP':['टिभीमा HDMI INPUT मा लगेर छान्नुहोस्।','छान्नुहोस्','संकेत पठाइयो। टिभी हेर्नुहोस्।'],
+ 'mn-MN':['Сумтай товчоор HDMI INPUT дээр очоод сонгоно уу.','Сонгох','Командыг илгээлээ. Зурагтаа шалгана уу.'],
+ 'id-ID':['Arahkan ke HDMI INPUT di TV, lalu tekan Pilih.','Pilih','Perintah terkirim. Periksa TV.'],
+ 'lo-LA':['ເລື່ອນໄປ HDMI INPUT ໃນ TV ແລ້ວກົດເລືອກ.','ເລືອກ','ສົ່ງຄຳສັ່ງແລ້ວ. ເບິ່ງ TV.'],
+ 'my-MM':['TV ပေါ်တွင် HDMI INPUT သို့ ရွှေ့ပြီး ရွေးပါ။','ရွေးရန်','အမိန့်ပို့ပြီးပါပြီ။ TV ကို ကြည့်ပါ။'],
+ 'zh-CN':['用方向键移到电视上的 HDMI INPUT，再点选择。','选择','指令已发送，请查看电视。'],
+ 'ja-JP':['テレビの HDMI INPUT に矢印を合わせて「選択」を押してください。','選択','信号を送りました。テレビをご確認ください。']
+};
 export const REMOTE_TEXT = Object.fromEntries(Object.entries(rows).map(([lang,values]) => [lang, {
  ...Object.fromEntries(keys.map((key,i)=>[key,values[i]])),
- saved:storageText[lang][0], temporary:storageText[lang][1]
+ saved:storageText[lang][0], temporary:storageText[lang][1],
+ tvMenuHelp:menuWords[lang][0], tvSelect:menuWords[lang][1], tvKeySent:menuWords[lang][2],
+ tv:tvText[lang][0], tvConfirmed:tvText[lang][1], tvSent:tvText[lang][2], tvUnknown:tvText[lang][3]
 }]));

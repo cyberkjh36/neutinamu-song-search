@@ -1,12 +1,12 @@
-import {REMOTE_TEXT} from './ui-text.mjs?v=3.9';
+import {REMOTE_TEXT} from './ui-text.mjs?v=3.11';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()=>{},$=id=>document.getElementById(id),doc=document}){
  let generation=connection.generation,language=getLanguage(),pending=false,controlStatus='',favoriteStatus='',failed=false,rows=[],page=0,applied='',loaded=false;
- let displayedSnapshot, more=false, loadSequence=0;
+ let displayedSnapshot, more=false, loadSequence=0, menuOpen=false;
  const retries=new Map(),words=()=>REMOTE_TEXT[getLanguage()],connected=()=>['ready','sending'].includes(connection.state);
- function reset(){displayedSnapshot=undefined;more=false;generation=connection.generation;pending=false;controlStatus='';favoriteStatus='';failed=false;rows=[];page=0;applied='';loaded=false;retries.clear();$('favorites-list').replaceChildren();$('favorites-query').value='';$('favorites-panel').hidden=true;}
+ function reset(){menuOpen=false;displayedSnapshot=undefined;more=false;generation=connection.generation;pending=false;controlStatus='';favoriteStatus='';failed=false;rows=[];page=0;applied='';loaded=false;retries.clear();$('favorites-list').replaceChildren();$('favorites-query').value='';$('favorites-panel').hidden=true;}
  function render(){
   if(generation!==connection.generation)reset();
   if(cache?.snapshot && cache.snapshot!==displayedSnapshot && loaded && !pending && !$('favorites-panel').hidden){
@@ -19,8 +19,18 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   status.hidden=!status.textContent;
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
-  $('remote-feedback').textContent=!connected()?w.connect:!connection.controlSupported?w.upgrade:controlStatus?w[controlStatus]:'';
-  $('remote-feedback').classList.toggle('error',['failed','uncertain'].includes(controlStatus));
+  const tv=$('remote-tv');
+  tv.hidden=!connection.tvInputSupported;
+  tv.disabled=tv.hidden||off;
+  $('remote-tv-label').textContent=w.tv;
+  if(!connection.tvMenuSupported)menuOpen=false;
+  $('tv-menu').hidden=!menuOpen;
+  $('tv-menu-help').textContent=w.tvMenuHelp;
+  $('tv-select').textContent=w.tvSelect;
+  for(const id of ['tv-left','tv-right','tv-select'])$(id).disabled=!menuOpen||off;
+  tv.setAttribute('aria-expanded',String(menuOpen));
+  $('remote-feedback').textContent=!connected()?w.connect:controlStatus?w[controlStatus]:!connection.controlSupported?w.upgrade:'';
+  $('remote-feedback').classList.toggle('error',['failed','uncertain','tvUnknown'].includes(controlStatus));
   $('favorites-open').textContent=w.favorites;$('favorites-open').disabled=browseOff;
   $('favorites-open').setAttribute('aria-expanded',String(!$('favorites-panel').hidden));
   $('favorites-hint').textContent=!connected()?w.connect:!connection.favoritesSupported?w.upgrade:w.hint;
@@ -40,6 +50,29 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   catch(e){if(g===connection.generation)controlStatus=e.code==='upgrade'?'upgrade':'uncertain';}
   finally{if(g===connection.generation)pending=false;render();}
  });
+ async function pressTv(input){
+  if(pending||blocked()||connection.state!=='ready'||!connection.tvInputSupported)return;
+  const g=connection.generation, retryKey='tv:'+input;
+  const checkOnly=retries.has(retryKey);
+  if(!checkOnly)retries.set(retryKey,requestId());
+  if(input==='VIDEO')menuOpen=true;
+  pending=true;controlStatus='working';render();
+  try{
+   const status=await connection.setTvInput(retries.get(retryKey),checkOnly,input);
+   if(g!==connection.generation)return;
+   retries.delete(retryKey);
+   controlStatus=status==='sent'&&connection.tvMenuSupported?'tvKeySent':({confirmed:'tvConfirmed',sent:'tvSent',rejected:'failed'}[status]||'tvUnknown');
+  }catch(e){if(g===connection.generation){
+   if(e.code==='busy' || (checkOnly && e.code==='timeout'))retries.delete(retryKey);
+   controlStatus=e.code==='busy'?'failed':'tvUnknown';
+  }}
+  finally{if(g===connection.generation)pending=false;render();}
+ }
+ $('remote-tv').addEventListener('click',()=>{if(!$('remote-tv').disabled)return pressTv(connection.tvMenuSupported?'VIDEO':'HDMI_INPUT');});
+ for(const action of ['LEFT','RIGHT','SELECT']){
+  const button=$('tv-'+action.toLowerCase());
+  button.addEventListener('click',()=>{if(!button.disabled)return pressTv(action);});
+ }
  function show(catalog,keepButtons=false){
   const previous=new Map(keepButtons?rows.map(row=>[row.id,row]):[]);
   readCatalog(catalog);$('favorites-list').replaceChildren();rows=catalog.items.map(video=>{

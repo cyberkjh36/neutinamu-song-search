@@ -15,3 +15,79 @@ test('pending next blocks double tap; uncertain retry keeps exact nonce until ac
 test('disconnected or old PC shows guidance and disables actions',()=>{const h=harness();h.connection.controlSupported=false;h.connection.favoritesSupported=false;h.ui.render();assert.ok(h.$('remote-play').disabled&&h.$('favorites-open').disabled);assert.equal(h.$('remote-feedback').textContent,REMOTE_TEXT['ko-KR'].upgrade);h.connection.state='idle';h.connection.generation++;h.ui.render();assert.equal(h.$('remote-feedback').textContent,REMOTE_TEXT['ko-KR'].connect);assert.equal(h.$('favorites-list').children.length,0);});
 test('late favorite response from a previous room is discarded',async()=>{const h=harness();let resolve;h.connection.favorites=()=>new Promise(r=>resolve=r);h.$('favorites-open').fire('click');h.connection.generation++;h.connection.state='idle';h.ui.render();resolve(catalog);await tick();assert.equal(h.$('favorites-list').children.length,0);});
 test('favorite retry reuses reservation nonce and title; only successful PC ACK marks added',async()=>{const h=harness();let ok=false;h.connection.addVideo=async(...a)=>{h.calls.push(a);return{ok};};h.$('favorites-open').fire('click');await tick();const button=h.$('favorites-list').children[0];await button.fire('click');assert.equal(button.disabled,false);const first=h.calls.at(-1);ok=true;await button.fire('click');assert.deepEqual(h.calls.at(-1),first);assert.equal(button.disabled,true);});
+
+test('TV input uses the paired room and a dedicated operation, never a YouTube search',async()=>{
+ const calls=[];
+ const c=new KaraokeConnection(null,()=>{},{fetch:async(_,options)=>{
+  const b=JSON.parse(options.body);calls.push(b);
+  if(b.op==='join')return Response.json({ok:true,server:'Room PC',capabilities:{p2HdmiInput:1}});
+  return Response.json({ok:true,request:b.request,input:b.input,status:'sent'});
+ }});
+ try{
+  await c.connect('23456789','Phone');
+  assert.equal(await c.setTvInput(nonce),'sent');
+  assert.deepEqual(calls.map(x=>x.op),['join','setTvInput']);
+  assert.equal(calls[1].request,nonce);assert.equal(calls[1].input,'HDMI_INPUT');
+  assert.equal(calls[1].room,calls[0].room);assert.equal(calls[1].key,calls[0].key);
+ }finally{await c.disconnect();}
+ assert.equal(c.tvInputSupported,false);
+});
+
+test('legacy launchers and a PC name that looks like a feature cannot receive HDMI requests',async()=>{
+ const c=new KaraokeConnection(null,()=>{},{fetch:async()=>Response.json({ok:true,server:'WKQ1 WKS1 WKT1 WKC1 WKTV1 HDMI_INPUT'})});
+ try{
+  await c.connect('23456789','Phone');
+  assert.equal(c.tvInputSupported,false);
+  await assert.rejects(c.setTvInput(nonce),e=>e.code==='upgrade');
+ }finally{await c.disconnect();}
+});
+
+test('generic success, wrong acknowledgements and stale rooms cannot confirm a TV switch',async()=>{
+ let reply,delayed=false,release,requested;
+ const started=new Promise(r=>requested=r);
+ const c=new KaraokeConnection(null,()=>{},{fetch:async(_,options)=>{
+  const b=JSON.parse(options.body);
+  if(b.op==='join')return Response.json({ok:true,server:'PC',capabilities:{p2HdmiInput:1}});
+  if(b.op==='setTvInput'&&delayed){requested();await new Promise(r=>release=r);}
+  return Response.json({ok:true,...reply});
+ }});
+ try{
+  await c.connect('23456789','Phone');
+  for(const r of [{},{request:'bad',input:'HDMI_INPUT',status:'confirmed'},{request:nonce,input:'TV',status:'confirmed'}]){
+   reply=r;await assert.rejects(c.setTvInput(nonce),e=>e.code==='response');
+  }
+  delayed=true;reply={request:nonce,input:'HDMI_INPUT',status:'confirmed'};
+  const task=c.setTvInput(nonce);await started;
+  await c.disconnect();await c.connect('34567890','Phone');release();
+  await assert.rejects(task,e=>e.code==='disconnected');assert.equal(c.room,'34567890');
+ }finally{await c.disconnect();}
+});
+
+test('touch control is hidden on old rooms, ignores double taps and keeps retries distinct from confirmation',async()=>{
+ const h=harness(),b=h.$('remote-tv'),msg=h.$('remote-feedback');
+ assert.ok(b.hidden&&b.disabled);h.connection.tvInputSupported=true;h.ui.render();assert.ok(!b.hidden&&!b.disabled);
+ let release;const requests=[];
+ h.connection.setTvInput=r=>{requests.push(r);return new Promise(resolve=>release=resolve);};
+ const first=b.fire('click');await b.fire('click');assert.equal(requests.length,1);
+ release('sent');await first;assert.equal(msg.textContent,REMOTE_TEXT['ko-KR'].tvSent);
+ h.connection.setTvInput=async r=>{requests.push(r);throw Error('timeout');};
+ await b.fire('click');assert.equal(msg.textContent,REMOTE_TEXT['ko-KR'].tvUnknown);
+ h.connection.setTvInput=async r=>{requests.push(r);return 'confirmed';};
+ await b.fire('click');assert.equal(requests[1],requests[2]);assert.equal(msg.textContent,REMOTE_TEXT['ko-KR'].tvConfirmed);
+});
+
+test('queued HDMI requests are polled read-only and an uncertain manual retry only asks for the result',async()=>{
+ const calls=[];
+ const c=new KaraokeConnection(null,()=>{},{fetch:async(_,options)=>{
+  const b=JSON.parse(options.body);calls.push(b.op);
+  if(b.op==='join')return Response.json({ok:true,server:'PC',capabilities:{p2HdmiInput:1}});
+  const status=b.op==='setTvInput'?'queued':'sent';
+  return Response.json({ok:true,request:b.request,input:'HDMI_INPUT',status});
+ }});
+ try{
+  await c.connect('23456789','Phone');
+  assert.equal(await c.setTvInput(nonce),'sent');
+  assert.equal(await c.setTvInput(nonce,true),'sent');
+  assert.deepEqual(calls,['join','setTvInput','tvInputResult','tvInputResult']);
+ }finally{await c.disconnect();}
+});

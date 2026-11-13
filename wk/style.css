@@ -83,3 +83,11 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 #language-label{display:inline-block;vertical-align:middle}
 .remote-actions button span:not(.remote-icon){min-width:0;max-width:100%}
 #remote-title{display:block}
+
+.remote-actions #remote-tv {grid-column:1 / -1;flex-direction:row;min-height:50px}
+.remote-actions #remote-tv[hidden] {display:none}
+
+#tv-menu[hidden]{display:none}
+.tv-menu-actions{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:8px}
+.tv-menu-actions button{min-height:48px;white-space:pre-line}
+#tv-menu-help{white-space:pre-line}

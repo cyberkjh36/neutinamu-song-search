@@ -9,10 +9,12 @@ class E{
 const wait=async check=>{const end=Date.now()+5000;while(!check()){if(Date.now()>end)throw Error('UI did not settle');await new Promise(r=>setTimeout(r,10));}};
 for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_0 Safari'])test('full app native keyboard, explicit search, favorites and dictation fallback: '+device,async t=>{
  const html=await readFile(new URL('../wk/index.html',import.meta.url),'utf8'),elements=new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(x=>[x[1],new E()]));const $=id=>{assert.ok(elements.has(id),id);return elements.get(id);};$('favorites-panel').hidden=true;$('country-keyboard').hidden=true;$('query').maxLength=200;$('favorites-query').maxLength=160;
- const events=new E(),storage=new Map(),calls=[];
+ const events=new E(),storage=new Map(),calls=[];let roomTv=false;
  globalThis.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};globalThis.document={addEventListener(){},removeEventListener(){},body:new E(),documentElement:{},getElementById:$,querySelector:()=>new E(),createElement:()=>new E()};
  globalThis.location={protocol:'https:',hostname:'example.test',hash:'#12345678'};Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR',userAgent:device,platform:device.startsWith('iPhone')?'iPhone':'Linux',maxTouchPoints:1}});
- globalThis.fetch=async(u,o)=>{const body=JSON.parse(o.body);calls.push(body);return Response.json({ok:true,server:'WKQ1 WKS1 WKT1 WKC1 WKV1 TEST-PC',pending:false,result:true,catalog:{v:1,items:[{id:'abcdefghijk',title:'사랑 노래',channel:'3',duration:''}],error:null}});};
+ globalThis.fetch=async(u,o)=>{const body=JSON.parse(o.body);calls.push(body);
+  if(body.op==='setTvInput')return Response.json({ok:true,input:body.input,request:body.request,status:'sent'});
+  return Response.json({ok:true,...(roomTv?{capabilities:{p2TvMenu:1}}:{}),server:'WKQ1 WKS1 WKT1 WKC1 WKV1 TEST-PC',pending:false,result:true,catalog:{v:1,items:[{id:'abcdefghijk',title:'사랑 노래',channel:'3',duration:''}],error:null}});};
  globalThis.window={fetch:globalThis.fetch,crypto:globalThis.crypto,isSecureContext:true,addEventListener:events.addEventListener.bind(events)};
  const choose=code=>$('countries').children[LANGUAGES.findIndex(x=>x.code===code)].click();
  const typeNative=(id,value)=>{$(id).value=value;$(id).dispatchEvent(new Event('input'));};
@@ -115,6 +117,22 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
     assert.ok($('favorites-list').children[0].disabled);
     assert.equal(releases.length,2);
    }finally{globalThis.fetch=relay;delete globalThis.indexedDB;}
+  });
+  await t.test('TV control uses the existing browser room without an external guest app',async()=>{
+   assert.equal($('remote-tv').hidden,true);
+   roomTv=true;$('connect').click();await wait(()=>!$('remote-tv').hidden&&!$('remote-tv').disabled);
+   choose('ko-KR');assert.equal($('remote-tv-label').textContent,'TV연결');
+   $('remote-tv').click();await wait(()=>/버튼 신호를 보냈습니다/.test($('remote-feedback').textContent));
+   assert.equal($('tv-menu').hidden,false);
+   assert.equal(calls.filter(c=>c.op==='setTvInput').length,1);
+   const job=calls.find(c=>c.op==='setTvInput');
+   assert.equal(job.room,'12345678');assert.equal(job.input,'VIDEO');
+   for(const action of ['right','left','select']){
+    $('tv-'+action).click();await wait(()=>!$('tv-'+action).disabled);
+    assert.equal(calls.filter(c=>c.op==='setTvInput').at(-1).input,action.toUpperCase());
+   }
+   assert.equal(calls.filter(c=>c.op==='setTvInput').length,4);
+   $('disconnect').click();assert.equal($('remote-tv').hidden,true);
   });
  }finally{await events.fire('pagehide');}
 });
