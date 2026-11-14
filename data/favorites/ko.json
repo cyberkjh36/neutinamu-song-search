@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-13T18:00:35.283Z",
+  "updatedAt": "2026-11-14T10:05:36.298Z",
   "countries": [
     "ko"
   ],
@@ -192,6 +192,38 @@
     },
     {
       "country": "ko",
+      "id": "R05FtOb5Hz8",
+      "title": "[Lyrics Video] Seung-Chul Lee(이승철) - The western sky(서쪽 하늘)",
+      "url": "https://www.youtube.com/watch?v=R05FtOb5Hz8",
+      "count": 2,
+      "lastPlayed": "2026-11-14T10:05:06.0513900Z"
+    },
+    {
+      "country": "ko",
+      "id": "f5r7hUMLFaY",
+      "title": "다시 사랑한다면  - 도원경 | 잊혀지지 않는 명곡 리메이크",
+      "url": "https://www.youtube.com/watch?v=f5r7hUMLFaY",
+      "count": 2,
+      "lastPlayed": "2026-11-14T10:01:24.3565653Z"
+    },
+    {
+      "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 2,
+      "lastPlayed": "2026-11-14T09:56:41.4460598Z"
+    },
+    {
+      "country": "ko",
+      "id": "rsnm_qSPivg",
+      "title": "[ROCK] 김수철 - 별리",
+      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
+      "count": 2,
+      "lastPlayed": "2026-11-14T09:53:35.8423634Z"
+    },
+    {
+      "country": "ko",
       "id": "_bXarqHwbkY",
       "title": "스탠딩 에그(Standing Egg) - 오래된 노래 / 가사(Lyrics)",
       "url": "https://www.youtube.com/watch?v=_bXarqHwbkY",
@@ -304,22 +336,6 @@
     },
     {
       "country": "ko",
-      "id": "rsnm_qSPivg",
-      "title": "[ROCK] 김수철 - 별리",
-      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
-      "count": 1,
-      "lastPlayed": "2026-11-13T10:14:58.2713191Z"
-    },
-    {
-      "country": "ko",
-      "id": "j7IuU3wJ2pk",
-      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
-      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
-      "count": 1,
-      "lastPlayed": "2026-11-13T10:06:55.5916689Z"
-    },
-    {
-      "country": "ko",
       "id": "AS9ufKuQIVs",
       "title": "เขามัทรี - เอ็กซ์ ศุภกฤต - จอนนี่มิวสิค [ Official MV ]",
       "url": "https://www.youtube.com/watch?v=AS9ufKuQIVs",
@@ -357,22 +373,6 @@
       "url": "https://www.youtube.com/watch?v=UFwqT9Epxkc",
       "count": 1,
       "lastPlayed": "2026-11-06T04:42:44.7852680Z"
-    },
-    {
-      "country": "ko",
-      "id": "R05FtOb5Hz8",
-      "title": "[Lyrics Video] Seung-Chul Lee(이승철) - The western sky(서쪽 하늘)",
-      "url": "https://www.youtube.com/watch?v=R05FtOb5Hz8",
-      "count": 1,
-      "lastPlayed": "2026-11-01T09:17:57.7202700Z"
-    },
-    {
-      "country": "ko",
-      "id": "f5r7hUMLFaY",
-      "title": "다시 사랑한다면  - 도원경 | 잊혀지지 않는 명곡 리메이크",
-      "url": "https://www.youtube.com/watch?v=f5r7hUMLFaY",
-      "count": 1,
-      "lastPlayed": "2026-11-01T09:14:16.3433765Z"
     },
     {
       "country": "ko",
