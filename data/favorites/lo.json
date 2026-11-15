@@ -1,9 +1,26 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-14T10:05:36.298Z",
+  "updatedAt": "2026-11-15T15:22:59.983Z",
   "countries": [
     "lo"
   ],
-  "rows": []
+  "rows": [
+    {
+      "country": "lo",
+      "id": "YbPvU3IEiB4",
+      "title": "♫ • ฝากใจไปสีพันดอน • เสบสด อิเล็คโทนลาว「คาราโอเกะ」",
+      "url": "https://www.youtube.com/watch?v=YbPvU3IEiB4",
+      "count": 1,
+      "lastPlayed": "2026-11-15T11:16:02.7228770Z"
+    },
+    {
+      "country": "lo",
+      "id": "y2eYU_rGsxQ",
+      "title": "ຝາກໃຈໄປສີພັນດອນ ບົວຂາວ ດາວແດນໃຕ້ ฝากใจไปสีพันดอน บวขาว ดาวแดนใต้",
+      "url": "https://www.youtube.com/watch?v=y2eYU_rGsxQ",
+      "count": 1,
+      "lastPlayed": "2026-11-15T11:15:05.3909170Z"
+    }
+  ]
 }
