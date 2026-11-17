@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-16T07:57:52.188Z",
+  "updatedAt": "2026-11-17T16:03:46.158Z",
   "countries": [
     "th"
   ],
@@ -24,6 +24,14 @@
     },
     {
       "country": "th",
+      "id": "Qqf31osNksc",
+      "title": "คาราโอเกะ ขอใจเธอแลกเบอร์โทร (Kor-Jai-Ter-Lak-Ber-Toe) - หญิงลี ศรีจุมพล [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=Qqf31osNksc",
+      "count": 9,
+      "lastPlayed": "2026-11-17T13:04:42.6966757Z"
+    },
+    {
+      "country": "th",
       "id": "pnKEq4gSNu8",
       "title": "⭐️มาแรงTikTok!! ( เสื้อดำเด้าหน่อย ) V.แดนซ์มันส์ๆ [ ดีเจกิต รีมิกซ์ ]",
       "url": "https://www.youtube.com/watch?v=pnKEq4gSNu8",
@@ -37,14 +45,6 @@
       "url": "https://www.youtube.com/watch?v=9bZkp7q19f0",
       "count": 8,
       "lastPlayed": "2026-11-16T07:22:48.9224009Z"
-    },
-    {
-      "country": "th",
-      "id": "Qqf31osNksc",
-      "title": "คาราโอเกะ ขอใจเธอแลกเบอร์โทร (Kor-Jai-Ter-Lak-Ber-Toe) - หญิงลี ศรีจุมพล [ Original Karaoke ]",
-      "url": "https://www.youtube.com/watch?v=Qqf31osNksc",
-      "count": 8,
-      "lastPlayed": "2026-11-13T15:37:26.1586306Z"
     },
     {
       "country": "th",
@@ -88,6 +88,22 @@
     },
     {
       "country": "th",
+      "id": "tq078son2LA",
+      "title": "อะไรก็ยอม - เสก โลโซ | Live From Kimleng Audio",
+      "url": "https://www.youtube.com/watch?v=tq078son2LA",
+      "count": 6,
+      "lastPlayed": "2026-11-17T14:40:06.4766178Z"
+    },
+    {
+      "country": "th",
+      "id": "Up_W7ro-eY8",
+      "title": "รอเมียพี่เผลอ - เฉลิมพล มาลาคำ [KARAOKE Version] เสียงมาสเตอร์",
+      "url": "https://www.youtube.com/watch?v=Up_W7ro-eY8",
+      "count": 6,
+      "lastPlayed": "2026-11-17T13:31:16.1300854Z"
+    },
+    {
+      "country": "th",
       "id": "53Ac6dvQN_Y",
       "title": "คาราโอเกะ ซมซาน (Som-Sarn) - LOSO [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=53Ac6dvQN_Y",
@@ -120,19 +136,27 @@
     },
     {
       "country": "th",
+      "id": "TSsfTJ5OxTo",
+      "title": "บักคนซั่ว (坏蛋) - ทิดแอม  : บังเอิญ|Music #โปรเจคเพื่อเพื่อน【Official MV】",
+      "url": "https://www.youtube.com/watch?v=TSsfTJ5OxTo",
+      "count": 5,
+      "lastPlayed": "2026-11-17T14:34:24.0929580Z"
+    },
+    {
+      "country": "th",
+      "id": "3rFRwMeaf_w",
+      "title": "โบว์รักสีดำ คาราโอเกะ_ศิริพร อำไพพงษ์",
+      "url": "https://www.youtube.com/watch?v=3rFRwMeaf_w",
+      "count": 5,
+      "lastPlayed": "2026-11-17T13:18:35.1451711Z"
+    },
+    {
+      "country": "th",
       "id": "qbg5R0R6Vg4",
       "title": "เเม่ฮ้าง มหาสเน่ !! เเดนซ์ 3ช่า มันๆ ★ เบสหนักๆ 2022 😈 DJ GEZ MUSIC",
       "url": "https://www.youtube.com/watch?v=qbg5R0R6Vg4",
       "count": 5,
       "lastPlayed": "2026-11-16T07:30:52.9107453Z"
-    },
-    {
-      "country": "th",
-      "id": "Up_W7ro-eY8",
-      "title": "รอเมียพี่เผลอ - เฉลิมพล มาลาคำ [KARAOKE Version] เสียงมาสเตอร์",
-      "url": "https://www.youtube.com/watch?v=Up_W7ro-eY8",
-      "count": 5,
-      "lastPlayed": "2026-11-15T13:20:04.2784091Z"
     },
     {
       "country": "th",
@@ -168,14 +192,6 @@
     },
     {
       "country": "th",
-      "id": "tq078son2LA",
-      "title": "อะไรก็ยอม - เสก โลโซ | Live From Kimleng Audio",
-      "url": "https://www.youtube.com/watch?v=tq078son2LA",
-      "count": 5,
-      "lastPlayed": "2026-11-13T11:18:30.5660923Z"
-    },
-    {
-      "country": "th",
       "id": "2n_VFSCYwuY",
       "title": "191 LABANOON. คาราโอเกะ",
       "url": "https://www.youtube.com/watch?v=2n_VFSCYwuY",
@@ -189,6 +205,22 @@
       "url": "https://www.youtube.com/watch?v=dKH0vwFlNuc",
       "count": 5,
       "lastPlayed": "2026-11-05T15:03:22.0821920Z"
+    },
+    {
+      "country": "th",
+      "id": "CMPr31x5Kls",
+      "title": "♫ • วิ่งว่าว • กีต้าร์สด • คำมอด พรขุนเดช「คาราโอเกะ」",
+      "url": "https://www.youtube.com/watch?v=CMPr31x5Kls",
+      "count": 4,
+      "lastPlayed": "2026-11-17T15:26:56.4539433Z"
+    },
+    {
+      "country": "th",
+      "id": "cpBJaveE6lk",
+      "title": "โบว์แดงแสลงใจ - พาเมล่า เบาว์เด้น  | MIDI KARAOKE มิดี้ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=cpBJaveE6lk",
+      "count": 4,
+      "lastPlayed": "2026-11-17T13:22:50.1475481Z"
     },
     {
       "country": "th",
@@ -240,14 +272,6 @@
     },
     {
       "country": "th",
-      "id": "3rFRwMeaf_w",
-      "title": "โบว์รักสีดำ คาราโอเกะ_ศิริพร อำไพพงษ์",
-      "url": "https://www.youtube.com/watch?v=3rFRwMeaf_w",
-      "count": 4,
-      "lastPlayed": "2026-11-13T15:48:43.8922725Z"
-    },
-    {
-      "country": "th",
       "id": "bEik0pgrMJE",
       "title": "สาววังสะพุง - ใหม่พัชรี MAI PHATCHAREE แสดงสด | งานโคนมแห่งชาติ อ.มวกเหล็ก จ.สระบุรี",
       "url": "https://www.youtube.com/watch?v=bEik0pgrMJE",
@@ -269,14 +293,6 @@
       "url": "https://www.youtube.com/watch?v=8XXPxLLgwt8",
       "count": 4,
       "lastPlayed": "2026-11-13T12:15:37.0587820Z"
-    },
-    {
-      "country": "th",
-      "id": "TSsfTJ5OxTo",
-      "title": "บักคนซั่ว (坏蛋) - ทิดแอม  : บังเอิญ|Music #โปรเจคเพื่อเพื่อน【Official MV】",
-      "url": "https://www.youtube.com/watch?v=TSsfTJ5OxTo",
-      "count": 4,
-      "lastPlayed": "2026-11-13T11:24:07.6415972Z"
     },
     {
       "country": "th",
@@ -341,6 +357,22 @@
       "url": "https://www.youtube.com/watch?v=5wuMypdRRjI",
       "count": 4,
       "lastPlayed": "2026-10-25T10:24:09.2580529Z"
+    },
+    {
+      "country": "th",
+      "id": "04LdyQh53Rk",
+      "title": "ยายแล่ม เนื้อเพลง - เวอร์ชั่น ลำไย ไหทองคำ แสดงสด",
+      "url": "https://www.youtube.com/watch?v=04LdyQh53Rk",
+      "count": 3,
+      "lastPlayed": "2026-11-17T15:14:33.5268016Z"
+    },
+    {
+      "country": "th",
+      "id": "P5G3M75rSEM",
+      "title": "คาราโอเกะ สาวกันตรึม - ไผ่ พงศธร [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=P5G3M75rSEM",
+      "count": 3,
+      "lastPlayed": "2026-11-17T13:26:51.4508193Z"
     },
     {
       "country": "th",
@@ -424,14 +456,6 @@
     },
     {
       "country": "th",
-      "id": "cpBJaveE6lk",
-      "title": "โบว์แดงแสลงใจ - พาเมล่า เบาว์เด้น  | MIDI KARAOKE มิดี้ คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=cpBJaveE6lk",
-      "count": 3,
-      "lastPlayed": "2026-11-13T14:59:43.7176293Z"
-    },
-    {
-      "country": "th",
       "id": "ZjZKa5ycdeM",
       "title": "ปราณี คาราโอเกะ - จ่าหลอย เฮนรี่ฯ",
       "url": "https://www.youtube.com/watch?v=ZjZKa5ycdeM",
@@ -469,14 +493,6 @@
       "url": "https://www.youtube.com/watch?v=xFmgselfKzA",
       "count": 3,
       "lastPlayed": "2026-11-13T11:53:37.3248888Z"
-    },
-    {
-      "country": "th",
-      "id": "CMPr31x5Kls",
-      "title": "♫ • วิ่งว่าว • กีต้าร์สด • คำมอด พรขุนเดช「คาราโอเกะ」",
-      "url": "https://www.youtube.com/watch?v=CMPr31x5Kls",
-      "count": 3,
-      "lastPlayed": "2026-11-12T13:25:45.7495671Z"
     },
     {
       "country": "th",
@@ -621,6 +637,86 @@
       "url": "https://www.youtube.com/watch?v=aWjz_-RKbc4",
       "count": 3,
       "lastPlayed": "2026-10-24T12:31:43.4833646Z"
+    },
+    {
+      "country": "th",
+      "id": "rZaMKpMQHWc",
+      "title": "หนุ่มนาข้าว สาวนาเกลือ - คาราโอเกะ Midi Karaoke Cover |120/Eb",
+      "url": "https://www.youtube.com/watch?v=rZaMKpMQHWc",
+      "count": 2,
+      "lastPlayed": "2026-11-17T16:00:13.3844712Z"
+    },
+    {
+      "country": "th",
+      "id": "qvpUIQemXv4",
+      "title": "เลี้ยงส่ง | โจ๊ก โซคูล X SING WITH ME ร้อง​กับซี",
+      "url": "https://www.youtube.com/watch?v=qvpUIQemXv4",
+      "count": 2,
+      "lastPlayed": "2026-11-17T15:46:32.7669130Z"
+    },
+    {
+      "country": "th",
+      "id": "mOdeF6INfeg",
+      "title": "ยกมือขึ้นบ๊ายบาย คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=mOdeF6INfeg",
+      "count": 2,
+      "lastPlayed": "2026-11-17T15:41:31.6469271Z"
+    },
+    {
+      "country": "th",
+      "id": "SRofz3YFkTg",
+      "title": "บุญบั้งไฟเดือนหก คาราโอเกะ (สัญญาเดือนหก) โจอี้ ภูวาศิษฐ์",
+      "url": "https://www.youtube.com/watch?v=SRofz3YFkTg",
+      "count": 2,
+      "lastPlayed": "2026-11-17T15:31:36.5992323Z"
+    },
+    {
+      "country": "th",
+      "id": "ysgGBdRNimE",
+      "title": "น้ำตามดแดง - จ่าหลอย เฮนรี่ | เพื่อชีวิต คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=ysgGBdRNimE",
+      "count": 2,
+      "lastPlayed": "2026-11-17T13:44:10.7043154Z"
+    },
+    {
+      "country": "th",
+      "id": "C2wcqnYfzjE",
+      "title": "กุหลาบแดง - สมจิตร บ่อทอง | MIDI KARAOKE มิดี้ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=C2wcqnYfzjE",
+      "count": 2,
+      "lastPlayed": "2026-11-17T13:35:37.3284154Z"
+    },
+    {
+      "country": "th",
+      "id": "-x4Urp1Qrrk",
+      "title": "คาราโอเกะ คนบ้านเดียวกัน  - ไผ่ พงศธร [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=-x4Urp1Qrrk",
+      "count": 2,
+      "lastPlayed": "2026-11-17T12:59:52.5837363Z"
+    },
+    {
+      "country": "th",
+      "id": "o3yMDr7tMG8",
+      "title": "18 ฝน เสือ ธนพล (คาราโอเกะ-ตัดเสียงร้อง)",
+      "url": "https://www.youtube.com/watch?v=o3yMDr7tMG8",
+      "count": 2,
+      "lastPlayed": "2026-11-17T12:43:35.8514298Z"
+    },
+    {
+      "country": "th",
+      "id": "anltxqgP19I",
+      "title": "คาราโอเกะ อะไรก็ยอม (Arai-Gaw-Yaum) - LOSO [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=anltxqgP19I",
+      "count": 2,
+      "lastPlayed": "2026-11-17T12:38:05.2539941Z"
+    },
+    {
+      "country": "th",
+      "id": "EUHGjKyiry4",
+      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา [OFFICIAL Audio]",
+      "url": "https://www.youtube.com/watch?v=EUHGjKyiry4",
+      "count": 2,
+      "lastPlayed": "2026-11-17T12:30:19.5637989Z"
     },
     {
       "country": "th",
@@ -976,27 +1072,11 @@
     },
     {
       "country": "th",
-      "id": "P5G3M75rSEM",
-      "title": "คาราโอเกะ สาวกันตรึม - ไผ่ พงศธร [ Original Karaoke ]",
-      "url": "https://www.youtube.com/watch?v=P5G3M75rSEM",
-      "count": 2,
-      "lastPlayed": "2026-11-05T15:08:37.3899476Z"
-    },
-    {
-      "country": "th",
       "id": "9kbOa1PMtO4",
       "title": "แค่ผู้ชายมันทิ้ง#แดนซ์มันๆ #remix",
       "url": "https://www.youtube.com/watch?v=9kbOa1PMtO4",
       "count": 2,
       "lastPlayed": "2026-11-05T14:51:45.4679997Z"
-    },
-    {
-      "country": "th",
-      "id": "04LdyQh53Rk",
-      "title": "ยายแล่ม เนื้อเพลง - เวอร์ชั่น ลำไย ไหทองคำ แสดงสด",
-      "url": "https://www.youtube.com/watch?v=04LdyQh53Rk",
-      "count": 2,
-      "lastPlayed": "2026-11-05T14:47:37.8697953Z"
     },
     {
       "country": "th",
@@ -1312,11 +1392,299 @@
     },
     {
       "country": "th",
-      "id": "C2wcqnYfzjE",
-      "title": "กุหลาบแดง - สมจิตร บ่อทอง | MIDI KARAOKE มิดี้ คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=C2wcqnYfzjE",
+      "id": "XWSZInZpqpU",
+      "title": "ยกมือขึ้นบ๊ายบาย เพลงสุดท้ายก่อนอำลาพาจาก",
+      "url": "https://www.youtube.com/watch?v=XWSZInZpqpU",
       "count": 1,
-      "lastPlayed": "2026-11-15T15:18:38.7062228Z"
+      "lastPlayed": "2026-11-17T16:03:36.8815792Z"
+    },
+    {
+      "country": "th",
+      "id": "KonqgB8hZgI",
+      "title": "คาราโอเกะ กรุณาฟังให้จบ - แช่ม แช่มรัมย์",
+      "url": "https://www.youtube.com/watch?v=KonqgB8hZgI",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:55:43.9633807Z"
+    },
+    {
+      "country": "th",
+      "id": "x8cRsCKCO90",
+      "title": "Lyrics. ลาบานูน Labanoon 🎧🎼 แฟนเก่า ,คิดในใจ ,เท่าเดิม ,ปฎิทิน",
+      "url": "https://www.youtube.com/watch?v=x8cRsCKCO90",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:51:03.9357296Z"
+    },
+    {
+      "country": "th",
+      "id": "4PjlwmGOwRo",
+      "title": "เพลงอวยพรวันเกิดHD",
+      "url": "https://www.youtube.com/watch?v=4PjlwmGOwRo",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:44:36.9244049Z"
+    },
+    {
+      "country": "th",
+      "id": "zninvhkDuJQ",
+      "title": "ตะลึง : อนัน อันวา Anan Anwar [ Karaoke คาราโอเกะ ]",
+      "url": "https://www.youtube.com/watch?v=zninvhkDuJQ",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:40:07.6902676Z"
+    },
+    {
+      "country": "th",
+      "id": "s_hsbMgI3mA",
+      "title": "หลวงพ่อคูณ คาราโอเกะ - คาราบาว",
+      "url": "https://www.youtube.com/watch?v=s_hsbMgI3mA",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:35:49.2048672Z"
+    },
+    {
+      "country": "th",
+      "id": "vCIFiSPn-oQ",
+      "title": "สาวผัวเผลอ (วัน ทู ที โฟร) คาราโอเกะ - แสดงสด ใหม่ พัชรี",
+      "url": "https://www.youtube.com/watch?v=vCIFiSPn-oQ",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:21:43.9314220Z"
+    },
+    {
+      "country": "th",
+      "id": "Q-_VDE7CzT8",
+      "title": "สาวผัวเผลอ เนื้อเพลง : ผู้สาวผัวเผลอขอเสียงหน่อยเร็ว",
+      "url": "https://www.youtube.com/watch?v=Q-_VDE7CzT8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:16:51.8909342Z"
+    },
+    {
+      "country": "th",
+      "id": "QNHU-q40IV8",
+      "title": "สมน้ำหน้าตัวเอง - น้ำอ้อย  เสียงอิสาน",
+      "url": "https://www.youtube.com/watch?v=QNHU-q40IV8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:11:24.3000515Z"
+    },
+    {
+      "country": "th",
+      "id": "sqhuixVWSVU",
+      "title": "ยกมือ...ขึ้นบ๊าย..บาย | รวมศิลปินคำผุนร่นมมิตร",
+      "url": "https://www.youtube.com/watch?v=sqhuixVWSVU",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:07:02.3686176Z"
+    },
+    {
+      "country": "th",
+      "id": "rNyBdPyl9YQ",
+      "title": "คาราโอเกะ จื่อบ่ (Jue-Bor) - ก้านตอง ทุ่งเงิน [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=rNyBdPyl9YQ",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:06:39.9393169Z"
+    },
+    {
+      "country": "th",
+      "id": "a4ncXrbuedM",
+      "title": "กุหลาบ (KULARB) คาราโอเกะ - F.HERO Ft. ก้านตอง ทุ่งเงิน x SARAN",
+      "url": "https://www.youtube.com/watch?v=a4ncXrbuedM",
+      "count": 1,
+      "lastPlayed": "2026-11-17T15:04:27.5104317Z"
+    },
+    {
+      "country": "th",
+      "id": "ZNUMgHfUxrU",
+      "title": "คาราโอเกะ ซังได้ซังแล้ว - ต่าย อรทัย [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=ZNUMgHfUxrU",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:59:26.1338556Z"
+    },
+    {
+      "country": "th",
+      "id": "jhLgfWfdwq4",
+      "title": "รักสลายดอกฝ้ายบาน - จินตหรา พูนลาภ【OFFICIAL AUDIO】",
+      "url": "https://www.youtube.com/watch?v=jhLgfWfdwq4",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:55:11.5812613Z"
+    },
+    {
+      "country": "th",
+      "id": "8lxBE-RpiJ8",
+      "title": "คาราโอเกะ ซากอ้อย (Sahk-Oy) - So Cool [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=8lxBE-RpiJ8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:30:06.1151758Z"
+    },
+    {
+      "country": "th",
+      "id": "lVSKGixVlc8",
+      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา 🎙️🎼 [คาราโอเกะ | Karaoke | ดนตรีแน่น 🔊] | บ้านคาราโอเกะ by Bao-non",
+      "url": "https://www.youtube.com/watch?v=lVSKGixVlc8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:26:18.1949148Z"
+    },
+    {
+      "country": "th",
+      "id": "yiY-r-_RJIs",
+      "title": "คาราโอเกะ เลี้ยงส่ง (Lieng-Song) - So Cool [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=yiY-r-_RJIs",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:20:37.6524952Z"
+    },
+    {
+      "country": "th",
+      "id": "KEn34mPXBG4",
+      "title": "กอดน้องแน่น ๆ - สายใย อุดมพร (คาราโอเกะ)【SonarKaraoke】",
+      "url": "https://www.youtube.com/watch?v=KEn34mPXBG4",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:17:05.9580187Z"
+    },
+    {
+      "country": "th",
+      "id": "O5E6roh_rU8",
+      "title": "เก็บตะวัน - อิทธิ พลางกูร [Karaoke คาราโอเกะ] | วิน โอเกะ [Win Oke]",
+      "url": "https://www.youtube.com/watch?v=O5E6roh_rU8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:12:27.6130612Z"
+    },
+    {
+      "country": "th",
+      "id": "1NyeaK1CXPs",
+      "title": "แผลใหม่ คาราโอเกะ - หมิว รัชฎาพร 【COVER VERSION】",
+      "url": "https://www.youtube.com/watch?v=1NyeaK1CXPs",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:08:09.5979609Z"
+    },
+    {
+      "country": "th",
+      "id": "I4BNQUZcumo",
+      "title": "ผัวเขาผู้บ่าวข้อย - น้องใหม่ เมืองชุมแพ",
+      "url": "https://www.youtube.com/watch?v=I4BNQUZcumo",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:03:57.8562407Z"
+    },
+    {
+      "country": "th",
+      "id": "xroKrt0f-JM",
+      "title": "ผัวเขาผู้บ่าวข้อย - เสบสด คาราโอเกะ | ຜົວເຂົາຜູ້ບ່າວຂ້ອຍ - ເສບສົດຄາຣາໂອເກະ [ພັນລາວ ສະຕູດິໂອ]",
+      "url": "https://www.youtube.com/watch?v=xroKrt0f-JM",
+      "count": 1,
+      "lastPlayed": "2026-11-17T14:00:03.1493022Z"
+    },
+    {
+      "country": "th",
+      "id": "nLlz5_Md-VM",
+      "title": "รักคงยังไม่พอ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=nLlz5_Md-VM",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:56:04.5323535Z"
+    },
+    {
+      "country": "th",
+      "id": "9g1rUXhoVqE",
+      "title": "ช่องว่างในหัวใจ - เสือ ธนพล อินทฤทธิ์ ( คาราโอเกะ MIDI KARAOKE คอร์ดง่ายๆ )  คีย์  A Capo : 2 เล่น G",
+      "url": "https://www.youtube.com/watch?v=9g1rUXhoVqE",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:51:32.5237520Z"
+    },
+    {
+      "country": "th",
+      "id": "CmIbffU5PXM",
+      "title": "ใจนักเลง คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=CmIbffU5PXM",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:48:04.3008026Z"
+    },
+    {
+      "country": "th",
+      "id": "JtJLrIvVTok",
+      "title": "คาราโอเกะ ไม่ต้องเสียใจ - เสือ ธนพล",
+      "url": "https://www.youtube.com/watch?v=JtJLrIvVTok",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:39:24.4230481Z"
+    },
+    {
+      "country": "th",
+      "id": "ivUZ7-Fdiww",
+      "title": "ฮักนอกตำรา (ฮักคนมีเจ้าของ) - จินตหรา พูนลาภ [ AUDIO VERSION ]",
+      "url": "https://www.youtube.com/watch?v=ivUZ7-Fdiww",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:16:18.7295737Z"
+    },
+    {
+      "country": "th",
+      "id": "I70MORENgkQ",
+      "title": "แม่ฮ้างมหาเสน่ห์ V.แสดงสด cover มิดี้คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=I70MORENgkQ",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:13:09.2889001Z"
+    },
+    {
+      "country": "th",
+      "id": "0lTu55MA634",
+      "title": "คาราโอเกะ สาวกันตรึม - ไผ่ พงศธร [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=0lTu55MA634",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:12:20.8220541Z"
+    },
+    {
+      "country": "th",
+      "id": "WJNn3oqGE7k",
+      "title": "สาวเลยยังรอ - สาวแย้ เจติยา(KARAOKE)",
+      "url": "https://www.youtube.com/watch?v=WJNn3oqGE7k",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:10:23.4381383Z"
+    },
+    {
+      "country": "th",
+      "id": "n-ClyU_TJGs",
+      "title": "สาวบางโพ คาราโอเกะ 🎤 มยุรา ฟ้าสีทอง",
+      "url": "https://www.youtube.com/watch?v=n-ClyU_TJGs",
+      "count": 1,
+      "lastPlayed": "2026-11-17T13:09:43.5216995Z"
+    },
+    {
+      "country": "th",
+      "id": "nq5sCofWghU",
+      "title": "แอวลั่นปั๊ด คาราโอเกะ - V. แสดงสด",
+      "url": "https://www.youtube.com/watch?v=nq5sCofWghU",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:55:32.1719086Z"
+    },
+    {
+      "country": "th",
+      "id": "UWBYSLg3DDk",
+      "title": "คุณลำไย V.แสดงสด cover มิดี้คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=UWBYSLg3DDk",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:52:05.8468032Z"
+    },
+    {
+      "country": "th",
+      "id": "EaAn-EAk8j8",
+      "title": "เพราะพี่รักจริง คาราโอเกะ - หนึ่ง บีเคแบนด์",
+      "url": "https://www.youtube.com/watch?v=EaAn-EAk8j8",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:48:03.0188743Z"
+    },
+    {
+      "country": "th",
+      "id": "OZm6y8AqTvw",
+      "title": "รักคนมีเจ้าของ(ฮักนอกตำรา) - จินตหรา พูนลาภ / คาราโอเกะดนตรีสด KARAOKE",
+      "url": "https://www.youtube.com/watch?v=OZm6y8AqTvw",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:37:22.7885123Z"
+    },
+    {
+      "country": "th",
+      "id": "K_aGI_3Ku-s",
+      "title": "เสยเตยเวย - สาวแย้ เจติยา [ MV OFFICIAL ]",
+      "url": "https://www.youtube.com/watch?v=K_aGI_3Ku-s",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:34:05.3504141Z"
+    },
+    {
+      "country": "th",
+      "id": "aoaixGwZOGY",
+      "title": "ดอกกระเจียวบาน คาราโอเกะ-  ก้อง ห้วยไร่",
+      "url": "https://www.youtube.com/watch?v=aoaixGwZOGY",
+      "count": 1,
+      "lastPlayed": "2026-11-17T12:26:11.4243334Z"
     },
     {
       "country": "th",
@@ -2368,14 +2736,6 @@
     },
     {
       "country": "th",
-      "id": "rZaMKpMQHWc",
-      "title": "หนุ่มนาข้าว สาวนาเกลือ - คาราโอเกะ Midi Karaoke Cover |120/Eb",
-      "url": "https://www.youtube.com/watch?v=rZaMKpMQHWc",
-      "count": 1,
-      "lastPlayed": "2026-11-12T13:37:41.3954291Z"
-    },
-    {
-      "country": "th",
       "id": "eN3sECtCtV8",
       "title": "ปล่อยน้ำใส่นาน้อง [คาราโอเกะ] - Covermidi แสดงสด บอย ศิริชัย x แอน อรดี",
       "url": "https://www.youtube.com/watch?v=eN3sECtCtV8",
@@ -2440,14 +2800,6 @@
     },
     {
       "country": "th",
-      "id": "-x4Urp1Qrrk",
-      "title": "คาราโอเกะ คนบ้านเดียวกัน  - ไผ่ พงศธร [ Original Karaoke ]",
-      "url": "https://www.youtube.com/watch?v=-x4Urp1Qrrk",
-      "count": 1,
-      "lastPlayed": "2026-11-12T12:57:04.4248430Z"
-    },
-    {
-      "country": "th",
       "id": "_cXRMqui9K8",
       "title": "คาราโอเกะ ปริญญาใจ - ศิริพร อำไพพงษ์ [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=_cXRMqui9K8",
@@ -2477,14 +2829,6 @@
       "url": "https://www.youtube.com/watch?v=Dj6Zvb8yjTQ",
       "count": 1,
       "lastPlayed": "2026-11-12T12:37:12.0006836Z"
-    },
-    {
-      "country": "th",
-      "id": "EUHGjKyiry4",
-      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา [OFFICIAL Audio]",
-      "url": "https://www.youtube.com/watch?v=EUHGjKyiry4",
-      "count": 1,
-      "lastPlayed": "2026-11-12T12:28:49.1518774Z"
     },
     {
       "country": "th",
@@ -2525,14 +2869,6 @@
       "url": "https://www.youtube.com/watch?v=oYR0iL_wc1o",
       "count": 1,
       "lastPlayed": "2026-11-10T16:26:29.1546600Z"
-    },
-    {
-      "country": "th",
-      "id": "anltxqgP19I",
-      "title": "คาราโอเกะ อะไรก็ยอม (Arai-Gaw-Yaum) - LOSO [ Original Karaoke ]",
-      "url": "https://www.youtube.com/watch?v=anltxqgP19I",
-      "count": 1,
-      "lastPlayed": "2026-11-10T16:18:28.5127201Z"
     },
     {
       "country": "th",
@@ -2776,14 +3112,6 @@
     },
     {
       "country": "th",
-      "id": "qvpUIQemXv4",
-      "title": "เลี้ยงส่ง | โจ๊ก โซคูล X SING WITH ME ร้อง​กับซี",
-      "url": "https://www.youtube.com/watch?v=qvpUIQemXv4",
-      "count": 1,
-      "lastPlayed": "2026-11-10T11:41:19.6339154Z"
-    },
-    {
-      "country": "th",
       "id": "1oXKMxlUkc0",
       "title": "สาวบางโพ - เบนซ์ จริยา 【COVER VERSION】",
       "url": "https://www.youtube.com/watch?v=1oXKMxlUkc0",
@@ -2829,14 +3157,6 @@
       "url": "https://www.youtube.com/watch?v=WRPxJrabwb0",
       "count": 1,
       "lastPlayed": "2026-11-10T11:08:17.4013870Z"
-    },
-    {
-      "country": "th",
-      "id": "mOdeF6INfeg",
-      "title": "ยกมือขึ้นบ๊ายบาย คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=mOdeF6INfeg",
-      "count": 1,
-      "lastPlayed": "2026-11-05T15:17:22.9006955Z"
     },
     {
       "country": "th",
@@ -2909,14 +3229,6 @@
       "url": "https://www.youtube.com/watch?v=E-cBGJ4_OjQ",
       "count": 1,
       "lastPlayed": "2026-11-05T14:41:12.9599702Z"
-    },
-    {
-      "country": "th",
-      "id": "SRofz3YFkTg",
-      "title": "บุญบั้งไฟเดือนหก คาราโอเกะ (สัญญาเดือนหก) โจอี้ ภูวาศิษฐ์",
-      "url": "https://www.youtube.com/watch?v=SRofz3YFkTg",
-      "count": 1,
-      "lastPlayed": "2026-11-05T14:37:24.0828331Z"
     },
     {
       "country": "th",
@@ -4608,14 +4920,6 @@
     },
     {
       "country": "th",
-      "id": "ysgGBdRNimE",
-      "title": "น้ำตามดแดง - จ่าหลอย เฮนรี่ | เพื่อชีวิต คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=ysgGBdRNimE",
-      "count": 1,
-      "lastPlayed": "2026-10-29T14:02:17.8474687Z"
-    },
-    {
-      "country": "th",
       "id": "K2r9QjRpdJ0",
       "title": "Scorpions - Wind Of Change (Peters Pop-Show, 31.12.1991)",
       "url": "https://www.youtube.com/watch?v=K2r9QjRpdJ0",
@@ -5333,14 +5637,6 @@
       "url": "https://www.youtube.com/watch?v=Dr_5XYnqIAA",
       "count": 1,
       "lastPlayed": "2026-10-24T09:58:03.4157280Z"
-    },
-    {
-      "country": "th",
-      "id": "o3yMDr7tMG8",
-      "title": "18 ฝน เสือ ธนพล (คาราโอเกะ-ตัดเสียงร้อง)",
-      "url": "https://www.youtube.com/watch?v=o3yMDr7tMG8",
-      "count": 1,
-      "lastPlayed": "2026-10-24T09:44:19.1067255Z"
     },
     {
       "country": "th",
