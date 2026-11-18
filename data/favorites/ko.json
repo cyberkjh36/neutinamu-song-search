@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-17T16:03:46.158Z",
+  "updatedAt": "2026-11-18T13:39:27.331Z",
   "countries": [
     "ko"
   ],
@@ -11,8 +11,8 @@
       "id": "mYtLhe3yGHY",
       "title": "미련이 춤을 춰 / Dancing in Regret / 未練が踊る Emotional Korean Ballad · Sad Love Story",
       "url": "https://www.youtube.com/watch?v=mYtLhe3yGHY",
-      "count": 19,
-      "lastPlayed": "2026-11-04T06:19:59.6515509Z"
+      "count": 20,
+      "lastPlayed": "2026-11-18T11:11:10.5899668Z"
     },
     {
       "country": "ko",
@@ -27,8 +27,16 @@
       "id": "rZ4ztl-HcMM",
       "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
       "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 11,
-      "lastPlayed": "2026-11-13T09:47:34.6210155Z"
+      "count": 13,
+      "lastPlayed": "2026-11-18T13:25:25.0954745Z"
+    },
+    {
+      "country": "ko",
+      "id": "biXhgq7zrSg",
+      "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
+      "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
+      "count": 10,
+      "lastPlayed": "2026-11-18T13:20:48.2766200Z"
     },
     {
       "country": "ko",
@@ -48,11 +56,11 @@
     },
     {
       "country": "ko",
-      "id": "biXhgq7zrSg",
-      "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
-      "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
+      "id": "uqfF_qv477k",
+      "title": "BTS (방탄소년단) 'Body to Body' (Color Coded Lyrics)",
+      "url": "https://www.youtube.com/watch?v=uqfF_qv477k",
       "count": 8,
-      "lastPlayed": "2026-11-13T09:55:12.9171249Z"
+      "lastPlayed": "2026-11-18T11:09:42.9688321Z"
     },
     {
       "country": "ko",
@@ -61,14 +69,6 @@
       "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
       "count": 7,
       "lastPlayed": "2026-11-13T09:59:51.3174674Z"
-    },
-    {
-      "country": "ko",
-      "id": "uqfF_qv477k",
-      "title": "BTS (방탄소년단) 'Body to Body' (Color Coded Lyrics)",
-      "url": "https://www.youtube.com/watch?v=uqfF_qv477k",
-      "count": 7,
-      "lastPlayed": "2026-11-01T06:24:10.4082392Z"
     },
     {
       "country": "ko",
@@ -88,6 +88,14 @@
     },
     {
       "country": "ko",
+      "id": "33tAMu0OARE",
+      "title": "모란동백 - 조영남",
+      "url": "https://www.youtube.com/watch?v=33tAMu0OARE",
+      "count": 5,
+      "lastPlayed": "2026-11-18T13:05:00.9852142Z"
+    },
+    {
+      "country": "ko",
       "id": "5oFnMWvEPsY",
       "title": "김범수 지나간다",
       "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
@@ -104,6 +112,14 @@
     },
     {
       "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 4,
+      "lastPlayed": "2026-11-18T13:39:19.1358895Z"
+    },
+    {
+      "country": "ko",
       "id": "1cKc1rkZwf8",
       "title": "PSY - 예술이야(IT'S ART) M/V",
       "url": "https://www.youtube.com/watch?v=1cKc1rkZwf8",
@@ -117,14 +133,6 @@
       "url": "https://www.youtube.com/watch?v=EAWHtXQpYX4",
       "count": 4,
       "lastPlayed": "2026-11-04T06:54:46.2496645Z"
-    },
-    {
-      "country": "ko",
-      "id": "33tAMu0OARE",
-      "title": "모란동백 - 조영남",
-      "url": "https://www.youtube.com/watch?v=33tAMu0OARE",
-      "count": 4,
-      "lastPlayed": "2026-11-04T06:50:59.8395053Z"
     },
     {
       "country": "ko",
@@ -157,6 +165,14 @@
       "url": "https://www.youtube.com/watch?v=rGouJKSg6ao",
       "count": 4,
       "lastPlayed": "2026-10-30T12:52:59.7695296Z"
+    },
+    {
+      "country": "ko",
+      "id": "aJZlG3F0tVM",
+      "title": "김세영-밤의 길목에서 (1997) ,가사, 새벽이 오네요 이제 가요 당신은~ ,8090발라드 #김세영밤의길목에서 #김세영",
+      "url": "https://www.youtube.com/watch?v=aJZlG3F0tVM",
+      "count": 3,
+      "lastPlayed": "2026-11-18T13:29:30.6884144Z"
     },
     {
       "country": "ko",
@@ -208,14 +224,6 @@
     },
     {
       "country": "ko",
-      "id": "j7IuU3wJ2pk",
-      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
-      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
-      "count": 2,
-      "lastPlayed": "2026-11-14T09:56:41.4460598Z"
-    },
-    {
-      "country": "ko",
       "id": "rsnm_qSPivg",
       "title": "[ROCK] 김수철 - 별리",
       "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
@@ -245,14 +253,6 @@
       "url": "https://www.youtube.com/watch?v=HrtgKlDOUkY",
       "count": 2,
       "lastPlayed": "2026-11-04T07:28:07.8024461Z"
-    },
-    {
-      "country": "ko",
-      "id": "aJZlG3F0tVM",
-      "title": "김세영-밤의 길목에서 (1997) ,가사, 새벽이 오네요 이제 가요 당신은~ ,8090발라드 #김세영밤의길목에서 #김세영",
-      "url": "https://www.youtube.com/watch?v=aJZlG3F0tVM",
-      "count": 2,
-      "lastPlayed": "2026-11-04T07:23:34.1500336Z"
     },
     {
       "country": "ko",
@@ -301,6 +301,30 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "Gw2g8JHzOtE",
+      "title": "진성 - 보릿고개 (자막가사)",
+      "url": "https://www.youtube.com/watch?v=Gw2g8JHzOtE",
+      "count": 1,
+      "lastPlayed": "2026-11-18T13:38:44.6384243Z"
+    },
+    {
+      "country": "ko",
+      "id": "xgxJQS09nHs",
+      "title": "싸이 - 챔피언 (흠뻑쇼 2019)",
+      "url": "https://www.youtube.com/watch?v=xgxJQS09nHs",
+      "count": 1,
+      "lastPlayed": "2026-11-18T12:41:35.6780389Z"
+    },
+    {
+      "country": "ko",
+      "id": "9bZkp7q19f0",
+      "title": "PSY - GANGNAM STYLE(강남스타일) M/V",
+      "url": "https://www.youtube.com/watch?v=9bZkp7q19f0",
+      "count": 1,
+      "lastPlayed": "2026-11-18T11:13:49.0136332Z"
     },
     {
       "country": "ko",
