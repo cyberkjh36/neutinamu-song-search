@@ -1,11 +1,12 @@
 import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PERMISSION_TEXT, VOICE_TEXT, SAFARI_TEXT} from './ui-text.mjs?v=3.8';
-import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
+import {createPlaylistUi} from './playlist-ui.mjs?v=3.15';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.13';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.14';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
-import { KaraokeConnection } from './relay-client.mjs?v=3.14';
+import { KaraokeConnection } from './relay-client.mjs?v=3.15';
+import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
@@ -81,7 +82,7 @@ function showError(error) { feedback(error?.code || error || 'connect', true); }
 function renderConnection() {
   const state = connection.state;
   $('connection-state').classList.toggle('error', Boolean(connectionError));
-  $('connection-state').textContent = connectionError ? message(connectionError, true) : message(['ready','sending'].includes(state) ? 'connected' : ['choosing','connecting'].includes(state) ? 'connecting' : 'disconnected');
+  $('connection-state').textContent = connectionError ? message(connectionError, true) : message(['ready','sending'].includes(state) ? 'connected' : ['choosing','connecting','reconnecting'].includes(state) ? 'connecting' : 'disconnected');
 }
 function renderChromeHandoff() {
   $('chrome-handoff').hidden = !showChromeHandoff;
@@ -119,10 +120,10 @@ function renderSafariHandoff() {
 function refreshControls() {
   queueUi?.render(); browseUi?.render(); remoteUi?.render(); playlistUi?.render();
   const state = connection.state;
-  const active = ['choosing','connecting','ready','sending'].includes(state);
+  const active = ['choosing','connecting','reconnecting','ready','sending'].includes(state);
   busy = state === 'sending';
   $('connect').disabled = !supported || active;
-  $('connect').textContent = state === 'connecting' ? message('connecting') : currentLanguage.text[2];
+  $('connect').textContent = ['connecting','reconnecting'].includes(state) ? message('connecting') : currentLanguage.text[2];
   $('code').disabled = active;
   $('disconnect').hidden = !active;
   $('send').disabled = state !== 'ready' || !supported || Boolean(voice?.active) || !$('query').value.trim();
@@ -137,15 +138,17 @@ function refreshControls() {
   phoneKeyboard?.refresh();
 }
 const favoriteCache = createFavoritesCache({onChange:()=>remoteUi?.render()});
+let phoneSessionStorage;try{phoneSessionStorage=globalThis.sessionStorage;}catch{}
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
   if (state === 'ready' && detail) serverName = detail;
   renderConnection();
   if (state === 'error') showError(detail);
-  if (state === 'ready' && detail) feedback('connected');
+  if (state === 'ready' && detail) {feedback('connected');playlistUi?.resume();}
+  if (state === 'reconnecting') feedback('connecting');
   if (state === 'idle') feedback('disconnected');
   refreshControls();
-});
+},{storage:phoneSessionStorage,isOnline:()=>navigator.onLine!==false});
 const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
@@ -364,7 +367,10 @@ $('listening').addEventListener('keydown', event => {
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   }
 });
-window.addEventListener('pagehide', () => { closeVoice(); void connection.disconnect(); });
+bindPhoneLifecycle({connection,onSuspend:closeVoice});
+if(supported&&connection.restore(handoff.room)){
+  $('code').value=connection.room;void favoriteCache.refresh();
+}
 refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.

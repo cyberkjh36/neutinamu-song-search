@@ -1,13 +1,14 @@
-name: Check guest TV controls in eleven languages
+name: Check guest TV and connection recovery in eleven languages
 on:
   push:
-    branches: [main, 'codex/guest-tv-locales']
+    branches: [main, 'codex/guest-tv-locales', 'codex/phone-session-resume']
     paths: ['wk/**', 'wk-tests/**', 'tools/wk-tv-browser.mjs', '.github/workflows/wk-tv-languages.yml']
 permissions:
   contents: read
 jobs:
   mobile:
     runs-on: ubuntu-24.04
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -17,5 +18,5 @@ jobs:
       - run: npm ci
       - run: node --test wk-tests/*.test.mjs
       - run: npm install --no-save --package-lock=false playwright@1.56.1
-      - run: npx playwright install --with-deps chromium webkit
       - run: node tools/wk-tv-browser.mjs
+

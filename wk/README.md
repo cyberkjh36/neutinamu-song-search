@@ -1,3 +1,36 @@
+# WEB 3.15 — restore the same room after calls and app switching
+
+Switching apps, locking the screen and navigating away now suspend the phone
+connection instead of sending Leave. Visibility, page restoration, focus and
+network-online events check the same room and phone key. If the relay's 60-second
+phone timeout has elapsed, an idempotent Join restores that identity. Overlapping
+events share one recovery request; temporary failures retain credentials and retry
+with backoff. Full rooms retain the five-phone admission limit.
+
+A sessionStorage record keeps the current tab's connection across browser reloads
+and page restoration for up to 12 hours since the last successful check. A different
+QR room never restores the previous room. Explicit Disconnect clears that record
+and stops recovery. Keys are not put in URLs or persistent localStorage.
+
+Recovery sends only Ping/Join, never a reservation, Next or TV command. Commands
+already running keep their UI lock and request identity; interrupted stale control
+retries are not resumed after backgrounding. An open reservation list refreshes
+after the connection returns. All eleven languages use their existing translated
+connecting status. Android and iPhone browsers may suspend background execution;
+this feature restores the connection when the browser can run again.
+
+Apply by refreshing the phone app once. No new Windows installer or relay database
+change is required. Browser tabs that are fully closed need a fresh connection.
+
+Validation: 304 Node tests pass, including 14 session recovery cases and all-language
+UI recovery. The optional integration check uses the unchanged relay with an in-memory
+SQLite database to verify five simultaneous returning phones, expiry, PC restart,
+and absence of command replay. Run it with WK_RELAY_CHECKOUT pointing to the Sites
+source checkout: `node --test wk-tests/session-relay.integration.mjs`.
+The existing Chromium/WebKit workflow additionally exercises app return, actual
+sessionStorage restoration on reload, offline/online recovery and explicit disconnect
+in all eleven languages. Physical phone calls and the shop's network remain field checks.
+
 # WEB 3.14 — responsive search and reservations
 
 The relay advertises a 300 ms send interval to new clients. Older relays retain the existing 1,550 ms client fallback. The server permits a completed request to be followed after 250 ms while keeping one pending request per phone and idempotent request IDs. Reservation success still requires a PC acknowledgement.

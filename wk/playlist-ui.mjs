@@ -48,5 +48,6 @@ export function createPlaylistUi({connection,getLanguage,blocked=()=>false,$=id=
  $('playlist-next').addEventListener('click',()=>{if(!$('playlist-next').disabled)void load(snapshot.page+1);});
  const visibility=()=>{if(doc.hidden)stop();else if(!panel().hidden)void load(snapshot?.page||0);};doc.addEventListener('visibilitychange',visibility);
  render();
- return{render,changeLanguage:render,destroy(){destroyed=true;stop();doc.removeEventListener('visibilitychange',visibility);}};
+ return{render,changeLanguage:render,resume(){if(!panel().hidden)void load(snapshot?.page||0);},destroy(){destroyed=true;stop();doc.removeEventListener('visibilitychange',visibility);}};
 }
+

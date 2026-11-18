@@ -84,6 +84,13 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       choose('ja-JP');assert.equal($('connection-state').textContent,'接続済み\n(연결됨) · TEST-PC');assert.equal($('query').value,'노래 입력중');
       assert.equal($('connect').disabled,true);assert.equal(sent.length,1);choose('th-TH');
     });
+    await t.test('app switching keeps the room and translates recovery in all eleven languages',async()=>{
+      const key=sent[0].key,count=sent.length;events.get('pagehide')();await tick();
+      assert.equal(sent.length,count,'app switching must not send Leave');assert.equal($('disconnect').hidden,false);assert.equal($('connect').disabled,true);assert.equal($('send').disabled,true);
+      for(const language of LANGUAGES){choose(language.code);assert.equal($('connection-state').textContent,MESSAGES[language.code].connecting);}
+      choose('th-TH');events.get('pageshow')();events.get('focus')();await tick();
+      assert.equal(sent.length,count+1);assert.equal(sent.at(-1).op,'ping');assert.equal(sent.at(-1).key,key);assert.equal($('code').value,'12345678');assert.equal($('query').value,'노래 입력중');assert.equal($('send').disabled,false);
+    });
     await t.test('voice starts only after tapping; selected locale is passed',()=>{
       assert.equal(speech,undefined);$('voice').fire('click');assert.equal(speech.started,true);assert.equal(speech.lang,'th-TH');choose('ja-JP');assert.equal(document.documentElement.lang,'th-TH');assert.equal($('listening').open,true);assert.equal($('send').disabled,true);
     });
@@ -96,22 +103,22 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal($('stop-voice').hidden,false);
       speech.onsoundstart(); assert.equal(state(),'hearing');
       speech.onaudioend(); assert.equal(state(),'processing'); assert.equal($('stop-voice').disabled,true);
-      speech.onspeechstart(); assert.equal(state(),'processing'); assert.equal(sent.length,1);
+      speech.onspeechstart(); assert.equal(state(),'processing'); assert.equal(sent.length,2);
     });
     await t.test('recognized title fills text and never auto searches',()=>{
       const result=[{transcript:'เพลงไทย'}];result.isFinal=true;speech.onresult({resultIndex:0,results:[result]});speech.onend();
-      assert.equal($('query').value,'เพลงไทย');assert.equal(sent.length,1);assert.equal($('listening').open,false);assert.equal($('send').disabled,false);
+      assert.equal($('query').value,'เพลงไทย');assert.equal(sent.length,2);assert.equal($('listening').open,false);assert.equal($('send').disabled,false);
       assert.equal($('mic-state').textContent,MIC_TEXT['th-TH'].result);
     });
     await t.test('explicit button sends one selected-language request and confirms PC acknowledgement',async()=>{
-      await $('send').fire('click');assert.equal(sent.length,3);assert.equal(sent[1].op,'search');assert.equal(sent[1].language,'th-TH');assert.ok(sent[1].text.endsWith(":"+'เพลงไทย'));assert.match($('feedback').textContent,/PC/);
+      await $('send').fire('click');assert.equal(sent.length,4);assert.equal(sent[2].op,'search');assert.equal(sent[2].language,'th-TH');assert.ok(sent[2].text.endsWith(":"+'เพลงไทย'));assert.match($('feedback').textContent,/PC/);
     });
     await t.test('microphone denial leaves typed search available',()=>{
       $('voice').fire('click');speech.onerror({error:'not-allowed'});assert.equal($('feedback').textContent,MESSAGES['th-TH'].errors.microphone);assert.equal($('listening').open,true);assert.equal($('voice-keyboard').hidden,false);$('voice-close').fire('click');assert.equal($('query').disabled,false);assert.equal($('send').disabled,false);
     });
     await t.test('an existing error follows language changes without losing the title',()=>{
       for(const language of LANGUAGES){choose(language.code);assert.equal($('feedback').textContent,MESSAGES[language.code].errors.microphone);}
-      assert.equal($('query').value,'เพลงไทย');assert.equal(sent.length,3);
+      assert.equal($('query').value,'เพลงไทย');assert.equal(sent.length,4);
     });
     await t.test('Safari prefixed speech API uses the selected language',()=>{
       window.SpeechRecognition=undefined;window.webkitSpeechRecognition=Speech;choose('ja-JP');
@@ -263,5 +270,6 @@ test('eleven country packs include every instruction, every error and a flag ass
     assert.equal(words.steps.length,5);assert.ok((await readFile(new URL('../wk/flags/'+words.flag+'.png',import.meta.url))).length>0);
   }
 });
+
 
 

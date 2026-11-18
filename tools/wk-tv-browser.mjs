@@ -7,16 +7,16 @@ import {LANGUAGES,REMOTE_TEXT} from '../wk/ui-text.mjs';
 
 const root=resolve('wk');
 const productionRelay='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
-let room, actions, ready, latest;
+let room, actions, ready, latest, expired, requests;
 const api=createServer(async(req,res)=>{
   const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, GET, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Content-Type':'application/json'};
   if(req.method==='OPTIONS'){res.writeHead(204,headers).end();return;}
   let reply={ok:true};
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
-    const b=JSON.parse(raw);assert.equal(b.room,room);
-    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Test';ready=true;}
-    if(b.op==='ping'&&ready)reply.capabilities={p2TvMenu:1};
+    const b=JSON.parse(raw);assert.equal(b.room,room);requests.push(b);
+    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Test';ready=true;expired=false;}
+    if(b.op==='ping'&&ready)reply=expired?{ok:false,code:'disconnected'}:{ok:true,capabilities:{p2TvMenu:1}};
     if(b.op==='setTvInput'){
       assert.ok(ready);assert.match(b.request,/^[a-f0-9]{32}$/);actions.push(b.input);latest=b;
       reply={ok:true,request:b.request,input:b.input,status:'queued'};
@@ -55,7 +55,7 @@ try{
  for(const engine of [webkit,chromium]){
   const browser=await engine.launch();
   try{for(const lang of LANGUAGES){
-    room='01234567';actions=[];ready=false;latest=null;
+    room='01234567';actions=[];ready=false;latest=null;expired=false;requests=[];
     const errors=[],httpErrors=[];
     const ctx=await browser.newContext({locale:lang.code,hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
     const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -77,6 +77,34 @@ try{
       }
       assert.deepEqual(actions,['VIDEO','LEFT','RIGHT','SELECT']);
       assert.equal(await page.locator('#tv-select').textContent(),REMOTE_TEXT[lang.code].tvSelect);
+      const firstKey=requests.find(b=>b.op==='join').key;
+      await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+      assert.equal(await page.locator('#connect').isDisabled(),true);
+      assert.equal(requests.some(b=>b.op==='leave'),false);
+      expired=true;
+      await page.evaluate(()=>{window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));window.dispatchEvent(new Event('focus'));});
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      assert.equal(requests.filter(b=>b.op==='join').length,2);
+      assert.equal(requests.filter(b=>b.op==='join').at(-1).key,firstKey);
+      // Real sessionStorage and actual module startup must restore on reload.
+      await page.reload();
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      assert.equal(await page.locator('#code').inputValue(),room);
+      assert.equal(requests.filter(b=>b.op==='join').at(-1).key,firstKey);
+      assert.deepEqual(actions,['VIDEO','LEFT','RIGHT','SELECT'],'recovery never replays TV commands');
+      await ctx.setOffline(true);
+      await page.evaluate(()=>window.dispatchEvent(new Event('offline')));
+      assert.equal(await page.locator('#connect').isDisabled(),true);
+      assert.equal(await page.locator('#send').isDisabled(),true);
+      await ctx.setOffline(false);
+      await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      await page.locator('#disconnect').tap();
+      await page.waitForFunction(()=>!document.querySelector('#connect').disabled);
+      const joins=requests.filter(b=>b.op==='join').length;
+      await page.reload();
+      await page.waitForFunction(()=>document.querySelector('#connect')&&!document.querySelector('#connect').disabled);
+      assert.equal(requests.filter(b=>b.op==='join').length,joins,'explicit disconnect disables automatic restore');
       assert.deepEqual(errors,[]);console.log(engine.name(),lang.code,actions.join(' '));
     }catch(error){
       console.log(engine.name(),lang.code,{actions,errors,httpErrors,state:await page.locator('#connection-state').textContent(),help:await page.locator('#tv-availability').textContent()});
@@ -85,3 +113,4 @@ try{
   }}finally{await browser.close();}
  }
 }finally{server.close();api.close();}
+

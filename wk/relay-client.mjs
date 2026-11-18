@@ -6,8 +6,9 @@ import { CAPABILITY, queueCommand } from './queue-protocol.mjs?v=3.1';
 export const ENDPOINT='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
 const failure=code=>Object.assign(new Error(code),{code});
 const random=length=>Array.from(crypto.getRandomValues(new Uint8Array(length)),b=>b.toString(16).padStart(2,'0')).join('');
+const SESSION_KEY='wk-phone-session-v1', SESSION_AGE=12*60*60*1000;
 export class KaraokeConnection {
-  constructor(_unused,onChange=()=>{},options={}){this.change=onChange;this.url=options.url||ENDPOINT;this.fetch=(options.fetch||globalThis.fetch).bind(globalThis);this.state='idle';this.generation=0;this.controllers=new Set();this.pingMs=options.pingMs||10000;this.waitMs=options.waitMs||250;this.searchMs=options.searchMs||45000;this.requestMs=options.requestMs||10000;}
+  constructor(_unused,onChange=()=>{},options={}){this.change=onChange;this.url=options.url||ENDPOINT;this.fetch=(options.fetch||globalThis.fetch).bind(globalThis);this.state='idle';this.generation=0;this.controllers=new Set();this.pingMs=options.pingMs||10000;this.waitMs=options.waitMs||250;this.searchMs=options.searchMs||45000;this.requestMs=options.requestMs||10000;this.storage=options.storage;this.isOnline=options.isOnline||(()=>true);this.foreground=0;this.paused=false;this.accepted=false;this.retryCount=0;}
   set(state,detail){this.state=state;this.change(state,detail);}
   async wait(ms,read){
     if(ms<=0)return;
@@ -26,15 +27,71 @@ export class KaraokeConnection {
   }
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
-    await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
+    await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.name=name;this.last=null;this.set('connecting');
     try{const reply=await this.call('join',{name},generation);
+      this.acceptJoin(reply);this.accepted=true;this.confirmedAt=Date.now();this.remember();this.set(this.paused?'reconnecting':'ready',this.serverName);this.heartbeat(generation);}
+    catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
+  }
+  acceptJoin(reply){
       // Negotiate the server's admission interval; older relays keep their safe delay.
       const interval=reply.timing?.sendIntervalMs;
       this.sendMs=Number.isInteger(interval)&&interval>=300&&interval<=1550?interval:1550;
       this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
       this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
-      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
-    catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
+      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.serverName=this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server;
+  }
+  remember(){
+    if(!this.accepted||!this.key||!this.room)return;
+    try{this.storage?.setItem(SESSION_KEY,JSON.stringify({v:1,room:this.room,key:this.key,name:this.name,at:this.confirmedAt}));}catch{}
+  }
+  forget(){try{this.storage?.removeItem(SESSION_KEY);}catch{}}
+  restore(expectedRoom=''){
+    if(this.state!=='idle')return false;
+    let saved;try{saved=JSON.parse(this.storage?.getItem(SESSION_KEY)||'null');}catch{}
+    if(!saved||saved.v!==1||!/^\d{8}$/.test(saved.room)||!/^[a-f0-9]{64}$/.test(saved.key)||typeof saved.name!=='string'||saved.name.length>40||!Number.isFinite(saved.at)||saved.at>Date.now()+60000||Date.now()-saved.at>SESSION_AGE||(expectedRoom&&saved.room!==expectedRoom)){this.forget();return false;}
+    this.key=saved.key;this.room=saved.room;this.name=saved.name;this.confirmedAt=saved.at;this.accepted=true;this.needsJoin=true;
+    void this.resume();return true;
+  }
+  suspend(){
+    this.paused=true;clearTimeout(this.timer);this.remember();
+    if(this.accepted)this.set('reconnecting');
+  }
+  offline(){
+    clearTimeout(this.timer);if(this.accepted)this.set('reconnecting');
+  }
+  resume(){
+    this.paused=false;
+    if(!this.accepted||!this.key||!this.room)return Promise.resolve(false);
+    if(!this.isOnline()){this.set('reconnecting');return Promise.resolve(false);}
+    if(this.recovery)return this.recovery;
+    if(['ready','sending'].includes(this.state)&&Date.now()-this.confirmedAt<1000)return Promise.resolve(true);
+    const generation=this.generation;clearTimeout(this.timer);this.set('reconnecting');
+    const task=(async()=>{
+      try{
+        if(!this.needsJoin){
+          try{const reply=await this.call('ping',{},generation);this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;}
+          catch(e){if(e.code!=='disconnected'||generation!==this.generation)throw e;this.needsJoin=true;}
+        }
+        if(this.needsJoin){const reply=await this.call('join',{name:this.name},generation);this.acceptJoin(reply);this.needsJoin=false;}
+        if(generation!==this.generation)return false;
+        this.retryCount=0;this.confirmedAt=Date.now();this.remember();
+        this.set(this.paused?'reconnecting':this.foreground?'sending':'ready',this.serverName);this.heartbeat(generation);return true;
+      }catch(e){
+        if(generation!==this.generation)return false;
+        if(['pairing','permission','invalid'].includes(e.code)){await this.disconnect();this.set('error',e.code);return false;}
+        this.scheduleRecovery(e.code);return false;
+      }finally{if(this.recovery===task)this.recovery=null;}
+    })();
+    this.recovery=task;return task;
+  }
+  scheduleRecovery(code){
+    if(!this.accepted)return;clearTimeout(this.timer);this.set('reconnecting');
+    if(this.paused||!this.isOnline())return;
+    // Keep credentials during outages. A full room or rate limit backs off;
+    // it must not create a new identity or occupy another phone slot.
+    const delay=['full','slow'].includes(code)?60000:Math.min(30000,Math.min(2000,this.pingMs)*2**Math.min(this.retryCount++,5));
+    const generation=this.generation;
+    this.timer=setTimeout(()=>{if(generation===this.generation)void this.resume();},delay);
   }
   refreshTvStatus(generation=this.generation){
     if(generation!==this.generation || !['ready','sending'].includes(this.state))return Promise.reject(failure('disconnected'));
@@ -45,18 +102,20 @@ export class KaraokeConnection {
       if(menu!==this.tvMenuSupported||available!==this.tvInputSupported){
         this.tvMenuSupported=menu;this.tvInputSupported=available;this.change(this.state);
       }
+      this.confirmedAt=Date.now();this.remember();
       return available;
     }).finally(()=>{if(this.tvStatusRead===read)this.tvStatusRead=null;});
     this.tvStatusRead=read;return read;
   }
   heartbeat(generation,misses=0){
+    clearTimeout(this.timer);if(this.paused||!this.accepted)return;
     this.timer=setTimeout(async()=>{
       if(generation!==this.generation)return;
       try{await this.refreshTvStatus(generation);if(generation===this.generation)this.heartbeat(generation);}
       catch(e){
         if(generation!==this.generation)return;
         if(['connect','networkTimeout','response'].includes(e.code)&&misses<2){this.heartbeat(generation,misses+1);return;}
-        await this.disconnect();this.set('error',e.code);
+        this.scheduleRecovery(e.code);
       }
     },misses?Math.min(2000,this.pingMs):this.pingMs);
   }
@@ -90,6 +149,7 @@ export class KaraokeConnection {
     if(this.state!=='ready') throw failure('busy');
     if(typeof request!=='string'||!/^[a-f0-9]{32}$/.test(request)) throw failure('invalid');
     const generation=this.generation;
+    this.foreground++;
     this.set('sending');
     try {
       // The room host must deduplicate (room, phone, request). Only a read-back
@@ -106,6 +166,7 @@ export class KaraokeConnection {
         reply=await this.call('tvInputResult',payload,generation);
       }
     } finally {
+      if(generation===this.generation)this.foreground--;
       if(generation===this.generation && this.state==='sending') this.set('ready');
     }
   }
@@ -132,7 +193,7 @@ export class KaraokeConnection {
     text=text.trim();if(!background&&(!this.last||this.last.text!==text||this.last.language!==language))this.last={id:random(16),text,language};
     const job=background?{id:random(16),text,language}:this.last,generation=this.generation;
     const read=background?{sent:false,deferred:false,wake:null}:null;
-    if(read)this.backgroundRead=read;else this.set('sending');
+    if(read)this.backgroundRead=read;else {this.foreground++;this.set('sending');}
     try{
       // Queue polling is read-only and never flashes the search UI or changes its draft.
       // An unsent list refresh yields its slot to a deliberate command. Once sent,
@@ -157,12 +218,12 @@ export class KaraokeConnection {
         if(generation!==this.generation)throw failure('disconnected');
       }
       throw failure('timeout');
-    }catch(e){if(!background&&['invalid','slow','busy','timeout'].includes(e.code))this.last=null;throw e;}
-    finally{if(read&&this.backgroundRead===read)this.backgroundRead=null;if(!background&&generation===this.generation&&this.state==='sending')this.set('ready');}
+    }catch(e){if(!background&&['invalid','slow','busy','timeout'].includes(e.code))this.last=null;if(generation===this.generation&&e.code==='disconnected')this.scheduleRecovery(e.code);throw e;}
+    finally{if(read&&this.backgroundRead===read)this.backgroundRead=null;if(!background&&generation===this.generation){this.foreground--;if(this.state==='sending')this.set('ready');}}
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
+    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }
