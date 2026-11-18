@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {LANGUAGES} from '../wk/labels.mjs';
-import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.13';
+import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.14';
 
 const titles={
  'ko-KR':'사랑은 늘 도망가', 'th-TH':'เพลงรักของเรา', 'fil-PH':'Awit ng pag-ibig',
@@ -92,3 +92,4 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
   assert.ok(!requests().some(c=>c.text.startsWith('WKC1:')),'search tests send no playback controls');
  }finally{await events.fire('pagehide');}
 });
+

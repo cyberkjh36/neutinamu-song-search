@@ -3,9 +3,9 @@ import {createPlaylistUi} from './playlist-ui.mjs?v=3.8';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.13';
-import {createFavoritesCache} from './favorites-cache.mjs?v=3.9';
+import {createFavoritesCache} from './favorites-cache.mjs?v=3.14';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
-import { KaraokeConnection } from './relay-client.mjs?v=3.13';
+import { KaraokeConnection } from './relay-client.mjs?v=3.14';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
 import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './voice-input.mjs?v=2.7';
@@ -369,5 +369,6 @@ refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.
 if (secure && navigator.serviceWorker?.register) navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(()=>{});
+
 
 

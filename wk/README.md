@@ -1,3 +1,11 @@
+# WEB 3.14 — responsive search and reservations
+
+The relay advertises a 300 ms send interval to new clients. Older relays retain the existing 1,550 ms client fallback. The server permits a completed request to be followed after 250 ms while keeping one pending request per phone and idempotent request IDs. Reservation success still requires a PC acknowledgement.
+
+The accompanying 20261118.2 Windows update polls every 250 ms while phones are connected, wakes immediately when a command finishes, and caches successful searches for 60 seconds per exact query, country and HTTP client (up to 32 entries). Idle and error polling retain the previous interval. Cached results never repeat a reservation command.
+
+Validation: 289 phone tests, 56 relay tests, actual compiled .NET-client synthetic latency/duplicate-ack tests. Physical Android/iPhone and Windows installation remain field checks. Refresh/reconnect the phone and install the protected PC update on each room PC to receive the complete improvement.
+
 # WORLD KARAOKE · WEB 3.7 — 휴대폰 기본 키보드
 
 노래 검색과 애창곡 검색의 키보드 아이콘을 누르거나 입력창을 누르면 휴대폰
@@ -307,3 +315,4 @@ the relay's per-phone limit and command nonce. No relay database change.
 
 The root TJ P2 app is unchanged. 11 locale labels; Android Chrome/iPhone Safari
 web UI. wk-tests/playlist-preview.html is a synthetic display fixture only.
+

@@ -28,6 +28,9 @@ export class KaraokeConnection {
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.last=null;this.set('connecting');
     try{const reply=await this.call('join',{name},generation);
+      // Negotiate the server's admission interval; older relays keep their safe delay.
+      const interval=reply.timing?.sendIntervalMs;
+      this.sendMs=Number.isInteger(interval)&&interval>=300&&interval<=1550?interval:1550;
       this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
       this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
       this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.set('ready',this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server);this.heartbeat(generation);}
@@ -143,7 +146,7 @@ export class KaraokeConnection {
       if(generation!==this.generation)throw failure('disconnected');
       if(read?.deferred)throw failure('deferred');
       if(read)read.sent=true;
-      await this.call('search',job,generation);this.nextSend=Date.now()+1550;const started=Date.now(),deadline=started+this.searchMs;
+      await this.call('search',job,generation);this.nextSend=Date.now()+(this.sendMs||1550);const started=Date.now(),deadline=started+this.searchMs;
       while(Date.now()<deadline){
         const r=await this.call('result',{id:job.id},generation);
         if(!r.pending){if(!background)this.last=null;return {ok:r.result,code:r.result?undefined:'failed',...(r.catalog?{catalog:r.catalog}:{})};}
@@ -163,4 +166,5 @@ export class KaraokeConnection {
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }
+
 
