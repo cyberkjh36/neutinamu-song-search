@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-19T13:25:26.742Z",
+  "updatedAt": "2026-11-19T15:58:14.944Z",
   "countries": [
     "ko"
   ],
@@ -112,6 +112,14 @@
     },
     {
       "country": "ko",
+      "id": "rsnm_qSPivg",
+      "title": "[ROCK] 김수철 - 별리",
+      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
+      "count": 4,
+      "lastPlayed": "2026-11-19T14:58:04.0183638Z"
+    },
+    {
+      "country": "ko",
       "id": "JzIT15DkZyI",
       "title": "[MV] 허각 임한별 이무진 이진성(먼데이 키즈)  김희재 #안녕 '오래된 노래' | SBS '더 리슨: 너와 함께한 시간'",
       "url": "https://www.youtube.com/watch?v=JzIT15DkZyI",
@@ -181,14 +189,6 @@
       "url": "https://www.youtube.com/watch?v=rGouJKSg6ao",
       "count": 4,
       "lastPlayed": "2026-10-30T12:52:59.7695296Z"
-    },
-    {
-      "country": "ko",
-      "id": "rsnm_qSPivg",
-      "title": "[ROCK] 김수철 - 별리",
-      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
-      "count": 3,
-      "lastPlayed": "2026-11-19T04:54:20.9818782Z"
     },
     {
       "country": "ko",
@@ -301,6 +301,22 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "CxDE6GydXbg",
+      "title": "[라리가] 11R 바르셀로나 vs 알라베스 라민 야말 주요장면",
+      "url": "https://www.youtube.com/watch?v=CxDE6GydXbg",
+      "count": 1,
+      "lastPlayed": "2026-11-19T14:52:12.8956692Z"
+    },
+    {
+      "country": "ko",
+      "id": "gkRwJnNFOrc",
+      "title": "'무승부도 탈락' 벼랑 끝 노르웨이! 홀란드의 극장골로 덴마크 격파 #SPOTIME #UNL",
+      "url": "https://www.youtube.com/watch?v=gkRwJnNFOrc",
+      "count": 1,
+      "lastPlayed": "2026-11-19T14:48:24.4473183Z"
     },
     {
       "country": "ko",
