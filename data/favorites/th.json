@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-18T13:39:27.331Z",
+  "updatedAt": "2026-11-19T13:25:26.742Z",
   "countries": [
     "th"
   ],
@@ -64,6 +64,22 @@
     },
     {
       "country": "th",
+      "id": "Up_W7ro-eY8",
+      "title": "รอเมียพี่เผลอ - เฉลิมพล มาลาคำ [KARAOKE Version] เสียงมาสเตอร์",
+      "url": "https://www.youtube.com/watch?v=Up_W7ro-eY8",
+      "count": 7,
+      "lastPlayed": "2026-11-19T12:40:27.5562664Z"
+    },
+    {
+      "country": "th",
+      "id": "qPeshXuuxMI",
+      "title": "แผลใหม่ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=qPeshXuuxMI",
+      "count": 7,
+      "lastPlayed": "2026-11-19T12:35:57.3381644Z"
+    },
+    {
+      "country": "th",
       "id": "niukZCvB67I",
       "title": "คาราโอเกะ ใจสั่งมา (Jai-Sung-Mah) - LOSO [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=niukZCvB67I",
@@ -96,27 +112,11 @@
     },
     {
       "country": "th",
-      "id": "Up_W7ro-eY8",
-      "title": "รอเมียพี่เผลอ - เฉลิมพล มาลาคำ [KARAOKE Version] เสียงมาสเตอร์",
-      "url": "https://www.youtube.com/watch?v=Up_W7ro-eY8",
-      "count": 6,
-      "lastPlayed": "2026-11-17T13:31:16.1300854Z"
-    },
-    {
-      "country": "th",
       "id": "53Ac6dvQN_Y",
       "title": "คาราโอเกะ ซมซาน (Som-Sarn) - LOSO [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=53Ac6dvQN_Y",
       "count": 6,
       "lastPlayed": "2026-11-15T14:42:22.1101796Z"
-    },
-    {
-      "country": "th",
-      "id": "qPeshXuuxMI",
-      "title": "แผลใหม่ คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=qPeshXuuxMI",
-      "count": 6,
-      "lastPlayed": "2026-11-13T16:54:54.8595837Z"
     },
     {
       "country": "th",
@@ -133,6 +133,14 @@
       "url": "https://www.youtube.com/watch?v=AS9ufKuQIVs",
       "count": 6,
       "lastPlayed": "2026-11-01T10:52:48.8343637Z"
+    },
+    {
+      "country": "th",
+      "id": "wlnLJW21P_8",
+      "title": "มักบ่าวรุ่นน้อง คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=wlnLJW21P_8",
+      "count": 5,
+      "lastPlayed": "2026-11-19T12:27:36.3609005Z"
     },
     {
       "country": "th",
@@ -293,14 +301,6 @@
       "url": "https://www.youtube.com/watch?v=8XXPxLLgwt8",
       "count": 4,
       "lastPlayed": "2026-11-13T12:15:37.0587820Z"
-    },
-    {
-      "country": "th",
-      "id": "wlnLJW21P_8",
-      "title": "มักบ่าวรุ่นน้อง คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=wlnLJW21P_8",
-      "count": 4,
-      "lastPlayed": "2026-11-12T12:32:02.2910680Z"
     },
     {
       "country": "th",
@@ -637,6 +637,30 @@
       "url": "https://www.youtube.com/watch?v=aWjz_-RKbc4",
       "count": 3,
       "lastPlayed": "2026-10-24T12:31:43.4833646Z"
+    },
+    {
+      "country": "th",
+      "id": "WaiEg7yIXrU",
+      "title": "แผลใหม่ - หมิว รัชฎาพร 【COVER VERSION】",
+      "url": "https://www.youtube.com/watch?v=WaiEg7yIXrU",
+      "count": 2,
+      "lastPlayed": "2026-11-19T13:25:20.0025220Z"
+    },
+    {
+      "country": "th",
+      "id": "WJNn3oqGE7k",
+      "title": "สาวเลยยังรอ - สาวแย้ เจติยา(KARAOKE)",
+      "url": "https://www.youtube.com/watch?v=WJNn3oqGE7k",
+      "count": 2,
+      "lastPlayed": "2026-11-19T12:49:04.0374572Z"
+    },
+    {
+      "country": "th",
+      "id": "jhLgfWfdwq4",
+      "title": "รักสลายดอกฝ้ายบาน - จินตหรา พูนลาภ【OFFICIAL AUDIO】",
+      "url": "https://www.youtube.com/watch?v=jhLgfWfdwq4",
+      "count": 2,
+      "lastPlayed": "2026-11-19T12:44:49.1871415Z"
     },
     {
       "country": "th",
@@ -1392,6 +1416,78 @@
     },
     {
       "country": "th",
+      "id": "WqdXoCSPrzA",
+      "title": "18ฝน - เสือ ธนพล [เนื้อเพลง]",
+      "url": "https://www.youtube.com/watch?v=WqdXoCSPrzA",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:20:21.5228950Z"
+    },
+    {
+      "country": "th",
+      "id": "eNE4WXQ6Jf4",
+      "title": "ความรักสีดำ (คีย์ ญ.)- คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=eNE4WXQ6Jf4",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:16:45.5549728Z"
+    },
+    {
+      "country": "th",
+      "id": "BTFYt5Q__YI",
+      "title": "โบว์รักสีดำ คาราโอเกะ ศิริพร อำไพพงษ์ Cm",
+      "url": "https://www.youtube.com/watch?v=BTFYt5Q__YI",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:12:17.7440903Z"
+    },
+    {
+      "country": "th",
+      "id": "h_wK3bQkIQU",
+      "title": "คาราโอเกะ หนีแม่มาแพ้รัก - ศิริพร อำไพพงษ์ [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=h_wK3bQkIQU",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:08:14.5814196Z"
+    },
+    {
+      "country": "th",
+      "id": "EQFpvPAC2wY",
+      "title": "เมื่อไหร่จะพอ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=EQFpvPAC2wY",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:03:56.8051240Z"
+    },
+    {
+      "country": "th",
+      "id": "CeZ3qgbfQFo",
+      "title": "♫ • ผู้ชายในฝัน • ลูกทุ่ง พุ่มพวง ดวงจันทร์「คาราโอเกะ」",
+      "url": "https://www.youtube.com/watch?v=CeZ3qgbfQFo",
+      "count": 1,
+      "lastPlayed": "2026-11-19T13:00:48.0509428Z"
+    },
+    {
+      "country": "th",
+      "id": "e2ZofWLvxmA",
+      "title": "นึกเสียว่าสงสาร อ้อย กะท้อน #คาราโอเกะ #karaoke",
+      "url": "https://www.youtube.com/watch?v=e2ZofWLvxmA",
+      "count": 1,
+      "lastPlayed": "2026-11-19T12:56:55.1531682Z"
+    },
+    {
+      "country": "th",
+      "id": "jTOdRg3W0G0",
+      "title": "สมน้ำหน้าตัวเอง",
+      "url": "https://www.youtube.com/watch?v=jTOdRg3W0G0",
+      "count": 1,
+      "lastPlayed": "2026-11-19T12:49:28.0135387Z"
+    },
+    {
+      "country": "th",
+      "id": "alq43o662rM",
+      "title": "คลื่น  - PRAE CHANAA แพร ชนา (เนื้อเพลง)",
+      "url": "https://www.youtube.com/watch?v=alq43o662rM",
+      "count": 1,
+      "lastPlayed": "2026-11-19T12:35:05.1860121Z"
+    },
+    {
+      "country": "th",
       "id": "XWSZInZpqpU",
       "title": "ยกมือขึ้นบ๊ายบาย เพลงสุดท้ายก่อนอำลาพาจาก",
       "url": "https://www.youtube.com/watch?v=XWSZInZpqpU",
@@ -1493,14 +1589,6 @@
       "url": "https://www.youtube.com/watch?v=ZNUMgHfUxrU",
       "count": 1,
       "lastPlayed": "2026-11-17T14:59:26.1338556Z"
-    },
-    {
-      "country": "th",
-      "id": "jhLgfWfdwq4",
-      "title": "รักสลายดอกฝ้ายบาน - จินตหรา พูนลาภ【OFFICIAL AUDIO】",
-      "url": "https://www.youtube.com/watch?v=jhLgfWfdwq4",
-      "count": 1,
-      "lastPlayed": "2026-11-17T14:55:11.5812613Z"
     },
     {
       "country": "th",
@@ -1621,14 +1709,6 @@
       "url": "https://www.youtube.com/watch?v=0lTu55MA634",
       "count": 1,
       "lastPlayed": "2026-11-17T13:12:20.8220541Z"
-    },
-    {
-      "country": "th",
-      "id": "WJNn3oqGE7k",
-      "title": "สาวเลยยังรอ - สาวแย้ เจติยา(KARAOKE)",
-      "url": "https://www.youtube.com/watch?v=WJNn3oqGE7k",
-      "count": 1,
-      "lastPlayed": "2026-11-17T13:10:23.4381383Z"
     },
     {
       "country": "th",
@@ -2413,14 +2493,6 @@
       "url": "https://www.youtube.com/watch?v=w-SHP7XHQwU",
       "count": 1,
       "lastPlayed": "2026-11-13T14:40:13.9998476Z"
-    },
-    {
-      "country": "th",
-      "id": "WaiEg7yIXrU",
-      "title": "แผลใหม่ - หมิว รัชฎาพร 【COVER VERSION】",
-      "url": "https://www.youtube.com/watch?v=WaiEg7yIXrU",
-      "count": 1,
-      "lastPlayed": "2026-11-13T14:39:55.5884274Z"
     },
     {
       "country": "th",
