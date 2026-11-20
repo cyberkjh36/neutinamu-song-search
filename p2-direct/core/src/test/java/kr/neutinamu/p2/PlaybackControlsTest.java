@@ -14,6 +14,15 @@ public class PlaybackControlsTest {
     }
     private static void packet(QueueHarness h,byte[] expected)throws Exception{assertArrayEquals(profile().packet(expected),readFrame(h.peer).bytes());}
     private static void playing(QueueHarness h,int song)throws Exception{send(h.peer,4300,cat(Wire.integer(song),new byte[]{0}));}
+    @Test public void exactSearchUsesChosenNumberEvenWithAnUnrelatedQueue()throws Exception{
+        try(QueueHarness h=new QueueHarness(1500)){
+            h.ready();h.session.playExact(914);packet(h,Wire.queue());
+            send(h.peer,4200,list(47050));packet(h,Wire.play(914));
+            playing(h,914);h.await(Session.State.READY);
+            h.session.playExact(914);packet(h,Wire.queue());send(h.peer,4200,list(47050,914));
+            packet(h,Wire.moveReserved(2,914,1,0));
+        }
+    }
     private static void begin(QueueHarness h,boolean next)throws Exception{
         h.ready();if(next)h.session.next();else h.session.playQueued(914,1);packet(h,Wire.queue());send(h.peer,4200,list(47050,914,47050));
         if(!next){packet(h,Wire.moveReserved(3,914,1,0));message(h.peer,4210,9,100);packet(h,Wire.queue());send(h.peer,4200,list(914,47050,47050));}

@@ -148,6 +148,10 @@ public final class MainActivity extends Activity {
             public void playQueued(int song,int index){advanceCommand(false,song,index);}
             public void cancelQueued(int song,int index){cancelQueueCommand(song,index);}
             public void play(int song){if(ensureControlReady(true))dispatch("PLAY_TAPPED","[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…",s->s.startInOrder(song));paint();}
+            public void playExact(int song){
+                if(ensureControlReady(true))dispatch("PLAY_EXACT_TAPPED",song+"번 실행을 요청합니다…",s->s.playExact(song));
+                paint();
+            }
             public void reserve(int song){queueCommand(true,song);}
             public void queue(){queueCommand(false,0);}
             public void cancel(){if(ensureControlReady(false))dispatch("CANCEL_TAPPED","[C10] 정지 버튼 입력을 받았습니다. 요청을 전송합니다…",Session::cancel);paint();}

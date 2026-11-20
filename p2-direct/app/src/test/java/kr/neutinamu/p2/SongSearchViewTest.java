@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void pause(){calls.add("pause");}public void refresh(){calls.add("status");}public void personalSongs(){calls.add("personalSongs");}public void removePersonalSong(int n){calls.add("personalRemove:"+n);}
+        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void playExact(int n){calls.add("playExact:"+n);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void pause(){calls.add("pause");}public void refresh(){calls.add("status");}public void personalSongs(){calls.add("personalSongs");}public void removePersonalSong(int n){calls.add("personalRemove:"+n);}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -30,6 +30,11 @@ public class SongSearchViewTest {
         assertFalse(calls.stream().anyMatch(s->s.startsWith("play:")));
         search.handle("{\"command\":\"socket\",\"url\":\"https://example.com\"}");search.handle("not json");
         assertFalse(calls.contains("connect"));
+    }
+    @Test public void resultPlayTargetsOnlyItsNumber(){
+        search.handle("{\"command\":\"playExact\",\"number\":\"914\"}");
+        search.handle("{\"command\":\"playExact\",\"number\":\"0\"}");
+        assertTrue(calls.contains("playExact:914"));assertFalse(calls.contains("playExact:0"));
     }
     @Test public void pauseAndResumeSendOneTogglePerPress(){
         search.handle("{\"command\":\"pause\"}");

@@ -20,7 +20,7 @@ public final class Session implements Closeable {
     private State state=State.AUTH;private long deadline,lastReceived;private int wanted;
     private final int commandTimeoutMs,idleTimeoutMs;
     private boolean playReply;private int reservedSong;
-    private enum QueueAction { NEXT, SELECTED, SEARCH }
+    private enum QueueAction { NEXT, SELECTED, SEARCH, EXACT }
     private QueueAction queueAction;private int selectedQueueIndex;
     private Wire.QueueSnapshot expectedQueue;
     private Wire.QueueSnapshot lastQueue,removeBefore;private int removeSong,removeIndex;
@@ -174,6 +174,15 @@ public final class Session implements Closeable {
             }
             if(f.code==4200&&advancing()){
                 if(state==State.ADVANCE_QUEUE){
+                    if(queueAction==QueueAction.EXACT){
+                        selectedQueueIndex=songs.indexOf(wanted);
+                        if(selectedQueueIndex<0){
+                            int song=wanted;clearAdvance();
+                            change(State.READY,"선택한 곡을 실행합니다…");
+                            play(song);return;
+                        }
+                        queueAction=QueueAction.SELECTED;
+                    }
                     if(songs.isEmpty()){
                         if(queueAction==QueueAction.SEARCH){int fallback=wanted;clearAdvance();change(State.READY,"예약곡이 없어 선택한 곡을 실행합니다…");play(fallback);}
                         else{clearAdvance();change(State.READY,"예약곡이 없습니다. 노래를 찾아 먼저 예약해 주세요. 현재 곡은 정지하지 않았습니다.");}
@@ -275,6 +284,10 @@ public final class Session implements Closeable {
     public synchronized void startInOrder(int song)throws IOException {
         if(song<1||song>99999999)throw new IllegalArgumentException("Invalid song number");
         advance(QueueAction.SEARCH,song,0);
+    }
+    public synchronized void playExact(int song)throws IOException {
+        if(song<1||song>99999999)throw new IllegalArgumentException("Invalid song number");
+        advance(QueueAction.EXACT,song,0);
     }
     public synchronized void playQueued(int song,int index)throws IOException {
         if(song<1||song>99999999||index<0||index>254)throw new IllegalArgumentException("Invalid queue selection");
