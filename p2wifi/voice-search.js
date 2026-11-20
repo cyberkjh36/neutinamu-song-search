@@ -23,7 +23,7 @@ function setVoiceState(phase, error) {
   dialog.dataset.phase = phase;
   $('voiceDialogStatus').textContent = failed ? error : voiceStates[phase];
   $('voiceRetryBtn').hidden = !failed || !(window.SpeechRecognition || window.webkitSpeechRecognition);
-  $('voiceTypeBtn').hidden = !failed || error === voiceErrors['no-speech'];
+  $('voiceTypeBtn').hidden = !failed;
 }
 
 function releaseVoice() {
@@ -141,5 +141,6 @@ $('voiceCancelBtn').onclick = closeVoiceDialog;
 $('voiceRetryBtn').onclick = startVoice;
 $('voiceTypeBtn').onclick = () => { closeVoiceDialog(); $('query').focus(); };
 $('voiceDialog').addEventListener('cancel', event => { event.preventDefault(); closeVoiceDialog(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && currentVoice) closeVoiceDialog(); });
-window.addEventListener('pagehide', () => { if (currentVoice) closeVoiceDialog(); });
+// Android can briefly hide this page while the system recognition or permission UI is open.
+// Let the recognizer, timeout, or an actual navigation finish the session.
+window.addEventListener('pagehide', closeVoiceDialog);

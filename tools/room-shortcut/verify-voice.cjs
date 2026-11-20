@@ -18,6 +18,15 @@ module.exports = async function verifyVoice(page, base) {
   assert(await dialog.isVisible());
   assert.equal(await phase(), 'starting');
   assert((await dialog.locator('.voice-orb').boundingBox()).width >= 100);
+  // The Android system sheet may temporarily cover the page before audio starts.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', {value:true, configurable:true});
+    try { document.dispatchEvent(new Event('visibilitychange')); }
+    finally { delete document.hidden; }
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  assert(await dialog.isVisible());
+  assert(!(await page.evaluate(() => window.testRecognition.aborted)));
   await page.evaluate(() => window.testRecognition.onaudiostart());
   assert.equal(await phase(), 'listening');
   await page.evaluate(() => window.testRecognition.onspeechstart());
@@ -27,6 +36,7 @@ module.exports = async function verifyVoice(page, base) {
   await page.evaluate(() => window.testRecognition.onerror({error:'no-speech'}));
   assert.equal(await phase(), 'error');
   assert.equal(await page.locator('#voiceDialogStatus').textContent(), '인식하지 못했습니다. 다시 말씀해 주세요.');
+  assert(await page.locator('#voiceTypeBtn').isVisible());
   await page.locator('#voiceRetryBtn').click();
   await page.evaluate(() => {
     const part = [{transcript:'조용필'}]; part.isFinal = false;
@@ -52,4 +62,8 @@ module.exports = async function verifyVoice(page, base) {
   await page.evaluate(() => window.testRecognition.onerror({error:'not-allowed'}));
   await page.locator('#voiceTypeBtn').click();
   assert(await page.locator('#query').evaluate(el => el === document.activeElement));
+  await mic.click();
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+  assert(!(await dialog.isVisible()));
+  assert(await page.evaluate(() => window.testRecognition.aborted));
 };
