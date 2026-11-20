@@ -1,0 +1,98 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {RoomConnection} from '../../p2wifi/room-connection.mjs';
+import {WifiClient} from '../../p2wifi/wifi-client.mjs';
+
+const room='10000005', qr={label:'5',ticket:'a'.repeat(64)};
+const success=(online=true,connected=true)=>({ok:true,online,name:'모의 P2',session:'b'.repeat(32),state:{connected}});
+const fail=code=>({ok:false,code});
+function fixture(reply) {
+ const calls=[], saved=new Map();
+ const storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)};
+ const client=new WifiClient({storage,delay:async()=>{},fetcher:async(_,options)=>{
+  const request=JSON.parse(options.body);
+  calls.push(request);
+  return Response.json(await reply(request));
+ }});
+ const recovery=new RoomConnection(client,()=>{},()=>true);
+ let scheduled=null;
+ recovery.schedule=ms=>{scheduled=recovery.target&&!recovery.suspended?ms:null;};
+ return {client,recovery,calls,scheduled:()=>scheduled};
+}
+test('failed first manual join retries in the same room with the same phone key; rate limits back off',async()=>{
+ const responses=[fail('offline'),fail('full'),fail('slow'),success()];
+ const {client,recovery,calls,scheduled}=fixture(()=>responses.shift());
+ recovery.start({room});
+ for(const min of [2000,15000,60000]){
+  await recovery.check();
+  assert(!recovery.ready && scheduled()>=min);
+  await assert.rejects(client.send({action:'reserve',number:1}));
+ }
+ await recovery.check();
+ assert(recovery.ready);
+ assert.deepEqual(calls.map(x=>x.op),Array(4).fill('join'));
+ assert.equal(new Set(calls.map(x=>x.key)).size,1);
+ assert(calls.every(x=>x.room===room));
+});
+test('P2-only outage and return use the existing phone membership',async()=>{
+ const states=[success(),success(true,false),success()];
+ const {recovery,calls}=fixture(b=>b.op==='resolvePrintRoom'?{ok:true,room}:states.shift());
+ recovery.start(qr);await recovery.check();await recovery.check();
+ assert(!recovery.ready);await recovery.check();assert(recovery.ready);
+ assert.deepEqual(calls.map(x=>x.op),['resolvePrintRoom','join','status','status']);
+});
+test('printed QR re-resolves its original label after a PC replacement; stale keys do not move rooms',async()=>{
+ const newer='20000005';
+ let code=room;
+ const {recovery,calls}=fixture(b=>{
+  if(b.op==='resolvePrintRoom')return {ok:true,room:code};
+  if(b.op==='status')return success(false,false);
+  return success();
+ });
+ recovery.start(qr);await recovery.check();await recovery.check();assert(!recovery.ready);
+ code=newer;await recovery.check();assert(recovery.ready);
+ const lookups=calls.filter(x=>x.op==='resolvePrintRoom');
+ assert.equal(lookups.length,2);assert(lookups.every(x=>x.label===qr.label&&x.ticket===qr.ticket));
+ const joins=calls.filter(x=>x.op==='join');
+ assert.deepEqual(joins.map(x=>x.room),[room,newer]);assert.notEqual(joins[0].key,joins[1].key);
+});
+test('suspension ignores late status; shared wake-up reclaims expired membership once',async()=>{
+ let release,blocked=true;
+ const {client,recovery,calls}=fixture(b=>{
+  if(b.op!=='status')return success();
+  if(blocked)return new Promise(r=>release=r);
+  return fail('disconnected');
+ });
+ recovery.start({room});await recovery.check();
+ const check=recovery.check();await recovery.check();recovery.suspend();
+ await assert.rejects(client.send({action:'play',number:1}));
+ recovery.wake();recovery.wake();release(success());await check;
+ assert(!recovery.ready);blocked=false;await recovery.check();assert(recovery.ready);
+ assert.deepEqual(calls.map(x=>x.op),['join','status','status','join']);
+ assert.equal(calls[0].key,calls[3].key);
+});
+test('manual cancellation or invalid ticket stops all subsequent recovery attempts',async()=>{
+ let release;
+ const {recovery,calls}=fixture(()=>new Promise(r=>release=r));
+ recovery.start(qr);const lookup=recovery.check();recovery.stop();release({ok:true,room});await lookup;
+ recovery.wake();await recovery.check();assert.equal(calls.length,1);
+ const invalid=fixture(()=>fail('bad_ticket'));invalid.recovery.start(qr);
+ await invalid.recovery.check();invalid.recovery.wake();await invalid.recovery.check();
+ assert.equal(invalid.calls.length,1);assert.equal(invalid.recovery.target,null);
+});
+test('a lost reservation response is recovered by reading that one job, even after phone reconnect',async()=>{
+ let release;
+ const {client,recovery,calls}=fixture(b=>{
+  if(b.op==='command')throw TypeError('network lost after acceptance');
+  if(b.op==='result')return new Promise(r=>release=r);
+  return success();
+ });
+ recovery.start({room});await recovery.check();
+ const sending=client.send({action:'reserve',number:123});
+ await new Promise(setImmediate);
+ assert(!recovery.ready);await recovery.check();assert(recovery.ready);
+ await assert.rejects(client.send({action:'reserve',number:123}));
+ release({ok:true,status:'confirmed'});assert.equal((await sending).status,'confirmed');
+ assert.deepEqual(calls.map(x=>x.op),['join','command','result','status']);
+ assert.equal(calls[1].id,calls[2].id);assert.equal(calls[1].session,calls[2].session);
+});

@@ -35,6 +35,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    assert.equal(await tab.locator('.desk-qr h2').textContent(),'5번방 손님용 QR');
    await require('./verify-voice.cjs')(tab,base);
    await require('./verify-song-text.cjs')(tab);
+   await require('./verify-reconnect.cjs')(tab,base);
    assert.deepEqual(errors,[]);console.log(type,'verified seven scan routes, isolation, offline handling, desktop QR');
   } finally{await browser.close();}
  }
