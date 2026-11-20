@@ -21,7 +21,7 @@ module.exports=async function checkRemote(browser,base,ua){
  assert.ok(await page.locator('#qr svg path').count());
  await page.locator('#number').fill('3');assert.equal(await page.locator('#poster').isVisible(),false);
  await page.goto(base+'p2wifi/index.html#room=00001234&label=5');
- await page.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('연결됨'));
+ await page.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('연결됨')).catch(async error=>{throw new Error('방 연결 확인 실패: '+await page.locator('#nativeStatus').textContent()+' / '+errors.join(', '),{cause:error});});
  assert.equal(await page.locator('.native-connection .connection-caption').textContent(),'5번방');
  await page.waitForFunction(()=>document.getElementById('statusDot')?.classList.contains('ready'),{},{timeout:60000});
  await page.locator('#query').fill('가로수 그늘 아래 서면');await page.locator('#searchBtn').click();

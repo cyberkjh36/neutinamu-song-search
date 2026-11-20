@@ -102,7 +102,8 @@ async function check(name,type,ua){
   await shortcutPage.locator('#query').fill('ㅈㅇㅍ 꿈');await shortcutPage.locator('#searchBtn').click();
   await shortcutPage.waitForFunction(()=>document.getElementById('heroNumber').textContent==='693');
   await shortcutContext.close();
-  await require('./p2wifi-browser-check.cjs')(browser,url,ua);
+  const checkWifiRemote=require('./p2wifi-browser-check.cjs');
+  await checkWifiRemote(browser,url,ua);
   assert.deepEqual(errors,[]);
   console.log('PASS '+name+': initials, IME, voice result/cancel, icon guide, manifest/icons, offline catalog, standalone launch, no overflow.');
  }finally{networkUnavailable=false;await context.close();await browser.close();}
