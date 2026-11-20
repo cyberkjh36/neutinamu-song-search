@@ -75,7 +75,7 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
   await page.evaluate(()=>{const b=document.querySelector('.favorite-song[data-code="10092"]');b.click();b.click();});
   await page.waitForFunction(()=>document.getElementById('favoritesPanel').hidden);
   assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='reserve')),[{command:'reserve',number:'10092'}]);
-  assert.equal(await page.evaluate(()=>commands.filter(x=>['play','cancel','next'].includes(x.command)).length),0);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>['play','playExact','cancel','next'].includes(x.command)).length),0);
   assert.ok((await page.locator('#nativeAction').textContent()).includes('예약 요청 중'));
   await page.locator('#favoriteShortcuts [data-category=age3040]').click();
   await page.locator('.favorite-song[data-code="14515"]').click();
@@ -103,10 +103,10 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
   await page.evaluate(()=>onP2NativeVoice(['조용필 꿈'],''));
   assert.equal(await page.locator('#heroNumber').textContent(),'14515');
   assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='reserve')),[{command:'reserve',number:'10092'},{command:'reserve',number:'14515'}]);
-  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='play').length),0);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length),0);
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'예약 완료',busy:false,connected:true}));
   await page.locator('#nativePlay').click();
-  assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='play')),[{command:'play',number:'14515'}]);
+  assert.deepEqual(await page.evaluate(()=>commands.filter(x=>x.command==='playExact')),[{command:'playExact',number:'14515'}]);
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'요청 완료',busy:false,connected:true}));
   await page.locator('#nativeQueue').click();
   await page.evaluate(()=>{onP2NativeQueue({songs:[10092,14515],valid:true,message:'예약곡 2곡'});onP2NativeState({label:'● 8번방 연결됨',message:'목록 확인',busy:false,connected:true});});
@@ -136,10 +136,10 @@ const root=path.resolve(__dirname,'../..'),data=require(path.join(root,'favorite
   assert.equal(await page.evaluate(()=>commands.filter(c=>c.command==='reserve').at(-1).number),'14515');
   await page.evaluate(()=>onP2NativeState({label:'연결됨',message:'예약됨',busy:false,connected:true}));
   await page.locator('#favoriteShortcuts [data-category=mine]').click();await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===2);
-  const beforeDelete=await page.evaluate(()=>commands.filter(c=>['play','cancel','queueCancel','reserve','next'].includes(c.command)).length);
+  const beforeDelete=await page.evaluate(()=>commands.filter(c=>['play','playExact','cancel','queueCancel','reserve','next'].includes(c.command)).length);
   page.once('dialog',dialog=>dialog.accept());await page.locator('.personal-remove').first().click();
   await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===1);
-  assert.equal(await page.evaluate(()=>commands.filter(c=>['play','cancel','queueCancel','reserve','next'].includes(c.command)).length),beforeDelete);
+  assert.equal(await page.evaluate(()=>commands.filter(c=>['play','playExact','cancel','queueCancel','reserve','next'].includes(c.command)).length),beforeDelete);
   assert.equal(await page.locator('.favorite-song').getAttribute('data-code'),'14515');
   await page.context().setOffline(false);await page.reload();await page.waitForFunction(()=>!document.getElementById('searchBtn').disabled);await page.context().setOffline(true);
   await page.locator('#favoriteShortcuts [data-category=mine]').click();await page.waitForFunction(()=>document.querySelectorAll('.favorite-song').length===1);
