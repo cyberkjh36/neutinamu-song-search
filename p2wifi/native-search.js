@@ -5,11 +5,16 @@ var queueOpen=false,queueRevision=0,queueKey='',queueData={songs:[],message:'먼
 var playbackData={number:0,known:false},playbackRevision=0,playbackKey='';
 var activeFeedback=null;
 var $=id=>document.getElementById(id);
-function send(command,number){native.command(JSON.stringify({command:command,number:number||''}));}
+function send(command,number,feedback){
+ const result=native.command(JSON.stringify({command:command,number:number||''}));
+ if(feedback&&result&&typeof result.then==='function'){
+  result.then(reply=>{if(feedback.isConnected&&reply?.message)feedback.textContent=friendly(reply.message);});
+ }
+}
 function icon(name){var paths={remove:'<path d="m6 6 12 12M18 6 6 18"/>',list:'<path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/>',next:'<path d="m2 5 10 7-10 7Zm11 0 10 7-10 7Z" fill="currentColor" stroke="none"/>',plus:'<path d="M12 5v14M5 12h14"/>',play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',pause:'<path d="M8 5v14M16 5v14" stroke-width="4"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'};return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+paths[name]+'</svg>';}
 function friendly(message){if(/^\[A01\]/.test(message))return '[A01] 반주기가 연결을 승인하지 않았습니다. 연결 설정에서 확인해 주세요.';if(/^\[C00\]/.test(message))return '먼저 P2에 연결해 주세요. 곡 시작·예약 명령은 보내지 않았습니다.';return message||'';}
 function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!connected||!selected||busy;});['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
-function playbackCommand(command){if(busy||!connected)return;busy=true;buttons();send(command);}
+function playbackCommand(command,feedback){if(busy||!connected)return;busy=true;buttons();send(command,null,feedback);}
 function requestQueue(){if(busy)return;busy=true;buttons();send('queue');}
 function toggleQueue(open){queueOpen=typeof open==='boolean'?open:!queueOpen;$('nativeQueuePanel').hidden=!queueOpen;['nativeQueue','nativeQueueNav'].forEach(id=>$(id).setAttribute('aria-expanded',String(queueOpen)));$('nativeQueueNav').classList.toggle('active',queueOpen);$('nativeSearchNav').classList.toggle('active',!queueOpen);document.body.classList.toggle('queue-open',queueOpen);if(queueOpen){$('nativeQueueClose').focus();requestQueue();}else $('nativeQueueNav').focus();}
 async function renderQueue(){
@@ -72,7 +77,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  start.onclick=()=>{
   if(busy||!connected)return;
   if(playbackData.known&&playbackData.number>0){playbackStatus.textContent='현재 곡이 있습니다. 다음 예약곡으로 넘어가려면 ‘다음곡’을 누르세요.';return;}
-  activeFeedback=playbackStatus;playbackCommand('next');
+  activeFeedback=playbackStatus;playbackCommand('next',playbackStatus);
  };
  var playback=document.createElement('div');playback.id='nativePlayback';var next=document.createElement('button');next.id='nativeNext';next.type='button';next.innerHTML=icon('next')+'다음곡';next.onclick=()=>playbackCommand('next');playback.append(start,pause,next,hint,playbackStatus);$('hero').after(playback);
 
@@ -93,7 +98,7 @@ function resultRow(select,song){
   button.onclick=()=>{
    if(!connected||busy)return;
    activeFeedback=feedback;feedback.textContent=song.title+' · '+label+' 요청 중…';
-   busy=true;buttons();send(command,song.code);
+   busy=true;buttons();send(command,song.code,feedback);
   };
   actions.append(button);
  }
