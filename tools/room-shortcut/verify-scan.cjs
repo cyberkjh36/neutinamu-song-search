@@ -38,6 +38,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    await tab.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
    await tab.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('모의 반주기 연결됨'));
    await require('./verify-song-text.cjs')(tab);
+   await require('./verify-pause.cjs')(tab);
    const favoritesTab=await cx.newPage();
    favoritesTab.on('pageerror',e=>errors.push(e.message));
    try {

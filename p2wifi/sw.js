@@ -1,4 +1,4 @@
-const CACHE = 'neutinamu-webremote-1.3.6-personal';
+const CACHE = 'neutinamu-webremote-1.3.7-pause';
 const FILES = ['index.html','voice-search.js','native-search.js','favorites-ui.js','favorites-data.js','favorites.css',
   'vendor/qrcode.js','wifi-client.mjs','room-connection.mjs','wifi-bridge.js','wifi.css','manifest.webmanifest','../chosung.js','../p2.css','../icon.svg',
   '../icon-192.png','../icon-512.png'];
