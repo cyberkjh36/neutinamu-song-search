@@ -153,9 +153,10 @@
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.3.8"></script>
+  <script src="wifi-bridge.js?v=1.3.9"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
+  <script src="../catalog-sync.js" defer></script>
   <script src="../chosung.js"></script>
   <script src="native-search.js?v=1.3.8" defer></script>
   <link rel="stylesheet" href="favorites.css?v=1.3.5">
@@ -221,15 +222,19 @@ function renderCount(n){$('dbCount').innerHTML=`저장 곡 <span class="dbcount"
 function csvParse(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(cell);cell=''}else if(c==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell=''}else cell+=c}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
 function headerKey(s){return normalize(s).replace(/^(tj|금영)/,'')}
 function fieldIndex(headers,options,fallback){const h=headers.map(headerKey);for(const opt of options){const i=h.indexOf(headerKey(opt));if(i>=0)return i}return fallback}
-async function importCSVText(raw,expectedCount){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
+async function importCSVText(raw,expectedCount,onlyMissing=false){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
  const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]==null?'':r[ci]).trim().replace(/\.0$/,'');const title=String(r[ti]==null?'':r[ti]).trim();const artist=String(r[ai]==null?'':r[ai]).trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
  if(!out.length)throw Error('곡번호와 곡제목을 읽지 못했습니다. 입력 양식과 열 이름을 확인해 주세요.');
  if(expectedCount!==undefined&&(out.length!==expectedCount||new Set(out.map(s=>s.code)).size!==expectedCount))throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');
- for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000))store.put(song);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
+ for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000)){
+  if(onlyMissing){const existing=store.get(song.code);existing.onsuccess=()=>{if(existing.result===undefined)store.add(song);};}
+  else store.put(song);
+ }tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
 async function importFile(file){return importCSVText(await file.text())}
 async function updateBundledCatalog(){
  const empty=await countSongs()===0;
  // An empty database must be restored even if its version markers survived.
+ if(empty)window.TJCatalogSync?.clear(DB_NAME);
  if(empty)for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);
  for(const catalog of BUNDLED_CATALOGS){
   if(localStorage.getItem(catalog.key))continue;
@@ -304,11 +309,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
   if(document.querySelector('#favoritesTabs [data-category="mine"][aria-pressed="true"]')&&!document.getElementById('favoritesPanel').hidden)window.NeutiP2?.command(JSON.stringify({command:'personalSongs'}));
   setMessage(updatePending?'새 곡 목록을 받지 못했습니다. 저장된 곡은 검색할 수 있으며, 인터넷 연결 후 앱을 다시 열면 업데이트합니다.':'곡 제목이나 가수를 말하거나 입력해 주세요.');
   $('searchBtn').disabled=false;$('voiceBtn').disabled=false;
+  window.TJCatalogSync?.attach({base:'../',dbName:DB_NAME,importBatch:importCSVText,refreshCount:async()=>renderCount(await countSongs())});
  }
  catch(e){setMessage('곡 데이터를 준비하지 못했습니다. 저장 공간을 확인하고 앱을 다시 실행해 주세요. '+e.message,true)}
  $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
  $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
- $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);renderCount(0);$('hero').classList.remove('show');if(window.P2Remote)window.P2Remote.setSong(null);$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
+ $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;window.TJCatalogSync?.clear(DB_NAME);for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);renderCount(0);$('hero').classList.remove('show');if(window.P2Remote)window.P2Remote.setSong(null);$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
 });
 </script>
 </body>

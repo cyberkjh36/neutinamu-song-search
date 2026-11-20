@@ -66,3 +66,12 @@ test('duplicate and truncated updates are rejected before writing and stay retry
  }
  await a.run('db.close()');
 });
+
+test('a verified download fills missing songs and preserves a manually stored title',async()=>{
+ const a=app();await a.run('openDB()');
+ a.c.local='곡번호,곡제목,가수\n71547,직접 저장한 제목,내 가수\n';
+ a.c.patch='곡번호,곡제목,가수\n71547,다른 제목,가수\n71548,Boundary,Dr.Yun\n';
+ await a.run('importCSVText(local)');await a.run('importCSVText(patch,2,true)');await a.run('importCSVText(patch,2,true)');
+ assert.equal(await a.run('countSongs()'),2);assert.equal(await a.run("(awaitList=>awaitList.then(x=>x.find(s=>s.code==='71547').title))(allSongs())"),'직접 저장한 제목');
+ await a.run('db.close()');
+});

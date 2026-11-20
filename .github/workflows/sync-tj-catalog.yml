@@ -1,0 +1,58 @@
+name: Sync TJ song catalog
+on:
+  schedule:
+    - cron: '23 0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/sync-tj-catalog.py', '.github/workflows/sync-tj-catalog.yml']
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: tj-song-catalog
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check the fortnightly catalog cycle
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            python3 scripts/sync-tj-catalog.py
+          else
+            python3 scripts/sync-tj-catalog.py --if-due
+          fi
+      - name: Publish the verified manifest and new batches
+        run: |
+          git add -- catalog-updates.json ':(glob)catalog-update-*.csv'
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Update official TJ new-song catalog'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Ensure the phone download is published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url="https://cyberkjh36.github.io/neutinamu-song-search/catalog-updates.json"
+          live_matches() {
+            curl -fsSL --max-time 12 "$url?check=$GITHUB_RUN_ID-$(date +%s)" -o "$RUNNER_TEMP/tj-live.json" &&
+              cmp -s catalog-updates.json "$RUNNER_TEMP/tj-live.json"
+          }
+          if live_matches; then exit 0; fi
+          # A branch push made with GITHUB_TOKEN may need an explicit Pages build.
+          sleep 25
+          if live_matches; then exit 0; fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          for attempt in {1..18}; do
+            sleep 10
+            if live_matches; then exit 0; fi
+          done
+          exit 1

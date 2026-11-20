@@ -1,6 +1,6 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v20-20261120-catalog';
-var ASSETS=['./p2-room.html','./room-connect.js','./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
+var CACHE='neutinamu-p2-v21-live-catalog';
+var ASSETS=['./p2-room.html','./room-connect.js','./catalog-sync.js','./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
 });

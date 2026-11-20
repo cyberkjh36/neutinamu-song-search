@@ -2,6 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium,webkit}=require('playwright');
 const root=path.resolve(__dirname,'..'),prefix='/neutinamu-song-search/';
+const catalogCount=76617+JSON.parse(fs.readFileSync(path.join(root,'catalog-updates.json'),'utf8')).batches.reduce((n,b)=>n+b.count,0);
 const output=path.join(root,'browser-report');fs.mkdirSync(output,{recursive:true});
 let networkUnavailable=false;
 const server=http.createServer((req,res)=>{
@@ -19,7 +20,7 @@ async function check(name,type,ua){
  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:ua});
  const page=await context.newPage(),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',req=>requests.push(req.url()));
  const url='http://127.0.0.1:'+server.address().port+prefix;
- const ready=()=>page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,745')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
+ const ready=()=>page.waitForFunction(n=>Number(document.querySelector('#dbCount .dbcount')?.textContent.replace(/[^0-9]/g,''))===n&&!document.getElementById('searchBtn').disabled,catalogCount,{timeout:60000});
  try{
   await page.goto(url);await ready();
   await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -93,7 +94,7 @@ async function check(name,type,ua){
   const shortcutContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:ua});
   const shortcutPage=await shortcutContext.newPage();
   await shortcutPage.goto(url+'?shortcut=1');
-  await shortcutPage.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,745')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
+  await shortcutPage.waitForFunction(n=>Number(document.querySelector('#dbCount .dbcount')?.textContent.replace(/[^0-9]/g,''))===n&&!document.getElementById('searchBtn').disabled,catalogCount,{timeout:60000});
   assert.equal(await shortcutPage.locator('#appManifest').count(),0,'Shortcut does not request a WebAPK');
   assert.equal(await shortcutPage.locator('#installHelp').isVisible(),true);
   const shortcutGuide=await shortcutPage.locator('#installHelp').textContent();

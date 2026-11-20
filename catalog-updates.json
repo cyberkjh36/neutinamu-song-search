@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "through": "2026-11-21",
+  "batches": [
+    {
+      "file": "catalog-update-20261120.csv",
+      "sha256": "dc1848277f07e2c6dbaa92faeb6ccee82b1c8be84f2785ad570eaf3c0fee090e",
+      "count": 128
+    },
+    {
+      "file": "catalog-update-20261121-5c12bbadd6a1.csv",
+      "sha256": "5c12bbadd6a1b5ed58b6c86f32f05859b9343e89f1559c2884499afe50de23da",
+      "count": 2
+    }
+  ]
+}
