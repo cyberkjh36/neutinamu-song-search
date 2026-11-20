@@ -33,6 +33,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    await tab.waitForSelector('.desk-qr-picture svg');
    await tab.waitForFunction(()=>document.body.textContent.includes('모의 반주기 연결됨'));
    assert.equal(await tab.locator('.desk-qr h2').textContent(),'5번방 손님용 QR');
+   await require('./verify-voice.cjs')(tab,base);
    assert.deepEqual(errors,[]);console.log(type,'verified seven scan routes, isolation, offline handling, desktop QR');
   } finally{await browser.close();}
  }
