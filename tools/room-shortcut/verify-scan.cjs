@@ -40,7 +40,10 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    await require('./verify-song-text.cjs')(tab);
    const favoritesTab=await cx.newPage();
    favoritesTab.on('pageerror',e=>errors.push(e.message));
-   try {await require('./verify-favorites-reserve.cjs')(favoritesTab,base);}
+   try {
+    await require('./verify-favorites-reserve.cjs')(favoritesTab,base);
+    await require('./verify-personal.cjs')(favoritesTab,base);
+   }
    finally {await favoritesTab.close();}
    await require('./verify-reconnect.cjs')(tab,base);
    assert.deepEqual(errors,[]);console.log(type,'verified seven scan routes, isolation, offline handling, desktop QR');

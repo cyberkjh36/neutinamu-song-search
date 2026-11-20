@@ -92,7 +92,7 @@ export class WifiClient {
     if (Date.now() >= deadline) break;
     try {
      const result = await this.call('result',request);
-     if (!['pending','claimed'].includes(result.status)) return result;
+     if (!['pending','claimed'].includes(result.status)) return {...result,requestId:request.id};
     } catch (error) {
      if (['permission','disconnected','expired'].includes(error.code)) break;
     }
@@ -103,6 +103,7 @@ export class WifiClient {
 }
 export function mergePersonal(record,events){
  const saved=record&&typeof record==='object'?record:{},songs={...(saved.songs||{})},seen={...(saved.seen||{})};
- for(const e of events||[]){if(!/^[a-f0-9]{32}$/.test(e.id)||!Number.isInteger(e.number)||e.number<1||e.number>99999999||!Number.isSafeInteger(e.created)||seen[e.id])continue;seen[e.id]=e.created;songs[e.number]={number:e.number,lastPlayed:Math.max(songs[e.number]?.lastPlayed||0,e.created)};}
- const keep=Object.values(songs).sort((a,b)=>b.lastPlayed-a.lastPlayed).slice(0,5000);return {songs:Object.fromEntries(keep.map(x=>[x.number,x])),seen:Object.fromEntries(Object.entries(seen).sort((a,b)=>b[1]-a[1]).slice(0,10000))};
+ const removed={...(saved.removed||{})};
+ for(const e of events||[]){if(!/^[a-f0-9]{32}$/.test(e.id)||!Number.isInteger(e.number)||e.number<1||e.number>99999999||!Number.isSafeInteger(e.created)||seen[e.id])continue;seen[e.id]=e.created;if(e.created<=(removed[e.number]||0))continue;songs[e.number]={number:e.number,lastPlayed:Math.max(songs[e.number]?.lastPlayed||0,e.created)};}
+ const keep=Object.values(songs).sort((a,b)=>b.lastPlayed-a.lastPlayed).slice(0,5000);return {removed:Object.fromEntries(Object.entries(removed).sort((a,b)=>b[1]-a[1]).slice(0,10000)),songs:Object.fromEntries(keep.map(x=>[x.number,x])),seen:Object.fromEntries(Object.entries(seen).sort((a,b)=>b[1]-a[1]).slice(0,10000))};
 }

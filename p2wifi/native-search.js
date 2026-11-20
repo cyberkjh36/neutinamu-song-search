@@ -51,6 +51,14 @@ document.addEventListener('DOMContentLoaded',()=>{
  var panel=document.createElement('section');panel.className='panel native-connection';panel.innerHTML='<div><span class="connection-caption">내 방 연결</span><strong id="nativeState" role="status">○ P2 연결 전</strong></div><button id="nativeConnect" type="button">P2 연결</button><p id="nativeStatus" class="hint" role="status">방 QR을 스캔하면 자동으로 연결합니다. QR 없이 이용하려면 P2 연결을 누르세요.</p>';searchPanel.before(panel);$('nativeConnect').onclick=()=>{if(!busy){busy=true;buttons();send('connect');}};
  var title=document.createElement('h2');title.className='native-section-title';title.textContent='어떤 노래를 부를까요?';searchPanel.prepend(title);searchPanel.insertBefore($('voiceBtn'),searchPanel.querySelector('.searchrow'));$('query').setAttribute('aria-label','노래 제목, 가수, 초성 또는 곡번호');$('query').placeholder='제목 · 가수 · 초성 · 곡번호';
  var controls=document.createElement('div');controls.className='native-controls';controls.innerHTML='<button id="nativePlay" type="button" disabled>'+icon('play')+'실행</button><button id="nativeReserve" type="button" disabled>'+icon('plus')+'예약</button><button id="nativeQueue" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 목록</button><p id="nativeOrderHelp" class="hint">실행: 예약곡이 있으면 첫 곡부터, 없으면 선택한 곡을 실행합니다.<br>예약: 선택한 곡을 목록 맨 뒤에 추가합니다.</p><p id="nativeAction" class="hint" role="status"></p>';$('hero').append(controls);$('hero').querySelector('.matchlabel').textContent='선택한 곡 · 가수를 확인하세요';
+ var saveFavorite=document.createElement('button');saveFavorite.type='button';saveFavorite.id='nativeSaveFavorite';saveFavorite.textContent='내 애창곡에 저장';
+ var savedNote=document.createElement('p');savedNote.id='favoriteSaveStatus';savedNote.className='hint';savedNote.setAttribute('role','status');
+ controls.append(saveFavorite,savedNote);
+ saveFavorite.onclick=async()=>{
+  const song=selected;if(!song)return;
+  const saved=await native.command(JSON.stringify({command:'personalAdd',number:song.code}));
+  if(selected===song)savedNote.textContent=saved===true?song.title+' · 내 애창곡에 저장했습니다.':'저장하지 못했습니다. 브라우저의 저장 공간을 확인해 주세요.';
+ };
  ['Play','Reserve'].forEach(kind=>{$('native'+kind).onclick=()=>{if(selected&&!busy){busy=true;buttons();send(kind==='Play'?'play':'reserve',selected.code);}};});$('nativeQueue').onclick=()=>toggleQueue();
  var stop=document.createElement('button');stop.type='button';stop.id='nativeStop';stop.innerHTML=icon('stop')+'정지';stop.onclick=()=>playbackCommand('cancel');var playback=document.createElement('div');playback.id='nativePlayback';var next=document.createElement('button');next.id='nativeNext';next.type='button';next.innerHTML=icon('next')+'다음곡 실행';next.onclick=()=>playbackCommand('next');playback.append(stop,next);$('hero').after(playback);
 
@@ -60,7 +68,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  var nav=document.createElement('nav');nav.className='native-nav';nav.setAttribute('aria-label','주요 메뉴');nav.innerHTML='<button id="nativeSearchNav" class="active" type="button">'+icon('search')+'노래 찾기</button><button id="nativeQueueNav" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 <span class="queue-count">—</span></button><button id="nativeMoreNav" type="button">'+icon('more')+'더보기</button>';document.body.append(nav);$('nativeQueueNav').onclick=()=>toggleQueue();$('nativeSearchNav').onclick=()=>{if(queueOpen)toggleQueue(false);searchPanel.scrollIntoView({behavior:'smooth',block:'start'});};$('nativeMoreNav').onclick=()=>{if(queueOpen)toggleQueue(false);tools.open=!tools.open;if(tools.open)tools.scrollIntoView({behavior:'smooth',block:'start'});};
  $('fileInput').addEventListener('click',e=>{e.preventDefault();send('import');});document.querySelector('.footer').textContent='made by cyberkjh · 0.11.15\n공식 TJ 앱이 아닙니다. 음성 인식은 인터넷 연결이 필요할 수 있습니다.';document.querySelector('.footer').style.whiteSpace='pre-line';renderQueue();renderPlayback();buttons();send('status');
 });
-window.P2Remote={setSong(song){selected=song&&/^[1-9][0-9]{0,7}$/.test(String(song.code))?song:null;buttons();},reserveSelected(code){
+window.P2Remote={setSong(song){if($('favoriteSaveStatus'))$('favoriteSaveStatus').textContent='';selected=song&&/^[1-9][0-9]{0,7}$/.test(String(song.code))?song:null;buttons();},reserveSelected(code){
  if(!connected)return '먼저 P2에 연결한 뒤 예약을 눌러 주세요.';
  if(busy)return '이전 요청을 처리하고 있습니다. 잠시 후 예약을 다시 눌러 주세요.';
  if(!selected||String(selected.code)!==String(code))return '곡 정보를 다시 확인한 뒤 예약을 눌러 주세요.';
