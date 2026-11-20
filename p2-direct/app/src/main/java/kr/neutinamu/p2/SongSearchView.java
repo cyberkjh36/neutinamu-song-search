@@ -52,7 +52,7 @@ final class SongSearchView {
     static String assetPath(Uri uri){
         if(!"https".equals(uri.getScheme())||!"appassets.androidplatform.net".equals(uri.getHost())||uri.getPort()!=-1||uri.getUserInfo()!=null||uri.getQuery()!=null||uri.getFragment()!=null)return null;
         String path=uri.getEncodedPath();if(path==null||!path.startsWith("/search/"))return null;
-        String name=path.substring(8);return ASSETS.contains(name)?(name.startsWith("catalog-")?name:"song-search/"+name):null;
+        String name=path.substring(8);return ASSETS.contains(name)?(name.endsWith(".csv")?name:"song-search/"+name):null;
     }
     static String catalogFile(Uri uri){
         if(!"https".equals(uri.getScheme())||!"appassets.androidplatform.net".equals(uri.getEncodedAuthority())||uri.getQuery()!=null||uri.getFragment()!=null)return null;

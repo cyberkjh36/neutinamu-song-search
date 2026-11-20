@@ -36,6 +36,16 @@ public class SongSearchViewTest {
         search.handle("{\"command\":\"playExact\",\"number\":\"0\"}");
         assertTrue(calls.contains("playExact:914"));assertFalse(calls.contains("playExact:0"));
     }
+    @Test public void catalogSyncScriptLoadsFromTheInstalledApk() throws IOException {
+        Uri url=Uri.parse("https://appassets.androidplatform.net/search/catalog-sync.js");
+        assertEquals("song-search/catalog-sync.js",SongSearchView.assetPath(url));
+        android.webkit.WebResourceResponse resource=search.resource(url);
+        assertEquals(200,resource.getStatusCode());
+        assertEquals("application/javascript",resource.getMimeType());
+        try(Scanner contents=new Scanner(resource.getData(),"UTF-8")){
+            assertTrue(contents.useDelimiter("\\A").next().contains("window.TJCatalogSync="));
+        }
+    }
     @Test public void downloadableCatalogIsRestrictedToExpectedDataResources(){
         final String base="https://appassets.androidplatform.net/search/";
         assertEquals("catalog-updates.json",SongSearchView.catalogFile(Uri.parse(base+"catalog-updates.json")));
