@@ -2,7 +2,7 @@
 
 고정 설치 안내 주소: https://cyberkjh36.github.io/neutinamu-song-search/p2-install.html
 
-현재 배포본은 **0.11.18 신곡 자동 업데이트 버전**입니다.
+현재 배포본은 **0.11.19 신곡 자동 업데이트 버전**입니다.
 
 - 인터넷에 연결된 상태에서 앱을 열거나 다시 돌아오면 새로 배포된 태진 곡번호·제목·가수를 받아 저장합니다. 이후 신곡을 받을 때는 앱 재설치가 필요 없습니다. 오프라인에서는 이미 받은 곡을 검색할 수 있습니다.
 - 아래쪽 **실행**은 첫 예약곡을 시작합니다. **일시정지**를 다시 누르면 현재 곡을 이어 부를 수 있습니다. **다음곡**은 다음 예약곡으로 넘어갑니다.
@@ -18,15 +18,15 @@
 
 **기존 앱을 삭제하지 않고 업데이트해 주세요.** 기존 설치 QR과 각 방 연결 QR은 그대로입니다. 앱 삭제 또는 앱 데이터 삭제 시 내 애창곡 기록도 삭제됩니다.
 
-- 파일: `Neutinamu_P2_Room_QR_0.11.18.apk`
+- 파일: `Neutinamu_P2_Room_QR_0.11.19.apk`
 - 패키지: `kr.neutinamu.p2.direct`
-- versionName: `0.11.18-catalog-sync`
-- versionCode: `32`
-- SHA-256: `95704811d70ab7e5e05ad9156453d3bc9e88cf4eb6ea62e17279699ba44c8a33`
+- versionName: `0.11.19-catalog-sync`
+- versionCode: `33`
+- SHA-256: `58db0da23fe7ead49476cab82dba87995b83c542383fa4505f3003b28e276711`
 - 서명 인증서 SHA-256: `e92339ba88ae926b8a5d8958d451288a0cb6b302bc77810b3f46f536323c7b18`
 - 방 대응표: 기존과 같은 1·2·3·5·6·7·8번방
-- 소스 커밋: `b474288dfd87fe1ef0839a888713a03a258f6e1b` (`codex/p2-direct-native-trial`)
-- 자동 검사: https://github.com/cyberkjh36/neutinamu-song-search/actions/runs/44759951113
+- 소스 커밋: `73e162bb3fa6655b838b008afe06980d29228ccd` (`codex/p2-direct-native-trial`)
+- 자동 검사: https://github.com/cyberkjh36/neutinamu-song-search/actions/runs/44761429365
 
 검증 결과:
 - 브라우저와 Android 앱의 버튼 입력, P2의 일시정지·계속 응답, 중복 입력 방지와 서명된 배포 파일을 검사했습니다.
