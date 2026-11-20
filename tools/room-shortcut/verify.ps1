@@ -9,9 +9,10 @@ if(!$csc){throw 'Visual Studio C# compiler not found'}
 $app=Join-Path $dir 'Neutinamu_Room_Remote_1.3.0.exe'
 Copy-Item (Join-Path $PSScriptRoot 'Program.cs') $dir
 Copy-Item (Join-Path $PSScriptRoot 'Remote.ico') $dir
+Copy-Item (Join-Path $PSScriptRoot 'DesktopLink.cs') $dir
 Push-Location $dir
 try {
-  & $csc /nologo /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs
+  & $csc /nologo /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs DesktopLink.cs
   if($LASTEXITCODE){throw 'Build failed'}
 } finally {Pop-Location}
 $stderr=Join-Path $dir 'install.stderr.txt'
@@ -22,7 +23,9 @@ $name=-join ([char[]](0xb290,0xd2f0,0xb098,0xbb34,0x20,0xb178,0xb798,0xbc29,0x20
 $linkPath=Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) ($name+'.lnk')
 if(!(Test-Path -LiteralPath $linkPath)){throw 'Korean desktop shortcut missing'}
 $shell=New-Object -ComObject WScript.Shell
-$link=$shell.CreateShortcut($linkPath)
+$readPath=Join-Path $dir 'installed-shortcut.lnk'
+Copy-Item -LiteralPath $linkPath -Destination $readPath
+$link=$shell.CreateShortcut($readPath)
 if($link.Arguments -ne '--open' -or !(Test-Path -LiteralPath $link.TargetPath) -or $link.IconLocation -notlike '*RoomRemote.exe,0'){throw 'Invalid shortcut target, arguments, or icon'}
 if((Get-FileHash $link.TargetPath).Hash -ne (Get-FileHash $app).Hash){throw 'Installed program mismatch'}
 Add-Type -AssemblyName System.Drawing

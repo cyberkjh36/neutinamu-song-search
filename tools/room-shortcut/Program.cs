@@ -38,12 +38,10 @@ internal static class RoomShortcut {
             string temp=Path.Combine(dir,Guid.NewGuid().ToString("N")+".tmp");
             try{File.Copy(self,temp);if(File.Exists(exe))File.Replace(temp,exe,null);else File.Move(temp,exe);}finally{if(File.Exists(temp))File.Delete(temp);}
         }
-        dynamic shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell",true));
         string desktop=Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory,Environment.SpecialFolderOption.Create);
         if(string.IsNullOrWhiteSpace(desktop))throw new IOException("Windows 바탕화면 폴더를 찾지 못했습니다.");
         Directory.CreateDirectory(desktop);
-        dynamic link=shell.CreateShortcut(Path.Combine(desktop,Title+".lnk"));
-        link.TargetPath=exe;link.Arguments="--open";link.WorkingDirectory=dir;link.IconLocation=exe+",0";link.Description="이 방의 P2 리모컨과 손님용 QR 열기";link.Save();
+        DesktopLink.Save(Path.Combine(desktop,Title+".lnk"),exe);
     }
     static string HostPath(){
         using(var key=Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")){
