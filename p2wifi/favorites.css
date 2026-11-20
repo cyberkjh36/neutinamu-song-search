@@ -43,3 +43,6 @@
 #favoritesMore[hidden],#personalHint[hidden],.favorites-source[hidden]{display:none}
 #personalHint{font-size:15px;line-height:1.7;color:#bcd0d6;border-top:1px solid #42606e;padding-top:16px}
 .personal-remove{display:block;width:100%;min-height:48px;margin-top:6px;background:transparent;color:#cbdce3;border:1px solid #426776;border-radius:12px;font-size:16px}
+
+#favoritesFeedback{position:absolute;z-index:2;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:min(90%,540px);box-sizing:border-box;margin:0;padding:10px 18px;border:1px solid #92c5a7;border-radius:12px;background:#142e28;color:#fff;font-size:19px;font-weight:650;line-height:1.45;text-align:center;overflow-wrap:anywhere;pointer-events:none}
+#favoritesFeedback:empty{opacity:0}

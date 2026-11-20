@@ -38,6 +38,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    await tab.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
    await tab.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('모의 반주기 연결됨'));
    await require('./verify-song-text.cjs')(tab);
+   await require('./verify-favorites-reserve.cjs')(tab,base);
    await require('./verify-reconnect.cjs')(tab,base);
    assert.deepEqual(errors,[]);console.log(type,'verified seven scan routes, isolation, offline handling, desktop QR');
   } finally{await browser.close();}
