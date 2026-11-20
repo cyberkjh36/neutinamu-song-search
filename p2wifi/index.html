@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#10243a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="느티나무 P2 리모컨">
+  <meta name="apple-mobile-web-app-title" content="느티나무 P2 리모컨">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <meta name="description" content="태진 P2 곡 번호를 음성과 노래 데이터로 검색합니다.">
+  <link id="appManifest" rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="icon" sizes="192x192" href="../icon-192.png" type="image/png">
+  <link rel="shortcut icon" href="../icon-192.png" type="image/png">
+  <title>느티나무 P2 리모컨</title>
+  <style>
+    :root{color-scheme:dark;--bg:#081522;--panel:#10243a;--panel2:#142d47;--line:#27435e;--text:#f4f7fb;--muted:#aac0d4;--cyan:#72e0e7;--yellow:#ffd166;--green:#a9f0c0;--red:#ff9b9b}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#173451 0,#081522 56%);color:var(--text);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;min-height:100vh}
+    main{width:100%;max-width:760px;width:min(760px,100%);margin:0 auto;padding:24px 18px calc(36px + env(safe-area-inset-bottom))}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-size:13px;letter-spacing:.1em;color:var(--cyan);font-weight:800}.small{color:var(--muted);font-size:13px}
+    h1{font-size:30px;font-size:clamp(27px,7vw,38px);line-height:1.15;margin:5px 0 8px}.lead{color:var(--muted);margin:0 0 20px;font-size:15px}
+    .panel{background:linear-gradient(145deg,#142d47,#0e2034);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 16px 42px #0004;margin-bottom:16px}
+    .status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;margin-bottom:16px}.dot{width:10px;height:10px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px currentColor}.dot.ready{background:var(--green)}
+    .searchrow{display:flex;gap:9px}.searchrow input{flex:1;min-width:0;background:#081522;color:var(--text);border:1px solid #365571;border-radius:14px;padding:15px 14px;font-size:17px;outline:none}.searchrow input:focus{border-color:var(--cyan)}
+    button,.filebtn{font:inherit;color:var(--text);border:1px solid #43637e;background:#193750;padding:13px 15px;border-radius:14px;cursor:pointer;font-weight:750}.searchbtn{white-space:nowrap}.voice{width:100%;margin-top:10px;background:linear-gradient(90deg,#15a8b7,#16758a);border:0;font-size:19px;padding:17px}.voice:disabled{opacity:.65}.voice .mic{font-size:23px;margin-right:8px}
+    .hero{display:none;text-align:center;padding:18px 10px 14px}.hero.show{display:block}.hero .number{font-size:clamp(62px,18vw,118px);font-weight:950;line-height:.98;letter-spacing:.02em;color:var(--yellow);text-shadow:0 6px 30px #ffd16655;overflow-wrap:anywhere}.hero .title{font-size:clamp(22px,6vw,32px);font-weight:850;margin-top:14px}.hero .artist{font-size:17px;color:var(--muted);margin-top:5px}.matchlabel{font-size:12px;color:var(--cyan);letter-spacing:.12em;font-weight:800;margin-bottom:10px}
+    .message{min-height:22px;color:var(--muted);font-size:14px;margin:12px 0 0}.message.error{color:var(--red)}
+    .results{display:grid;gap:9px;margin-top:14px}.result{display:flex;align-items:center;gap:14px;text-align:left;background:#0b1b2c;border:1px solid #27435e;border-radius:14px;padding:12px 14px}.result .num{font-weight:900;color:var(--yellow);font-size:24px;min-width:82px;text-align:center}.result .meta{min-width:0}.result .songtitle{font-size:16px;font-weight:800}.result .songartist{font-size:13px;color:var(--muted);margin-top:2px}.result:active{transform:scale(.99)}
+    details{border-top:1px solid var(--line);padding-top:15px;margin-top:14px}summary{cursor:pointer;font-weight:800}.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.filebtn{text-align:center;display:block}.filebtn input{display:none}.secondary{background:#10243a}.danger{color:#ffc1c1}.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:13px 0 0}.dbcount{font-weight:900;color:var(--cyan)}.footer{color:#90a8be;font-size:12px;line-height:1.55;text-align:center;padding:8px}
+    @media(max-width:440px){main{padding:19px 14px}.searchrow{display:grid;grid-template-columns:1fr auto}.searchrow input{grid-column:1/-1}.tools{grid-template-columns:1fr}.panel{padding:15px;border-radius:18px}}
+
+    h1{font-size:30px;font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
+    .hero{padding:20px 0 14px}
+    .hero .number{font-family:Arial,sans-serif;font-size:100px;font-weight:900;line-height:1.05;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;font-variant-numeric:tabular-nums;width:100%}
+
+    .install-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#163a46;border:1px solid #317784;border-radius:16px;padding:13px 15px;margin:0 0 16px}
+    .install-cta strong{font-size:15px;line-height:1.4;display:block}
+    .install-cta p{font-size:12px;color:#c8e3e7;margin:4px 0 0;line-height:1.4}
+    .install-cta button{flex-shrink:0;color:#051822;background:#a4f1ed;border:0;font-size:15px;padding:12px 14px}
+    .install-help{background:#193750;border:1px solid #4387a0;border-radius:12px;padding:14px 16px;margin:-7px 0 16px;color:#fff;line-height:1.6;font-size:14px}
+    [hidden]{display:none!important}
+    .legacy-steps{background:#112d42;border:1px solid #39647b;border-radius:14px;padding:12px 15px;margin:-3px 0 17px}
+    .legacy-steps summary{font-size:14px;font-weight:800;cursor:pointer}
+    .legacy-steps ol{padding-left:23px;color:#d9eaf2;font-size:14px;line-height:1.8}
+    .legacy-steps li{margin:5px 0}
+    .install-cta{flex-wrap:wrap}.install-cta p{font-size:16px}.browser-buttons{display:grid;grid-template-columns:1fr;gap:10px;width:100%}.browser-buttons a{font-size:20px;min-height:56px;text-decoration:none;background:#f5d36a;color:#081522}.browser-buttons a.secondary{background:#d3f5ef}.install-help{font-size:19px}.install-help li{margin-bottom:12px}
+    .shortcut-link{display:block;width:100%;padding:16px;border:2px solid #ffd166;border-radius:14px;background:#ffd166;color:#081522;text-align:center;text-decoration:none;font-size:20px;font-weight:800;line-height:1.4}
+    .shortcut-link:focus{outline:3px solid white;outline-offset:3px}
+    .update-area{margin:0 0 20px}
+    .update-link{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:64px;padding:16px 14px;border:2px solid #ffe29a;border-radius:16px;background:#ffd166;color:#081522;text-align:center;text-decoration:none;font-size:22px;font-weight:900;line-height:1.4}
+    .update-link:focus{outline:3px solid white;outline-offset:3px}
+    .update-area p{margin:8px 0 0;color:#d9eaf2;font-size:16px;text-align:center;line-height:1.5}
+    .install-help strong{color:#c1f7ee}
+    .install-help a{color:#c1f7ee;overflow-wrap:anywhere}
+    .install-help button{margin-top:11px;background:#c1f7ee;color:#081522}
+    @media(max-width:480px){.install-cta{flex-wrap:wrap}.install-cta button{width:100%}}
+    .voice-dialog{width:min(390px,calc(100% - 32px));max-height:calc(100% - 40px);overflow:auto;margin:auto;padding:32px 24px 24px;border:1px solid #39647b;border-radius:26px;background:#10243a;color:var(--text);text-align:center;box-shadow:0 24px 80px #0008}
+    .voice-dialog.fallback-open{display:block;position:fixed;inset:0;z-index:10000;outline:100vmax solid #020a14bb}
+    .voice-dialog::backdrop{background:#020a14bb;backdrop-filter:blur(4px)}
+    .voice-dialog h2{font-size:30px;margin:22px 0 10px;word-break:keep-all}
+    .voice-dialog p{font-size:16px;line-height:1.6;color:var(--muted);margin:10px 0}
+    .voice-orb{display:grid;place-items:center;width:132px;height:132px;margin:12px auto 24px;border-radius:50%;background:#16758a;color:#fff;box-shadow:0 0 0 12px #72e0e712}
+    .voice-orb svg{width:70px;height:70px}
+    .voice-dialog.listening .voice-orb{animation:voicePulse 1.6s ease-in-out infinite}
+    .voice-dialog .voice-status{font-weight:800;color:var(--cyan);font-size:15px}
+    .voice-dialog .voice-example{font-size:14px;margin:18px 0 24px}
+    .voice-dialog button{width:100%;min-height:48px}
+    @keyframes voicePulse{50%{box-shadow:0 0 0 22px #72e0e709;background:#1b8fa2}}
+    @media(prefers-reduced-motion:reduce){.voice-dialog.listening .voice-orb{animation:none}}
+  .p2-native .update-area,.p2-native #installCTA,.p2-native #installHelp,.p2-native .legacy-steps{display:none!important}
+    .native-connection{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}
+    .native-connection p{grid-column:1/-1;margin:0}.native-connection #nativeStop{grid-column:1/-1}
+    .native-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.native-controls button{flex:1;min-height:58px;font-size:19px}
+    .native-controls p{width:100%;text-align:left}.native-controls #nativePlay{background:var(--green);color:var(--bg)}
+    button:disabled{opacity:.5}.p2-native .searchrow{display:flex;flex-wrap:wrap}.p2-native .searchrow input{flex:1 1 100%}
+    /* Native Android controls only; the public browser search keeps its existing layout. */
+    .p2-native body{background:#0a1824}.p2-native main{max-width:600px;padding:20px 16px 108px}
+    .p2-native header{margin-bottom:8px}.p2-native .brand{font-size:12px;letter-spacing:.04em;color:#94c7cb}
+    .p2-native h1{font-size:27px;line-height:1.3;margin:0 0 6px}.p2-native .lead{font-size:14px;margin-bottom:20px}
+    .p2-native .panel{background:#12283a;box-shadow:none;border:1px solid #294353;border-radius:20px;padding:16px}
+    .p2-native .native-connection{background:#133633;border-color:#31635a;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+    .connection-caption{display:block;font-size:12px;color:#b3c9c6;letter-spacing:.02em;margin-bottom:5px}
+    #nativeState{display:block;font-size:22px;color:#b7f0ca;overflow-wrap:anywhere}#nativeConnect{font-size:13px;padding:10px;min-height:48px;background:transparent;border-color:#609184}
+    #nativeStatus{font-size:13px;line-height:1.55}.native-section-title{font-size:20px;margin:0 0 14px}
+    .p2-native #nativeSearchPanel>.status{display:none}.p2-native .voice{margin:0 0 14px;padding:20px 12px;border-radius:16px;background:#a9f0c0;color:#0a2923;font-size:20px}
+    .p2-native .searchrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.p2-native .searchrow input{grid-column:1/-1;width:100%;font-size:17px;line-height:1.5;min-height:58px;padding:12px 14px;appearance:none}
+    .p2-native #searchBtn{background:#24566a}.p2-native #nativeNew{background:transparent}.p2-native .searchrow button{min-height:48px}
+    .p2-native .hint{line-height:1.65}.p2-native .hero{border-top:1px solid #365160;margin-top:18px;padding-top:18px}
+    .p2-native .hero .number{font-size:100px;letter-spacing:0;text-shadow:none;white-space:nowrap;overflow-wrap:normal}
+    .p2-native .hero .title{font-size:30px;line-height:1.4;overflow-wrap:anywhere}.p2-native .hero .artist{font-size:22px;line-height:1.5}
+    .p2-native .native-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+    .p2-native .native-controls button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:60px;padding:12px 6px;font-size:17px;border-radius:14px}
+    .native-controls svg,#nativeStop svg{width:23px;height:23px;flex-shrink:0}.native-controls #nativeReserve{background:#ffd677;color:#33260a;border-color:#ffd677}
+    .native-controls #nativeQueue{grid-column:1/-1}.native-controls small{display:block;font-size:10px;font-weight:500;margin-top:3px}.native-controls #nativeQueue{background:#1d4053}
+    .p2-native .native-controls p{grid-column:1/-1;margin:5px 0 0;font-size:13px;overflow-wrap:anywhere}
+    .p2-native .result .songartist{display:block;margin-top:4px}.p2-native .result{gap:10px;min-height:70px}.p2-native .result .num{min-width:60px;font-size:22px}
+    #nativeStop{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;background:transparent;color:#dfbcbc;font-size:14px;min-height:48px}
+    .p2-native .native-tools{margin-top:20px}.native-tools summary{font-size:15px}.native-tools>button,.native-tools>.small{margin-top:14px}.native-tools>strong{display:block;margin-top:18px}
+    .native-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:60;width:100%;max-width:600px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;background:#102633;border-top:1px solid #395560;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+    .native-nav button{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;min-height:58px;padding:10px 4px;font-size:13px;border:0;background:transparent;color:#a7bdca;border-radius:12px}.native-nav button.active{color:#b7f0ca;background:#204238}.native-nav svg{width:22px;height:22px}
+    .queue-count{display:inline-block;padding:2px 7px;border-radius:8px;background:#2b4b55;color:#e1f5f3;font-size:13px}
+    #nativeQueuePanel{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:#000a;padding:22px 10px calc(82px + env(safe-area-inset-bottom))}
+    .queue-sheet{width:100%;max-width:580px;max-height:100%;overflow:auto;background:#12283a;border:1px solid #456476;border-radius:22px;padding:16px}.queue-open{overflow:hidden}
+    .queue-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.queue-heading h2{font-size:28px;line-height:1.4;margin:0}.queue-heading button{min-height:52px;font-size:20px;padding:10px 14px;flex-shrink:0}.queue-heading .queue-count{font-size:20px}
+    .now-playing{margin:14px 0;padding:16px;border:1px solid #426273;border-radius:16px;background:#102331}.now-playing.playing{background:#153f38;border-color:#80dcb0}.now-label{display:block;color:#b4d3df;font-size:20px;font-weight:700;margin-bottom:9px}.playing .now-label{color:#a9f0c0}#nativeNowTitle{display:block;color:#fff;font-size:30px;line-height:1.4;overflow-wrap:anywhere}.now-meta{display:flex;flex-direction:column;gap:4px;font-size:24px;line-height:1.5;overflow-wrap:anywhere;margin-top:10px;color:#d0e2e8}#nativeNowNumber{color:#ffd677;font-family:Arial,sans-serif;font-size:48px;line-height:1.15;font-weight:900}.now-meta:empty{display:none}
+    .queue-toolbar{display:flex;align-items:center;gap:12px;margin-top:12px}.queue-toolbar p{flex:1;font-size:18px;line-height:1.6;color:#b7d2d7}.queue-toolbar button{flex-shrink:0;font-size:18px;min-height:52px;padding:10px}
+    #nativeQueueList{list-style:none;padding:0;margin:14px 0}#nativeQueueList li{border-top:1px solid #456476;padding:16px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:stretch}.queue-play{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 10px;align-items:center;text-align:left;padding:16px 12px;min-height:76px;background:#112a3c;border:1px solid #3b5c71;border-radius:14px}.queue-play:focus-visible{outline:3px solid var(--green);outline-offset:2px}.queue-play:active{background:#244c58}.queue-play:disabled{opacity:.55}.queue-song{grid-column:1/-1;grid-row:2;min-width:0}.queue-start{grid-column:2;grid-row:1;display:flex;gap:6px;align-items:center;font-size:24px;color:var(--green)}.queue-start svg{width:28px;height:28px}.queue-help{font-size:18px;line-height:1.6;color:#b6e9cd}.queue-order{grid-column:1;grid-row:1;display:grid;place-items:center;min-width:44px;width:max-content;padding:0 8px;height:44px;font-size:24px;background:#254c50;color:#b7f0ca;border-radius:10px;font-weight:800}
+    .queue-cancel{display:flex;align-items:center;justify-content:center;gap:8px;min-height:58px;padding:12px;font-size:22px;white-space:nowrap;background:#402b38;color:#ffd7d7;border:1px solid #785063;border-radius:12px}.queue-cancel svg{width:26px;height:26px}.queue-cancel:disabled{opacity:.55}#nativeQueueNext{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:60px;margin-top:12px;background:#245c58;color:#e9fff3;font-size:22px}#nativeQueueNext svg{width:28px;height:28px}
+    #nativeQueueList .queue-song{min-width:0}#nativeQueueList strong{display:block;font-size:32px;line-height:1.4;overflow-wrap:anywhere}#nativeQueueList .queue-song>span{display:block;font-size:24px;line-height:1.5;overflow-wrap:anywhere;color:#d0e2e8;margin-top:10px}.queue-empty{padding:32px 12px;text-align:center;color:#bfd2d9;line-height:1.8}
+    .p2-native button:focus-visible,.p2-native summary:focus-visible{outline:3px solid #a9f0c0;outline-offset:3px}
+    .p2-native .hero.show{display:flex;flex-direction:column}.p2-native .hero .matchlabel{order:0}.p2-native .hero .title{order:1;margin-top:10px}.p2-native .hero .artist{order:2}.p2-native .hero .number{order:3;margin:14px 0}.p2-native .hero .native-controls{order:4;width:100%;margin-top:8px}
+    #nativePlayback{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}#nativePlayback[hidden],#nativeNext[hidden]{display:none}#nativePlayback button{flex:1;min-height:56px;font-size:17px;padding:10px 8px;display:flex;align-items:center;justify-content:center;gap:6px}#nativePlayback #nativeStop{margin:0;background:#402b38;color:#ffd7d7}#nativeNext{background:#245c58;color:#e9fff3}#nativePlayback svg{width:18px;height:18px}
+    @media(max-width:340px){.p2-native main{padding-left:10px;padding-right:10px}.p2-native .panel{padding:12px}.native-controls svg{width:19px}.p2-native .native-controls button{font-size:15px}.native-nav button{font-size:12px}}
+  </style>
+  <link rel="stylesheet" href="../p2.css">
+  <script src="wifi-bridge.js"></script>
+  <link rel="stylesheet" href="wifi.css">
+  <script src="../chosung.js"></script>
+  <script src="native-search.js" defer></script>
+  <link rel="stylesheet" href="favorites.css">
+  <script src="favorites-data.js" defer></script>
+  <script src="favorites-ui.js" defer></script>
+
+</head>
+<body>
+<main>
+  <header><div class="brand">느티나무 노래방</div><div id="dbCount" class="small">노래 데이터 확인 중</div></header>
+  <h1>느티나무 P2 리모컨</h1>
+  <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
+  <section class="panel">
+    <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
+    <div class="searchrow"><input id="query" type="search" placeholder="제목 · 가수 · 초성 (예: ㅅㄹ)" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>
+    <p class="hint">초성으로도 찾을 수 있어요. 예: ㅅㄹ → 사랑 · ㄱㅂㅅ → 김범수<br>입력한 뒤 ‘검색’을 눌러 주세요.</p>
+    <button id="voiceBtn" class="voice"><span class="mic">🎙</span>음성으로 노래 찾기</button>
+    <div id="message" class="message" aria-live="polite"></div>
+    <div id="hero" class="hero" aria-live="polite"><div class="matchlabel">가장 가까운 곡</div><div id="heroNumber" class="number"></div><div id="heroTitle" class="title"></div><div id="heroArtist" class="artist"></div></div>
+    <div id="results" class="results"></div>
+  </section>
+  <section class="panel">
+    <strong>곡 데이터</strong>
+    <p class="hint">곡번호·제목·가수 76,617곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
+    <div class="tools">
+      <label class="filebtn">📥 데이터 파일 불러오기<input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
+      <button id="templateBtn" class="secondary">📄 입력 양식 받기</button>
+      <button id="exportBtn" class="secondary">💾 저장 데이터 내보내기</button>
+      <button id="clearBtn" class="secondary danger">저장 데이터 지우기</button>
+    </div>
+    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>기존 76,435곡에 TJ미디어 공식 목록에서 확인한 182곡을 추가했습니다(2026.11.04 확인). 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
+  </section>
+  <div class="footer">느티나무 노래방 · P2 리모컨</div>
+</main>
+<dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
+  <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
+  <h2 id="voiceDialogTitle">말씀해 주세요</h2>
+  <p id="voiceDialogHint">찾으시는 노래 제목이나<br>가수 이름을 말씀해 주세요.</p>
+  <p id="voiceDialogStatus" class="voice-status" role="status" aria-live="polite">마이크를 준비하고 있어요…</p>
+  <p class="voice-example">짧은 제목은 가수와 함께 말해 보세요.<br>예: “조용필 꿈”, “조관우 늪”</p>
+  <button id="voiceCancelBtn" type="button" class="secondary" autofocus>취소</button>
+</dialog>
+<script>
+if(!Element.prototype.replaceChildren){Element.prototype.replaceChildren=function(){while(this.firstChild)this.removeChild(this.firstChild);for(var i=0;i<arguments.length;i++)this.appendChild(arguments[i]);};}
+const DB_NAME='neutinamu-webremote-songs', DB_VERSION=1, STORE='songs';
+const BUNDLED_CATALOGS=[
+ {url:'../catalog-20261018.csv',count:76435,key:'webremote-catalog-76435'},
+ {url:'../catalog-update-20261104.csv',count:182,key:'webremote-catalog-update-20261104'}
+];
+const $=id=>document.getElementById(id);
+let db, cachedSongs=null;
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'code'});};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error)})}
+function allSongs(){if(cachedSongs)return Promise.resolve(cachedSongs);return new Promise((resolve,reject)=>{const store=db.transaction(STORE).objectStore(STORE);if(typeof store.getAll==='function'){const r=store.getAll();r.onsuccess=()=>{cachedSongs=r.result;resolve(cachedSongs)};r.onerror=()=>reject(r.error)}else{const songs=[],r=store.openCursor();r.onsuccess=()=>{const cursor=r.result;if(cursor){songs.push(cursor.value);cursor.continue()}else{cachedSongs=songs;resolve(songs)}};r.onerror=()=>reject(r.error)}})}
+function countSongs(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE).objectStore(STORE).count();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function normalize(s){const raw=String(s==null?'':s),normalized=typeof raw.normalize==='function'?raw.normalize('NFKC'):raw;return normalized.toLocaleLowerCase('ko-KR').replace(/[\s\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E\u2000-\u206F\u20A0-\u20CF\u2100-\u214F\u2190-\u21FF\u2600-\u27BF\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65]/g,'')}
+function setMessage(s,err=false){$('message').textContent=s;$('message').className='message'+(err?' error':'')}
+function renderCount(n){$('dbCount').innerHTML=`저장 곡 <span class="dbcount">${n.toLocaleString()}</span>곡`;$('statusDot').classList.toggle('ready',n>0);$('statusText').textContent=n?`이 휴대폰에 ${n.toLocaleString()}곡이 저장되어 있어요.`:'노래 데이터 파일을 불러오면 검색할 수 있어요.'}
+function csvParse(text,delimiter){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(cell);cell=''}else if(c==='\n'){row.push(cell.replace(/\r$/,''));rows.push(row);row=[];cell=''}else cell+=c}if(cell.length||row.length){row.push(cell.replace(/\r$/,''));rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
+function headerKey(s){return normalize(s).replace(/^(tj|금영)/,'')}
+function fieldIndex(headers,options,fallback){const h=headers.map(headerKey);for(const opt of options){const i=h.indexOf(headerKey(opt));if(i>=0)return i}return fallback}
+async function importCSVText(raw,expectedCount){const text=raw.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delim=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const rows=csvParse(text,delim);if(rows.length<2){throw Error('곡 데이터 행이 없습니다. CSV 첫 줄에 제목 행이 있는지 확인해 주세요.')}
+ const h=rows.shift();const ci=fieldIndex(h,['곡번호','번호','곡 코드','code','song number'],0);const ti=fieldIndex(h,['곡제목','제목','곡명','title','song title'],1);const ai=fieldIndex(h,['가수','가수명','artist','singer'],2);const out=[];for(const r of rows){const code=String(r[ci]==null?'':r[ci]).trim().replace(/\.0$/,'');const title=String(r[ti]==null?'':r[ti]).trim();const artist=String(r[ai]==null?'':r[ai]).trim();if(!/^\d{1,8}$/.test(code)||!title)continue;out.push({code,title,artist,titleN:normalize(title),artistN:normalize(artist),hay:normalize(title+' '+artist)})}
+ if(!out.length)throw Error('곡번호와 곡제목을 읽지 못했습니다. 입력 양식과 열 이름을 확인해 주세요.');
+ if(expectedCount!==undefined&&(out.length!==expectedCount||new Set(out.map(s=>s.code)).size!==expectedCount))throw Error('곡 데이터 수가 예상과 다릅니다. 앱을 다시 실행해 주세요.');
+ for(let i=0;i<out.length;i+=1000){await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);for(const song of out.slice(i,i+1000))store.put(song);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('저장이 중단되었습니다.'))});if(out.length>1000)setMessage(`곡 데이터 준비 중… ${Math.min(i+1000,out.length).toLocaleString()} / ${out.length.toLocaleString()}곡`)}cachedSongs=null;return out.length}
+async function importFile(file){return importCSVText(await file.text())}
+async function updateBundledCatalog(){
+ const empty=await countSongs()===0;
+ // An empty database must be restored even if its version markers survived.
+ if(empty)for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);
+ for(const catalog of BUNDLED_CATALOGS){
+  if(localStorage.getItem(catalog.key))continue;
+  setMessage(`곡 목록 ${catalog.count.toLocaleString()}곡을 준비합니다. 잠시 기다려 주세요…`);
+  const response=await fetch(catalog.url,{cache:'no-store'});
+  if(!response.ok)throw Error('곡 데이터를 읽지 못했습니다.');
+  await importCSVText(await response.text(),catalog.count);
+  localStorage.setItem(catalog.key,'done');
+ }
+}
+function fitHeroNumber(){
+ const el=$('heroNumber');if(!$('hero').classList.contains('show')||!el.textContent)return;
+ el.style.fontSize='100px';const range=document.createRange();range.selectNodeContents(el);const measured=range.getBoundingClientRect().width;const available=el.clientWidth-4;
+ if(measured>0&&available>0)el.style.fontSize=Math.floor(Math.min(420,window.innerHeight*.4,available/measured*100))+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(fitHeroNumber));
+// Ignore trailing version/OST subtitles when matching a short song title.
+function mainTitle(song){return normalize(song.title.replace(/\s*[（(\[].*$/u,''))}
+function score(song,q,terms,initial,termPatterns){
+ if(!q)return 0;
+ const t=song.titleN,a=song.artistN,h=song.hay,base=mainTitle(song);
+ if(song.code===q)return 1200;
+ if(t===q)return 1000;
+ if(base===q)return 980;
+ // Accept both “조용필 꿈” and “꿈 조용필”, including unspaced speech.
+ if(a&&(q===a+t||q===t+a||q===a+base||q===base+a))return 1100;
+ if(/^\d+$/.test(q))return 0;
+ if(a===q)return 900;
+ if(t.startsWith(q))return 800;
+ if(t.includes(q))return 700;
+ if(a.includes(q))return 650;
+ if(h.includes(q))return 600;
+ let hits=0;for(const x of terms)if(x.length&&h.includes(x))hits++;
+ if(terms.length&&hits===terms.length)return hits*100+80;
+ if(initial){if(initial.exact.test(t))return 950;if(initial.start.test(t))return 780;if(initial.any.test(t))return 680;if(initial.any.test(a))return 630;}
+ if(termPatterns&&termPatterns.some(Boolean)&&terms.every((term,i)=>h.includes(term)||(termPatterns[i]&&termPatterns[i].any.test(h))))return 500;
+ return 0;
+}
+function findSongs(data,query){
+ const q=normalize(query),terms=query.split(/\s+/).map(normalize).filter(Boolean);
+ if(!q)return [];
+ const initial=Chosung.pattern(q),termPatterns=terms.map(Chosung.pattern);
+ let found=data.map(s=>({s,n:score(s,q,terms,initial,termPatterns)})).filter(x=>x.n>0);
+ // A one-character title should not be buried among partial-title/artist matches.
+ if(Array.from(q).length===1&&found.some(x=>x.n>=980))found=found.filter(x=>x.n>=980);
+ return found.sort((x,y)=>y.n-x.n||x.s.code.localeCompare(y.s.code));
+}
+let searchRevision=0;
+async function search(){const revision=++searchRevision;const query=$('query').value.trim();if(!query){setMessage('곡 제목이나 가수를 말하거나 입력해 주세요.',true);return}const data=await allSongs();if(revision!==searchRevision)return;if(!data.length){setMessage('먼저 태진 곡 데이터 CSV 파일을 불러와 주세요.',true);return}const matches=findSongs(data,query);const shortTitle=Array.from(normalize(query)).length===1&&matches.some(x=>x.n>=980);const found=window.NeutiP2?matches:shortTitle?matches:matches.slice(0,20);$('results').replaceChildren();$('hero').classList.remove('show');if(window.P2Remote)window.P2Remote.setSong(null);if(!found.length){setMessage(`“${query}”와 일치하는 곡이 저장 데이터에 없습니다. 태진 사이트에서 온라인으로 찾아볼 수도 있습니다.`);const a=document.createElement('a');a.className='filebtn';a.style.marginTop='10px';a.textContent='태진 공식 사이트에서 검색';a.href='https://www.tjmedia.com/song/accompaniment_search?strType=0&searchTxt='+encodeURIComponent(query);a.target='_self';a.rel='noopener';$('results').append(a);return}setMessage(`“${query}” 검색 결과 ${matches.length}곡${matches.length>found.length?` 중 ${found.length}곡 표시`:shortTitle?' · 제목이 일치하는 곡':''} · 가수를 확인해 선택하세요.`);const top=found[0].s;if(window.P2Remote)window.P2Remote.setSong(top);$('heroNumber').textContent=top.code;$('heroTitle').textContent=top.title;$('heroArtist').textContent=top.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'});let rendered=0;const more=window.NeutiP2?document.createElement('button'):null;function appendResults(){if(revision!==searchRevision)return;if(more)more.remove();const end=window.NeutiP2?Math.min(rendered+30,found.length):found.length;for(const {s} of found.slice(rendered,end)){const b=document.createElement('button');b.className='result';b.innerHTML=`<span class="num"></span><span class="meta"><span class="songtitle"></span><span class="songartist"></span></span>`;b.querySelector('.num').textContent=s.code;b.querySelector('.songtitle').textContent=s.title;b.querySelector('.songartist').textContent=s.artist||'가수 정보 없음';b.onclick=()=>{if(window.P2Remote)window.P2Remote.setSong(s);$('heroNumber').textContent=s.code;$('heroTitle').textContent=s.title;$('heroArtist').textContent=s.artist||'가수 정보 없음';$('hero').classList.add('show');fitHeroNumber();$('hero').scrollIntoView({behavior:'smooth',block:'center'})};$('results').append(b)}rendered=end;if(more&&rendered<found.length){more.id='nativeMoreResults';more.type='button';more.className='filebtn';more.textContent='검색 결과 더 보기 ('+rendered+' / '+found.length+')';more.onclick=appendResults;$('results').append(more);}}appendResults();}
+function resetVoiceButton(){$('voiceBtn').disabled=false;$('voiceBtn').innerHTML='<span class="mic">🎙</span>음성으로 노래 찾기'}
+async function useSpeechAlternatives(alternatives,revision){
+ try{
+  const data=await allSongs();if(revision!==searchRevision)return;
+  const candidates=alternatives.map(text=>String(text).trim()).filter(Boolean);
+  if(!candidates.length){setMessage('말씀하신 제목을 듣지 못했습니다. 다시 눌러 주세요.',true);return}
+  let selected=candidates[0],best=-1;
+  for(const text of candidates){const top=findSongs(data,text)[0];const rank=top?top.n:0;if(rank>best){selected=text;best=rank}}
+  $('query').value=selected;await search();
+ }catch(e){setMessage('검색하지 못했습니다. 다시 시도해 주세요.',true)}
+}
+let activeRecognition=null;
+function closeVoiceDialog(){
+ const dialog=$('voiceDialog');dialog.classList.remove('listening');
+ if(dialog.open&&typeof dialog.close==='function')dialog.close();
+ dialog.removeAttribute('open');dialog.classList.remove('fallback-open');
+}
+function showVoiceDialog(){
+ const dialog=$('voiceDialog');$('voiceDialogStatus').textContent='마이크를 준비하고 있어요…';$('voiceCancelBtn').textContent='취소';
+ if(typeof dialog.showModal==='function'){if(!dialog.open)dialog.showModal()}
+ else{dialog.setAttribute('open','');dialog.classList.add('fallback-open')}
+}
+function voiceFailure(message){
+ activeRecognition=null;resetVoiceButton();$('voiceDialog').classList.remove('listening');
+ $('voiceDialogStatus').textContent=message;$('voiceCancelBtn').textContent='닫기';setMessage(message,true);
+}
+function finishVoice(rec){
+ if(activeRecognition!==rec)return;
+ activeRecognition=null;resetVoiceButton();closeVoiceDialog();
+}
+function cancelVoice(){
+ const rec=activeRecognition;++searchRevision;
+ if(rec){finishVoice(rec);try{rec.abort()}catch(e){}}
+ else closeVoiceDialog();
+ setMessage('음성 검색을 취소했습니다. 다시 마이크를 눌러 주세요.');
+}
+$('voiceCancelBtn').onclick=cancelVoice;
+$('voiceDialog').addEventListener('cancel',event=>{event.preventDefault();cancelVoice()});
+function startVoice(){
+ if(activeRecognition)return;
+ const revision=++searchRevision;
+ $('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');if(window.P2Remote)window.P2Remote.setSong(null);setMessage('');
+ if(window.Android&&typeof Android.startVoice==='function'){Android.startVoice();return}
+ showVoiceDialog();
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){voiceFailure('이 브라우저에서는 음성 검색이 지원되지 않습니다. 아이폰은 이 창을 닫고 입력칸을 누른 뒤 키보드의 마이크(받아쓰기)로 제목을 말하고 검색을 누르세요.');return}
+ const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=5;
+ activeRecognition=rec;
+ $('voiceBtn').disabled=true;$('voiceBtn').innerHTML='<span class="mic">🎙</span>듣고 있어요…';
+ setMessage('곡 제목을 말씀해 주세요. 한 글자 제목은 “조용필 꿈”처럼 가수도 함께 말하면 더 정확해요.');
+ $('voiceDialogStatus').textContent='마이크를 준비하고 있어요…';
+ rec.onaudiostart=()=>{if(activeRecognition===rec){$('voiceDialog').classList.add('listening');$('voiceDialogStatus').textContent='듣고 있어요…'}};
+ rec.onresult=e=>{
+  if(activeRecognition!==rec||revision!==searchRevision)return;
+  const result=e.results[e.resultIndex||0];
+  finishVoice(rec);
+  if(result){setMessage('말씀하신 노래를 찾고 있어요…');useSpeechAlternatives(Array.from(result).map(x=>x.transcript),revision)}
+ };
+ rec.onerror=e=>{
+  if(activeRecognition!==rec)return;
+  if(revision===searchRevision)voiceFailure(e.error==='not-allowed'?'마이크 권한을 허용해 주세요.':e.error==='no-speech'?'말소리를 듣지 못했습니다. 다시 눌러 제목을 말씀해 주세요.':`음성 인식 오류: ${e.error}`);
+ };
+ rec.onend=()=>{if(activeRecognition===rec)voiceFailure('말소리를 듣지 못했습니다. 창을 닫고 다시 마이크를 눌러 주세요.')};
+ try{
+  rec.start();
+ }catch(e){voiceFailure('마이크를 시작하지 못했습니다. 창을 닫고 다시 시도해 주세요.')}
+}
+window.onNativeSpeech=function(text){useSpeechAlternatives([text],searchRevision)};
+window.setNativeSpeechError=function(message){setMessage(message,true)};
+function download(name,content,type){if(window.NeutiP2){NeutiP2.saveCsv(name,content);return;}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function quoteCSV(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}
+async function exportDB(){const songs=await allSongs();if(!songs.length){setMessage('내보낼 저장 곡 데이터가 없습니다.',true);return}const lines=['곡번호,곡제목,가수',...songs.map(s=>[s.code,s.title,s.artist].map(quoteCSV).join(','))];download('TJ_P2_노래데이터.csv','\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');setMessage(window.NeutiP2?"CSV 파일을 저장할 위치를 선택해 주세요.":`${songs.length.toLocaleString()}곡을 CSV로 저장했습니다.`)}
+const template='\uFEFF곡번호,곡제목,가수\r\n';
+
+document.addEventListener('DOMContentLoaded',async()=>{
+ $('searchBtn').disabled=true;$('voiceBtn').disabled=true;
+ try{
+  await openDB();let updatePending=false;
+  try{await updateBundledCatalog()}catch(error){if(!await countSongs())throw error;updatePending=true}
+  const currentCount=await countSongs();await allSongs();renderCount(currentCount);
+  setMessage(updatePending?'새 곡 목록을 받지 못했습니다. 저장된 곡은 검색할 수 있으며, 인터넷 연결 후 앱을 다시 열면 업데이트합니다.':'곡 제목이나 가수를 말하거나 입력해 주세요.');
+  $('searchBtn').disabled=false;$('voiceBtn').disabled=false;
+ }
+ catch(e){setMessage('곡 데이터를 준비하지 못했습니다. 저장 공간을 확인하고 앱을 다시 실행해 주세요. '+e.message,true)}
+ $('searchBtn').onclick=search;$('query').addEventListener('input',()=>{searchRevision++});$('query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});$('voiceBtn').onclick=startVoice;
+ $('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{setMessage('곡 데이터 파일을 읽고 있습니다…');const n=await importFile(f);renderCount(await countSongs());setMessage(`${n.toLocaleString()}곡을 불러왔습니다. 검색을 시작하세요.`)}catch(err){setMessage(err.message||'파일을 읽지 못했습니다.',true)}finally{e.target.value=''}};
+ $('templateBtn').onclick=()=>download('TJ_P2_노래데이터_입력양식.csv',template,'text/csv;charset=utf-8');$('exportBtn').onclick=exportDB;$('clearBtn').onclick=async()=>{if(!confirm('이 휴대폰에 저장된 곡 데이터를 모두 지울까요?'))return;await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});cachedSongs=null;for(const catalog of BUNDLED_CATALOGS)localStorage.removeItem(catalog.key);renderCount(0);$('hero').classList.remove('show');if(window.P2Remote)window.P2Remote.setSong(null);$('results').replaceChildren();setMessage('저장된 곡 데이터를 지웠습니다. 앱을 다시 열면 내장 곡 목록을 복원합니다.')};
+});
+</script>
+</body>
+</html>

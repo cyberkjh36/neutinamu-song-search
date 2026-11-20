@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="theme-color" content="#153c3c">
+<title>방별 QR 인쇄 · 느티나무 P2 리모컨</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eaf1ec;color:#153c3c;font:1rem/1.55 system-ui,"맑은 고딕",sans-serif;word-break:keep-all}
+main{max-width:42rem;margin:2rem auto;padding:1rem}h1,h2,p{margin:0 0 .65rem}h1{font-size:1.8rem}
+form,article{background:#fff;border:1px solid #bbcdc6;border-radius:16px;padding:clamp(1rem,4vw,2rem);margin-bottom:1rem}
+label{display:block;font-weight:700;margin-top:.8rem}input,button{font:inherit;color:inherit;padding:.65rem .8rem;border-radius:8px}input{width:100%;border:1px solid #739488}
+button{margin-top:1rem;border:0;background:#184e4b;color:#fff;font-weight:700;cursor:pointer}
+article{text-align:center}#qr{width:min(100%,75mm);margin:auto}#qr svg{display:block;width:100%;height:auto}#roomTitle{font-size:2.4rem}
+small{color:#3e6056}a{color:#155e53}button:disabled{opacity:.5} [hidden]{display:none!important}
+@page{size:A4 portrait;margin:20mm}
+@media print{body{background:white;color:black}main{margin:0;padding:0;max-width:none}form,footer,.actions{display:none}article{margin:12mm auto 0;border:1pt solid #333;padding:12mm 8mm;border-radius:0;max-width:145mm;break-inside:avoid}#qr{width:76mm}#roomTitle{font-size:32pt}}
+</style>
+<script src="./vendor/qrcode.js" defer></script><script src="./print.js" defer></script>
+</head><body><main>
+<form id="settings"><h1>방별 리모컨 QR 인쇄</h1><p>이 방 PC에서 연결한 P2의 전용 번호를 사용하세요.</p>
+<label for="number">매장 방번호</label><input id="number" placeholder="예: 5" inputmode="numeric" pattern="[1-9][0-9]?" maxlength="2" required>
+<label for="code">P2 전용 연결번호 8자리</label><input id="code" placeholder="PC의 ‘휴대폰 리모컨 QR’에서 확인" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off" required>
+<button type="submit">QR 만들기</button></form>
+<article id="poster" hidden><p>느티나무 노래방</p><h2 id="roomTitle"></h2><p>휴대폰 리모컨</p><div id="qr" role="img" aria-label="이 방 리모컨 연결 QR 코드"></div>
+<p><strong>카메라로 QR을 찍어 주세요</strong><br>링크를 열고 연결되면 노래를 찾아 예약하세요.</p><small>아이폰 · 안드로이드 공용</small>
+<div class="actions"><button id="print" type="button">인쇄 / PDF 저장</button></div></article>
+<footer><a href="./">손님용 리모컨 열기</a></footer></main></body></html>

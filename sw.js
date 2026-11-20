@@ -1,5 +1,5 @@
 /* Keep the installation worker parseable by older Android browsers. */
-var CACHE='neutinamu-p2-v17-20261107-shortcut-both-phones';
+var CACHE='neutinamu-p2-v18-20261120-room-web-remote';
 var ASSETS=['./p2-room.html','./room-connect.js','./chosung.js','./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',function(event){
  event.waitUntil(caches.open(CACHE).then(function(cache){return cache.addAll(ASSETS)}).then(function(){return self.skipWaiting()}));
@@ -14,7 +14,7 @@ self.addEventListener('fetch',function(event){
  var req=event.request,url=new URL(req.url);
  if(req.method!=='GET'||url.origin!==self.location.origin)return;
  // WORLD KARAOKE owns its separate scope.
- if(url.pathname.indexOf(new URL('./wk/',self.location).pathname)===0)return;
+ if(['./wk/','./p2wifi/'].some(function(path){return url.pathname.indexOf(new URL(path,self.location).pathname)===0}))return;
  if(url.pathname.slice(-13)==='/refresh.html'){event.respondWith(fetch(req,{cache:'no-store'}));return}
  if(req.mode==='navigate'){
   var relative=url.pathname.slice(new URL('./',self.location).pathname.length);
