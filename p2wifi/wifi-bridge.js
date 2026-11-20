@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 let pending=[];window.NeutiP2={command(json){pending.push(['command',json]);},saveCsv(name,text){pending.push(['save',name,text]);}};
-Promise.all([import('./wifi-client.mjs'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal}])=>{
+Promise.all([import('./wifi-client.mjs?v=1.1.0-r3'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal}])=>{
  const $=id=>document.getElementById(id), personalKey='p2wifi-personal-v1';let statusText='',lastQueueVersion='',speech=null;
  let storage;try{storage=localStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('이 브라우저에서는 저장 공간을 사용할 수 없습니다.');},removeItem(){}};}
  function personal(events=[]){try{let old=JSON.parse(storage.getItem(personalKey)||'{}'),next=mergePersonal(old,events);if(JSON.stringify(old)!==JSON.stringify(next))storage.setItem(personalKey,JSON.stringify(next));window.onP2NativePersonalSongs?.({songs:Object.values(next.songs).sort((a,b)=>b.lastPlayed-a.lastPlayed)});}catch{window.onP2NativePersonalSongs?.({error:'내 애창곡 저장 공간을 사용할 수 없습니다. 브라우저의 일반 탭에서 열어 주세요.'});}}
