@@ -7,10 +7,10 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    const cx=await browser.newContext({...devices[type==='webkit'?'iPhone 13':'Pixel 7'],serviceWorkers:'block'});
    const tab=await cx.newPage(),errors=[],ops=[];
    const labels=['1','2','3','5','6','7','8'],codes=Object.fromEntries(labels.map(n=>[n,'1000000'+n]));
-   let off=false;
+   let off=false,showSong=false;
    await cx.route('**/api/p2wifi',async route=>{
     const b=route.request().postDataJSON(); ops.push({op:b.op,room:b.room,label:b.label});
-    const json=b.op==='resolvePrintRoom' ? off?{ok:false,code:'room_offline'}:{ok:true,room:codes[b.label]} :{ok:true,online:true,name:'모의 반주기',session:'2'.repeat(32),state:{connected:true,queue:{valid:false,songs:[]},playback:{}}};
+    const json=b.op==='resolvePrintRoom' ? off?{ok:false,code:'room_offline'}:{ok:true,room:codes[b.label]} :{ok:true,online:true,name:'모의 반주기',session:'2'.repeat(32),state:{connected:true,queue:{valid:showSong,songs:showSong?[693]:[],version:'sample'},playback:{known:showSong,number:showSong?693:0}}};
     await route.fulfill({json,headers:{'Access-Control-Allow-Origin':'*'}});
    });
    tab.on('pageerror',e=>errors.push(e.message));
@@ -34,6 +34,9 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    await tab.waitForFunction(()=>document.body.textContent.includes('모의 반주기 연결됨'));
    assert.equal(await tab.locator('.desk-qr h2').textContent(),'5번방 손님용 QR');
    await require('./verify-voice.cjs')(tab,base);
+   showSong=true;
+   await tab.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
+   await tab.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('모의 반주기 연결됨'));
    await require('./verify-song-text.cjs')(tab);
    await require('./verify-reconnect.cjs')(tab,base);
    assert.deepEqual(errors,[]);console.log(type,'verified seven scan routes, isolation, offline handling, desktop QR');

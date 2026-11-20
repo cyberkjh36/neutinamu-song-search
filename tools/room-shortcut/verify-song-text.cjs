@@ -38,10 +38,6 @@ module.exports = async function verifySongText(page) {
   }
   await page.setViewportSize({width:320,height:720});
   await page.locator('#nativeQueueNav').click();
-  await page.evaluate(() => {
-    window.onP2NativeQueue({valid:true,version:'sample',songs:[693]});
-    window.onP2NativePlayback({known:true,number:693});
-  });
   await fits('#nativeQueueList .queue-song strong',title,34);
   await fits('#nativeQueueList .queue-song > span',artist,26);
   await fits('#nativeNowTitle',title,40);
