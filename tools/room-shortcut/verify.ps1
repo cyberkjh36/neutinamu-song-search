@@ -12,13 +12,20 @@ Copy-Item (Join-Path $PSScriptRoot 'Remote.ico') $dir
 Copy-Item (Join-Path $PSScriptRoot 'DesktopLink.cs') $dir
 Push-Location $dir
 try {
-  & $csc /nologo /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs DesktopLink.cs
+  & $csc /nologo /codepage:65001 /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs DesktopLink.cs
   if($LASTEXITCODE){throw 'Build failed'}
 } finally {Pop-Location}
-$stderr=Join-Path $dir 'install.stderr.txt'
-$p=Start-Process $app -ArgumentList '--install-only' -PassThru -RedirectStandardError $stderr
+$start=New-Object Diagnostics.ProcessStartInfo
+$start.FileName=$app
+$start.Arguments='--install-only'
+$start.UseShellExecute=$false
+$start.RedirectStandardError=$true
+$p=[Diagnostics.Process]::Start($start)
 if(!$p.WaitForExit(30000)){throw 'Shortcut creation did not finish in 30 seconds'}
-if($p.ExitCode -ne 0){throw ('Desktop installation failed: '+(Get-Content $stderr -Raw))}
+$exitCode=$p.ExitCode
+$detail=$p.StandardError.ReadToEnd()
+$p.Dispose()
+if($exitCode -ne 0){throw "Desktop installation failed ($exitCode): $detail"}
 $name=-join ([char[]](0xb290,0xd2f0,0xb098,0xbb34,0x20,0xb178,0xb798,0xbc29,0x20,0xb9ac,0xbaa8,0xcee8))
 $linkPath=Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) ($name+'.lnk')
 if(!(Test-Path -LiteralPath $linkPath)){throw 'Korean desktop shortcut missing'}
