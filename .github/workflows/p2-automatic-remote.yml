@@ -1,0 +1,21 @@
+name: Verify shared P2 automatic connection
+on:
+  push:
+    paths:
+      - 'downloads/WorldKaraoke_P2_WebRemote_Update_1.2.1.exe'
+      - 'tools/p2-autoconnect/**'
+      - '.github/workflows/p2-automatic-remote.yml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test released Windows bridge with the phone client and an isolated room
+        shell: powershell
+        run: ./tools/p2-autoconnect/check.ps1
