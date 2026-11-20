@@ -36,6 +36,15 @@ public class SongSearchViewTest {
         search.handle("{\"command\":\"playExact\",\"number\":\"0\"}");
         assertTrue(calls.contains("playExact:914"));assertFalse(calls.contains("playExact:0"));
     }
+    @Test public void downloadableCatalogIsRestrictedToExpectedDataResources(){
+        final String base="https://appassets.androidplatform.net/search/";
+        assertEquals("catalog-updates.json",SongSearchView.catalogFile(Uri.parse(base+"catalog-updates.json")));
+        assertEquals("catalog-update-20261120.csv",SongSearchView.catalogFile(Uri.parse(base+"catalog-update-20261120.csv")));
+        assertNotNull(SongSearchView.catalogFile(Uri.parse(base+"catalog-update-20261205-abcd12345678.csv")));
+        for(String name:new String[]{"index.html","remote.js","../other.csv","catalog-updates.json?url=x","catalog-update-20261120.csv%2Fx"})
+            assertNull(SongSearchView.catalogFile(Uri.parse(base+name)));
+        assertNull(SongSearchView.catalogFile(Uri.parse("https://example.com/search/catalog-updates.json")));
+    }
     @Test public void pauseAndResumeSendOneTogglePerPress(){
         search.handle("{\"command\":\"pause\"}");
         search.handle("{\"command\":\"pause\"}");

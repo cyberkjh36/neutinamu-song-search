@@ -8,6 +8,8 @@ import android.speech.RecognizerIntent;
 import android.webkit.*;
 import org.json.*;
 import java.io.*;
+import java.net.URL;
+import javax.net.ssl.HttpsURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -17,7 +19,7 @@ final class SongSearchView {
     static final String HOME="https://appassets.androidplatform.net/search/index.html";
     static final int VOICE=71,IMPORT=72,EXPORT=73;
     static final int MAX_CSV=16*1024*1024;
-    private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","favorites-data.js","favorites-ui.js","favorites.css","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
+    private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","catalog-sync.js","native-search.js","favorites-data.js","favorites-ui.js","favorites.css","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
     interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void playExact(int number);void reserve(int number);void queue();void cancel();void pause();void refresh();default void personalSongs(){}default void removePersonalSong(int number){} }
     interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
@@ -52,8 +54,41 @@ final class SongSearchView {
         String path=uri.getEncodedPath();if(path==null||!path.startsWith("/search/"))return null;
         String name=path.substring(8);return ASSETS.contains(name)?(name.startsWith("catalog-")?name:"song-search/"+name):null;
     }
+    static String catalogFile(Uri uri){
+        if(!"https".equals(uri.getScheme())||!"appassets.androidplatform.net".equals(uri.getEncodedAuthority())||uri.getQuery()!=null||uri.getFragment()!=null)return null;
+        String path=uri.getEncodedPath();
+        if(path==null||!path.startsWith("/search/"))return null;
+        String name=path.substring(8);
+        return "catalog-updates.json".equals(name)||name.matches("catalog-update-[0-9]{8}(-[a-f0-9]{12})?[.]csv")?name:null;
+    }
+    private WebResourceResponse catalogResponse(String name){
+        HttpsURLConnection connection=null;
+        try{
+            URL url=new URL("https://cyberkjh36.github.io/neutinamu-song-search/"+name);
+            connection=(HttpsURLConnection)url.openConnection();
+            connection.setInstanceFollowRedirects(false);connection.setUseCaches(false);
+            connection.setConnectTimeout(7000);connection.setReadTimeout(10000);
+            int limit=name.endsWith(".json")?1024*1024:MAX_CSV;
+            if(connection.getResponseCode()!=200||connection.getContentLengthLong()>limit)throw new IOException("Unavailable catalog");
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+            try(InputStream input=connection.getInputStream()){
+                byte[] buffer=new byte[8192];int n;
+                while((n=input.read(buffer))!=-1){
+                    if(bytes.size()+n>limit)throw new IOException("Catalog too large");
+                    bytes.write(buffer,0,n);
+                }
+            }
+            Map<String,String> headers=new HashMap<>();
+            headers.put("Cache-Control","no-store");headers.put("X-Content-Type-Options","nosniff");
+            headers.put("Content-Security-Policy","default-src 'none'");
+            return new WebResourceResponse(name.endsWith(".json")?"application/json":"text/csv","UTF-8",200,"OK",headers,new ByteArrayInputStream(bytes.toByteArray()));
+        }catch(IOException e){
+            return new WebResourceResponse("text/plain","UTF-8",503,"Unavailable",Collections.emptyMap(),new ByteArrayInputStream(new byte[0]));
+        }finally{if(connection!=null)connection.disconnect();}
+    }
     WebResourceResponse resource(Uri uri){
         String path=assetPath(uri);
+        if(path==null){String name=catalogFile(uri);if(name!=null)return catalogResponse(name);}
         if(path!=null)try{
             String mime=path.endsWith(".html")?"text/html":path.endsWith(".js")||path.endsWith(".mjs")?"application/javascript":path.endsWith(".css")?"text/css":path.endsWith(".png")?"image/png":path.endsWith(".svg")?"image/svg+xml":"text/csv";
             Map<String,String> headers=new HashMap<>();headers.put("Content-Security-Policy","default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'none'");
