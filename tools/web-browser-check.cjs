@@ -104,7 +104,7 @@ async function check(name,type,ua){
   await shortcutPage.waitForFunction(()=>document.getElementById('heroNumber').textContent==='693');
   await shortcutContext.close();
   const checkWifiRemote=require('./p2wifi-browser-check.cjs');
-  await checkWifiRemote(browser,url,ua);
+  await checkWifiRemote(browser,url,ua,catalogCount);
   assert.deepEqual(errors,[]);
   console.log('PASS '+name+': initials, IME, voice result/cancel, icon guide, manifest/icons, offline catalog, standalone launch, no overflow.');
  }finally{networkUnavailable=false;await context.close();await browser.close();}

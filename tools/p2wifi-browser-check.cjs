@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-module.exports=async function checkRemote(browser,base,ua){
+module.exports=async function checkRemote(browser,base,ua,catalogCount){
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:ua,serviceWorkers:'block'});
  try {
  const page=await context.newPage();let errors=[],log=[],q=[],version=0;
@@ -24,6 +24,11 @@ module.exports=async function checkRemote(browser,base,ua){
  await page.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('연결됨')).catch(async error=>{throw new Error('방 연결 확인 실패: '+await page.locator('#nativeStatus').textContent()+' / '+errors.join(', '),{cause:error});});
  assert.equal(await page.locator('.native-connection .connection-caption').textContent(),'5번방');
  await page.waitForFunction(()=>document.getElementById('statusDot')?.classList.contains('ready'),{},{timeout:60000});
+ // This track is delivered only by the online catalog, including on existing phones.
+ await page.waitForFunction(n=>Number(document.querySelector('#dbCount .dbcount')?.textContent.replace(/[^0-9]/g,''))===n,catalogCount,{timeout:60000});
+ await page.locator('#query').fill('71548');await page.locator('#searchBtn').click();
+ await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71548');
+ assert.equal(await page.locator('#heroTitle').textContent(),'Boundary');
  await page.locator('#query').fill('김희재 여름밤에 우린');await page.locator('#searchBtn').click();
  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71541');
  await page.locator('#nativeReserve').click();
