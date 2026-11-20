@@ -147,10 +147,14 @@ public final class MainActivity extends Activity {
             public void next(){advanceCommand(true,0,0);}
             public void playQueued(int song,int index){advanceCommand(false,song,index);}
             public void cancelQueued(int song,int index){cancelQueueCommand(song,index);}
-            public void play(int song){if(ensureControlReady(true))dispatch(true,song);paint();}
+            public void play(int song){if(ensureControlReady(true))dispatch("PLAY_TAPPED","[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…",s->s.startInOrder(song));paint();}
             public void reserve(int song){queueCommand(true,song);}
             public void queue(){queueCommand(false,0);}
-            public void cancel(){if(ensureControlReady(false))dispatch(false,0);paint();}
+            public void cancel(){if(ensureControlReady(false))dispatch("CANCEL_TAPPED","[C10] 정지 버튼 입력을 받았습니다. 요청을 전송합니다…",Session::cancel);paint();}
+            public void pause(){
+                if(ensureControlReady(true))dispatch("PAUSE_TAPPED","일시정지·계속 요청을 전송합니다…",Session::pause);
+                paint();
+            }
             public void refresh(){paint();}
             public void personalSongs(){showPersonalSongs();}
             public void removePersonalSong(int number){try{personalSongs.remove(number);showPersonalSongs();}catch(IOException|RuntimeException e){songSearch.personalSongs(new org.json.JSONArray(),"내 애창곡을 지우지 못했습니다. 다시 시도해 주세요.");}}
@@ -536,12 +540,12 @@ public final class MainActivity extends Activity {
         }
         return true;
     }
-    private void dispatch(boolean start,int song){
+    private interface PlaybackCommand { void send(Session session) throws IOException; }
+    private void dispatch(String event,String message,PlaybackCommand command){
         Session active=session;if(active==null||commandQueued){feedback("[WAIT] 연결 상태를 확인해 주세요.");return;}
-        commandQueued=true;diagnostics.event(start?"PLAY_TAPPED":"CANCEL_TAPPED");
-        show(start?"[P00] 시작 버튼 입력을 받았습니다. 요청을 전송합니다…":"[C10] 정지 버튼 입력을 받았습니다. 요청을 전송합니다…");
+        commandQueued=true;diagnostics.event(event);show(message);
         worker.execute(()->{
-            try{if(start)active.startInOrder(song);else active.cancel();}
+            try{command.send(active);}
             catch(IOException|RuntimeException e){diagnostics.event("COMMAND_SEND_FAILED");ui(()->show("[P02] 명령 전송 또는 처리에 실패했습니다. 반주기 화면을 확인하고 진단 결과를 공유해 주세요."));}
             finally{ui(()->{commandQueued=false;paint();});}
         });

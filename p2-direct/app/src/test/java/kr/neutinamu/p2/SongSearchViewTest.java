@@ -20,7 +20,7 @@ import static org.robolectric.Shadows.shadowOf;
 public class SongSearchViewTest {
     private Activity activity;private SongSearchView search;private List<String> calls;
     @Before public void open(){activity=Robolectric.buildActivity(Activity.class).setup().get();calls=new ArrayList<>();search=new SongSearchView(activity,new SongSearchView.Host(){
-        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void refresh(){calls.add("status");}public void personalSongs(){calls.add("personalSongs");}public void removePersonalSong(int n){calls.add("personalRemove:"+n);}
+        public void connection(){calls.add("settings");}public void connect(){calls.add("connect");}public void find(){calls.add("find");}public void next(){calls.add("next");}public void playQueued(int n,int index){calls.add("queuePlay:"+n+":"+index);}public void cancelQueued(int n,int index){calls.add("queueCancel:"+n+":"+index);}public void play(int n){calls.add("play:"+n);}public void reserve(int n){calls.add("reserve:"+n);}public void queue(){calls.add("queue");}public void cancel(){calls.add("cancel");}public void pause(){calls.add("pause");}public void refresh(){calls.add("status");}public void personalSongs(){calls.add("personalSongs");}public void removePersonalSong(int n){calls.add("personalRemove:"+n);}
     });calls.clear();}
     @After public void close(){search.close();activity.finish();}
     @Test public void bridgeAcceptsOnlyExplicitKnownActionsAndStrictSongNumbers(){
@@ -30,6 +30,11 @@ public class SongSearchViewTest {
         assertFalse(calls.stream().anyMatch(s->s.startsWith("play:")));
         search.handle("{\"command\":\"socket\",\"url\":\"https://example.com\"}");search.handle("not json");
         assertFalse(calls.contains("connect"));
+    }
+    @Test public void pauseAndResumeSendOneTogglePerPress(){
+        search.handle("{\"command\":\"pause\"}");
+        search.handle("{\"command\":\"pause\"}");
+        assertEquals(Arrays.asList("pause","pause"),calls);
     }
     @Test public void explicitConnectionAndNextActionsStaySeparateFromSettings(){
         for(String action:new String[]{"connect","find","next","connection"})search.handle("{\"command\":\""+action+"\"}");
@@ -41,7 +46,6 @@ public class SongSearchViewTest {
         for(String index:new String[]{"-1","255","1.5","01","1e2","null","true"})search.handle("{\"command\":\"queuePlay\",\"number\":\"914\",\"index\":\""+index+"\"}");
         search.handle("{\"command\":\"queuePlay\",\"number\":\"914\"}");
         search.handle("{\"command\":\"queuePlay\",\"number\":\"0\",\"index\":0}");
-        search.handle("{\"command\":\"pause\"}");
         assertFalse(calls.stream().anyMatch(x->x.startsWith("queuePlay:")||x.equals("pause")));
     }
     @Test public void queueCancellationRequiresExactNumberAndBoundedIntegerPosition(){
@@ -50,7 +54,6 @@ public class SongSearchViewTest {
         for(String index:new String[]{"-1","255","1.5","01","1e2","null","true"})search.handle("{\"command\":\"queueCancel\",\"number\":\"914\",\"index\":\""+index+"\"}");
         search.handle("{\"command\":\"queueCancel\",\"number\":\"914\"}");
         search.handle("{\"command\":\"queueCancel\",\"number\":\"0\",\"index\":0}");
-        search.handle("{\"command\":\"pause\"}");
         assertFalse(calls.stream().anyMatch(x->x.startsWith("queueCancel:")||x.equals("pause")));
     }
     @Test public void playbackDisplayIsReadOnlyAndRejectsInvalidSongNumbers(){

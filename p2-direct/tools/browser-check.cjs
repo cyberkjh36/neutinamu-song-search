@@ -171,10 +171,15 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.locator('#hero').isVisible(),false);assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),0);
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'연결되었습니다.',busy:false,connected:true}));
   assert.equal(await page.locator('#nativeNext').isVisible(),true);
-  assert.equal(await page.locator('#nativeStop').textContent(),'정지');
+  assert.equal(await page.locator('#nativeStop').textContent(),'일시정지');
   await page.evaluate(()=>onP2NativePlayback({number:914,known:true}));
   await page.locator('#nativeStop').click();assert.equal(await page.locator('#nativeNowNumber').textContent(),'914');await page.evaluate(()=>document.getElementById('nativeStop').click());
-  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),1);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='pause').length),1);
+  await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'일시정지·계속 응답을 받았습니다.',busy:false,connected:true}));
+  await page.locator('#nativeStop').click();
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='pause').length),2);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='cancel').length),0);
+  assert.equal(await page.locator('#nativeNowNumber').textContent(),'914');
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'정지 응답을 받았습니다.',busy:false,connected:true}));
   await page.evaluate(()=>onP2NativePlayback({number:0,known:true}));assert.match(await page.locator('#nativeNowTitle').textContent(),/정지/);assert.equal(await page.locator('#nativeNowNumber').textContent(),'');
   await page.locator('#voiceBtn').click();assert.equal(await page.evaluate(()=>commands.at(-1).command),'voice');

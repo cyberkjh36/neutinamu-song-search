@@ -18,7 +18,7 @@ final class SongSearchView {
     static final int VOICE=71,IMPORT=72,EXPORT=73;
     static final int MAX_CSV=16*1024*1024;
     private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","chosung.js","native-search.js","favorites-data.js","favorites-ui.js","favorites.css","p2-ui.mjs","p2-client.mjs","p2.css","icon.svg","icon-192.png","icon-512.png","catalog-20261018.csv","catalog-update-20261104.csv"));
-    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void refresh();default void personalSongs(){}default void removePersonalSong(int number){} }
+    interface Host { void connection();void connect();void find();void next();void playQueued(int number,int index);void cancelQueued(int number,int index);void play(int number);void reserve(int number);void queue();void cancel();void pause();void refresh();default void personalSongs(){}default void removePersonalSong(int number){} }
     interface VoiceResult { void received(List<String> texts,String error); }
     final WebView view;final Bridge bridge=new Bridge();
     private final Activity activity;private final Host host;private final ExecutorService files=Executors.newSingleThreadExecutor();
@@ -92,6 +92,7 @@ final class SongSearchView {
                     else host.cancelQueued(Integer.parseInt(number),Integer.parseInt(position));break;
                 case "queue":host.queue();break;
                 case "cancel":host.cancel();break;
+                case "pause":host.pause();break;
                 case "voice":startVoice();break;
                 case "import":pickCsv();break;
                 default:break;
