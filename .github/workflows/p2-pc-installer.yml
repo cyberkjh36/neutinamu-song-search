@@ -1,0 +1,18 @@
+name: Verify Windows P2 remote installer
+on:
+  push:
+    paths:
+      - 'downloads/Neutinamu_P2_WebRemote_Setup_*.exe'
+      - 'tools/verify-p2-installer.ps1'
+      - '.github/workflows/p2-pc-installer.yml'
+permissions:
+  contents: read
+jobs:
+  independent-install:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install while a different room link is running and retry a locked target
+        shell: powershell
+        run: ./tools/verify-p2-installer.ps1
