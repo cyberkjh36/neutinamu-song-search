@@ -3,11 +3,21 @@ $dir=Join-Path $env:RUNNER_TEMP 'room-shortcut-check'
 New-Item $dir -ItemType Directory -Force | Out-Null
 $fixture=Join-Path $dir 'fixture.json'
 [IO.File]::WriteAllText($fixture,'{"5":{"serial":"P0200000000","signer":"unused","ticket":"fixture"}}')
-dotnet build (Join-Path $PSScriptRoot 'RoomShortcut.csproj') -c Release "-p:RoomProfiles=$fixture" --output $dir
-if($LASTEXITCODE){throw 'Build failed'}
+$vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+$csc=& $vswhere -latest -products '*' -find 'MSBuild\Current\Bin\Roslyn\csc.exe' | Select-Object -First 1
+if(!$csc){throw 'Visual Studio C# compiler not found'}
 $app=Join-Path $dir 'Neutinamu_Room_Remote_1.3.0.exe'
-$p=Start-Process $app -ArgumentList '--install-only' -Wait -PassThru
-if($p.ExitCode -ne 0){throw 'Desktop installation failed'}
+Copy-Item (Join-Path $PSScriptRoot 'Program.cs') $dir
+Copy-Item (Join-Path $PSScriptRoot 'Remote.ico') $dir
+Push-Location $dir
+try {
+  & $csc /nologo /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs
+  if($LASTEXITCODE){throw 'Build failed'}
+} finally {Pop-Location}
+$stderr=Join-Path $dir 'install.stderr.txt'
+$p=Start-Process $app -ArgumentList '--install-only' -PassThru -RedirectStandardError $stderr
+if(!$p.WaitForExit(30000)){throw 'Shortcut creation did not finish in 30 seconds'}
+if($p.ExitCode -ne 0){throw ('Desktop installation failed: '+(Get-Content $stderr -Raw))}
 $name=-join ([char[]](0xb290,0xd2f0,0xb098,0xbb34,0x20,0xb178,0xb798,0xbc29,0x20,0xb9ac,0xbaa8,0xcee8))
 $linkPath=Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) ($name+'.lnk')
 if(!(Test-Path -LiteralPath $linkPath)){throw 'Korean desktop shortcut missing'}

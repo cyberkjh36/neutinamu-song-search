@@ -39,7 +39,10 @@ internal static class RoomShortcut {
             try{File.Copy(self,temp);if(File.Exists(exe))File.Replace(temp,exe,null);else File.Move(temp,exe);}finally{if(File.Exists(temp))File.Delete(temp);}
         }
         dynamic shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell",true));
-        dynamic link=shell.CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),Title+".lnk"));
+        string desktop=Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory,Environment.SpecialFolderOption.Create);
+        if(string.IsNullOrWhiteSpace(desktop))throw new IOException("Windows 바탕화면 폴더를 찾지 못했습니다.");
+        Directory.CreateDirectory(desktop);
+        dynamic link=shell.CreateShortcut(Path.Combine(desktop,Title+".lnk"));
         link.TargetPath=exe;link.Arguments="--open";link.WorkingDirectory=dir;link.IconLocation=exe+",0";link.Description="이 방의 P2 리모컨과 손님용 QR 열기";link.Save();
     }
     static string HostPath(){
@@ -108,7 +111,12 @@ internal static class RoomShortcut {
         ServicePointManager.SecurityProtocol=SecurityProtocolType.SystemDefault;
         Http.DefaultRequestHeaders.UserAgent.ParseAdd("NeutinamuRoomRemote/1.3.0");
         try{if(!args.SequenceEqual(new[]{"--open"}))InstallShortcut();}
-        catch(Exception e){MessageBox.Show("바탕화면 바로가기를 만들 수 없습니다.\r\n"+e.Message,Title);return;}
+        catch(Exception e){
+            Environment.ExitCode=1;
+            if(args.SequenceEqual(new[]{"--install-only"}))Console.Error.WriteLine(e.ToString());
+            else MessageBox.Show("바탕화면 바로가기를 만들 수 없습니다.\r\n"+e.Message,Title);
+            return;
+        }
         if(args.SequenceEqual(new[]{"--install-only"}))return;
         using(var f=new Form{Text=Title,ClientSize=new Size(430,165),StartPosition=FormStartPosition.CenterScreen,Font=new Font("맑은 고딕",10),Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath)}){
             var status=new Label{AutoSize=true,MaximumSize=new Size(380,0),Text="이 방의 반주기 연결을 확인하고 있습니다."};
