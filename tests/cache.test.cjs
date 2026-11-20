@@ -8,3 +8,27 @@ test('navigation uses latest HTML online and saved HTML offline; recovery page b
  offline=true;assert.equal(await request('app/'),'old');
  offline=false;assert.equal(await request('app/refresh.html'),'new');assert.equal(writes.length,1);
 });
+
+test('a P2 remote upgrade reuses the two installed CSVs and downloads only the new dated catalog',async()=>{
+ const handlers={},network=[],files=new Map(),scope='https://example.org/app/p2wifi/';
+ const previous=['catalog-20261018.csv','catalog-update-20261104.csv'];
+ const url=name=>new URL('../'+name,scope).href;
+ const old=new Map(previous.map(name=>[url(name),name]));
+ const caches={
+  match:async key=>{const text=files.get(key)??old.get(key);return text?new Response(text):undefined;},
+  open:async()=>({
+   addAll:async requests=>assert(requests.every(req=>!req.url.endsWith('.csv'))),
+   put:async(k,response)=>files.set(k,await response.text()),
+   add:async k=>{network.push(k);files.set(k,'new songs');}
+  })
+ };
+ const worker={registration:{scope},location:new URL(scope),skipWaiting(){},addEventListener:(n,f)=>handlers[n]=f};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../p2wifi/sw.js'),'utf8'),{self:worker,caches,URL,Request,Response,fetch(){throw Error('offline')}});
+ let installed;handlers.install({waitUntil:p=>installed=p});await installed;
+ assert.deepEqual(network,[url('catalog-update-20261120.csv')]);
+ old.clear();
+ for(const name of [...previous,'catalog-update-20261120.csv']){
+  let response;handlers.fetch({request:new Request(url(name)),respondWith:p=>response=p});
+  assert.equal(await (await response).text(),previous.includes(name)?name:'new songs');
+ }
+});

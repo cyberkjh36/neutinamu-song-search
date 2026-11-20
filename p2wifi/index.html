@@ -165,14 +165,14 @@
   </section>
   <section class="panel">
     <strong>곡 데이터</strong>
-    <p class="hint">곡번호·제목·가수 76,617곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
+    <p class="hint">곡번호·제목·가수 76,745곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
     <div class="tools">
       <label class="filebtn">📥 데이터 파일 불러오기<input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
       <button id="templateBtn" class="secondary">📄 입력 양식 받기</button>
       <button id="exportBtn" class="secondary">💾 저장 데이터 내보내기</button>
       <button id="clearBtn" class="secondary danger">저장 데이터 지우기</button>
     </div>
-    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>기존 76,435곡에 TJ미디어 공식 목록에서 확인한 182곡을 추가했습니다(2026.11.04 확인). 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
+    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>2026년 11월 20일까지 TJ미디어에서 발표한 신곡 128곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
   <div class="footer">느티나무 노래방 · P2 리모컨</div>
 </main>
@@ -193,7 +193,8 @@ if(!Element.prototype.replaceChildren){Element.prototype.replaceChildren=functio
 const DB_NAME='neutinamu-webremote-songs', DB_VERSION=1, STORE='songs';
 const BUNDLED_CATALOGS=[
  {url:'../catalog-20261018.csv',count:76435,key:'webremote-catalog-76435'},
- {url:'../catalog-update-20261104.csv',count:182,key:'webremote-catalog-update-20261104'}
+ {url:'../catalog-update-20261104.csv',count:182,key:'webremote-catalog-update-20261104'},
+ {url:'../catalog-update-20261120.csv',count:128,key:'webremote-catalog-update-20261120'}
 ];
 const $=id=>document.getElementById(id);
 let db, cachedSongs=null;

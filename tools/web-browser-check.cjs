@@ -19,7 +19,7 @@ async function check(name,type,ua){
  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,userAgent:ua});
  const page=await context.newPage(),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',req=>requests.push(req.url()));
  const url='http://127.0.0.1:'+server.address().port+prefix;
- const ready=()=>page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
+ const ready=()=>page.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,745')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
  try{
   await page.goto(url);await ready();
   await page.evaluate(()=>navigator.serviceWorker.ready);
@@ -74,7 +74,7 @@ async function check(name,type,ua){
   await page.addInitScript(()=>Object.defineProperty(navigator,'standalone',{get:()=>true}));
   await page.goto(url);await ready();assert.equal(await page.locator('#installCTA').isVisible(),false);
   for(const room of ['1','2','3','5','6','7','8']){
-   await page.goto(url+'p2-room.html?room='+room);
+   await page.goto(url+'p2-room.html?room='+room+'#app-required');
    assert.equal(await page.locator('#roomTitle').textContent(),room+'번방 반주기 연결');
    assert.equal(await page.locator('#webRemote').getAttribute('href'),'./p2wifi/index.html?label='+room);
    await page.locator('details > summary').click();
@@ -87,13 +87,13 @@ async function check(name,type,ua){
   // A room-page navigation must never replace the cached song-search index.
   await page.goto(url);await ready();
   if(name==='iphone-webkit')networkUnavailable=true;else await context.setOffline(true);
-  await page.goto(url+'p2-room.html?room=5');assert.equal(await page.locator('#roomTitle').textContent(),'5번방 반주기 연결');
+  await page.goto(url+'p2-room.html?room=5#app-required');assert.equal(await page.locator('#roomTitle').textContent(),'5번방 반주기 연결');
   await page.goto(url);await ready();assert.equal(await page.locator('#query').isVisible(),true);
   networkUnavailable=false;await context.setOffline(false);
   const shortcutContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:ua});
   const shortcutPage=await shortcutContext.newPage();
   await shortcutPage.goto(url+'?shortcut=1');
-  await shortcutPage.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,617')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
+  await shortcutPage.waitForFunction(()=>document.getElementById('dbCount').textContent.includes('76,745')&&!document.getElementById('searchBtn').disabled,{},{timeout:60000});
   assert.equal(await shortcutPage.locator('#appManifest').count(),0,'Shortcut does not request a WebAPK');
   assert.equal(await shortcutPage.locator('#installHelp').isVisible(),true);
   const shortcutGuide=await shortcutPage.locator('#installHelp').textContent();

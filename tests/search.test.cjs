@@ -16,7 +16,7 @@ function app(){
  return {c,el:id=>c.document.getElementById(id),run:s=>vm.runInContext(s,c)};
 }
 test('catalog and short-title matching, including subtitle versions',()=>{
- const {run}=app();assert.equal(run('cachedSongs.length'),76617);assert.equal(run('new Set(cachedSongs.map(s=>s.code)).size'),76617);
+ const {run}=app();assert.equal(run('cachedSongs.length'),76745);assert.equal(run('new Set(cachedSongs.map(s=>s.code)).size'),76745);
  for(const q of ['꿈','정','꽃','늪','님','길']){
   const songs=run(`findSongs(cachedSongs,${JSON.stringify(q)})`);
   assert.ok(songs.length>0,q);assert.ok(songs.every(x=>x.n>=980),q);
@@ -29,9 +29,9 @@ test('catalog and short-title matching, including subtitle versions',()=>{
  assert.ok(run(`findSongs(cachedSongs,'가로수 그늘 아래 서면').some(x=>x.s.code==='3')`));
  assert.equal(run(`findSongs(cachedSongs,'!!!').length`),0);
 });
-test('November 4 catalog additions are searchable by title, singer and song number',()=>{
+test('November catalog additions are searchable by title, singer and song number',()=>{
  const {run}=app();
- for(const [query,code] of [['풀카운트','71403'],['손빈아 나 그대를','71404'],['허각 나를 사랑하지 말아요','71423'],['71401','71401']]){
+ for(const [query,code] of [['71596','71596'],['내 어린 날의 노래','71442'],['김희재 여름밤에 우린','71541'],['풀카운트','71403'],['손빈아 나 그대를','71404'],['허각 나를 사랑하지 말아요','71423'],['71401','71401']]){
   assert.equal(run(`findSongs(cachedSongs,${JSON.stringify(query)})[0].s.code`),code);
  }
 });

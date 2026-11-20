@@ -118,14 +118,14 @@
   </section>
   <section class="panel">
     <strong>곡 데이터</strong>
-    <p class="hint">곡번호·제목·가수 76,617곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
+    <p class="hint">곡번호·제목·가수 76,745곡이 앱에 들어 있습니다. 처음 실행하거나 곡 목록이 업데이트되면 자동으로 준비되며, 준비가 끝나면 인터넷 없이도 글자로 검색할 수 있습니다.</p>
     <div class="tools">
       <label class="filebtn">📥 데이터 파일 불러오기<input id="fileInput" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"></label>
       <button id="templateBtn" class="secondary">📄 입력 양식 받기</button>
       <button id="exportBtn" class="secondary">💾 저장 데이터 내보내기</button>
       <button id="clearBtn" class="secondary danger">저장 데이터 지우기</button>
     </div>
-    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>기존 76,435곡에 TJ미디어 공식 목록에서 확인한 182곡을 추가했습니다(2026.11.04 확인). 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
+    <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>2026년 11월 20일까지 TJ미디어에서 발표한 신곡 128곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
   <div class="update-area">
     <a id="refreshBtn" class="update-link" href="./refresh.html"><span aria-hidden="true">🔄</span>최신 버전 불러오기</a>
@@ -140,7 +140,7 @@
       <li>추가했는데 안 보이면 <b>앱 목록 및 다른 홈 화면 페이지</b>를 살펴보고 <b>홈 화면 구성 잠금</b> 설정도 확인하세요.</li>
     </ol>
   </details>
-  <div class="footer"><b>웹앱 버전 2026.11.07 · v17</b> · <a id="refreshFooterLink" href="./refresh.html" style="color:var(--cyan)">최신 버전 불러오기</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,617곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
+  <div class="footer"><b>웹앱 버전 2026.11.20 · v20</b> · <a id="refreshFooterLink" href="./refresh.html" style="color:var(--cyan)">최신 버전 불러오기</a><br>이 앱은 TJ미디어의 공식 앱이 아닙니다. 노래 번호는 매장 반주기 수록곡과 다를 수 있습니다.<br>안드로이드 Chrome 또는 아이폰 Safari에서 사용하세요. iPhone에서 음성 인식이 지원되지 않으면 키보드의 받아쓰기(마이크)를 이용하세요.<br>음성 인식은 인터넷 연결이 필요할 수 있습니다.<br>검색 결과의 곡번호는 현재 앱에 저장된 곡 목록 기준입니다. 내장 목록: 76,745곡 · 신곡 확인: 2026.11.04 · 공개 자료: 번호책(Alfex4936), TJ미디어.</div>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogHint">
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
@@ -230,7 +230,8 @@ if(!Element.prototype.replaceChildren){Element.prototype.replaceChildren=functio
 const DB_NAME='tj-p2-songs', DB_VERSION=1, STORE='songs';
 const BUNDLED_CATALOGS=[
  {url:'./catalog-20261018.csv',count:76435,key:'tj-p2-catalog-76435'},
- {url:'./catalog-update-20261104.csv',count:182,key:'tj-p2-catalog-update-20261104'}
+ {url:'./catalog-update-20261104.csv',count:182,key:'tj-p2-catalog-update-20261104'},
+ {url:'./catalog-update-20261120.csv',count:128,key:'tj-p2-catalog-update-20261120'}
 ];
 const $=id=>document.getElementById(id);
 let db, cachedSongs=null;

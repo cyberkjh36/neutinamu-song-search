@@ -24,7 +24,8 @@ module.exports=async function checkRemote(browser,base,ua){
  await page.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('연결됨')).catch(async error=>{throw new Error('방 연결 확인 실패: '+await page.locator('#nativeStatus').textContent()+' / '+errors.join(', '),{cause:error});});
  assert.equal(await page.locator('.native-connection .connection-caption').textContent(),'5번방');
  await page.waitForFunction(()=>document.getElementById('statusDot')?.classList.contains('ready'),{},{timeout:60000});
- await page.locator('#query').fill('가로수 그늘 아래 서면');await page.locator('#searchBtn').click();
+ await page.locator('#query').fill('김희재 여름밤에 우린');await page.locator('#searchBtn').click();
+ await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71541');
  await page.locator('#nativeReserve').click();
  await page.waitForFunction(()=>document.getElementById('nativeAction').textContent.includes('P2 확인'));
  await page.locator('#nativeQueueNav').click();await page.waitForFunction(()=>document.querySelector('#nativeQueueList .queue-cancel:not(:disabled)'));
@@ -32,9 +33,13 @@ module.exports=async function checkRemote(browser,base,ua){
  await page.waitForFunction(()=>document.querySelector('#nativeQueueEmpty')?.textContent.includes('아직')&&!document.querySelector('#nativeQueueEmpty')?.hidden);
  assert.deepEqual(log.filter(x=>x.op==='command').map(x=>x.command.action),['reserve','queue','queueCancel']);
  assert.ok(log.filter(x=>x.op==='command').every(x=>x.room==='00001234'));
- await page.goto(base+'p2wifi/index.html?label=4');await page.locator('#wifiConnection[open]').waitFor();assert.equal(await page.locator('#wifiRoom').inputValue(),'');
- await page.goto(base+'p2-room.html?room=4');assert.equal(await page.locator('#webRemote').getAttribute('href'),'./p2wifi/index.html?label=4');
- await page.goto(base+'p2wifi/index.html#room=invalid');assert.equal(await page.locator('#wifiRoom').inputValue(),'');await page.locator('#wifiConnection[open]').waitFor();
+ assert.equal(log.find(x=>x.command?.action==='reserve').command.number,71541);
+ const joins=log.filter(x=>x.op==='join').length;
+ await page.goto(base+'p2wifi/index.html?label=4');
+ await page.waitForFunction(()=>document.getElementById('nativeStatus')?.textContent.includes('등록된 방 QR'));
+ await page.goto(base+'p2-room.html?room=4');assert.equal(await page.locator('#webRemote').getAttribute('href'),null);
+ await page.goto(base+'p2wifi/index.html#room=invalid');await page.locator('#wifiConnection[open]').waitFor();
+ assert.equal(log.filter(x=>x.op==='join').length,joins);
  assert.deepEqual(errors,[]);console.log('QR print, scoped QR join, search, reserve, queue, cancel, legacy room, invalid/stale room checks passed');
  } finally {await context.close();}
 };
