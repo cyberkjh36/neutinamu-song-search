@@ -1,0 +1,29 @@
+name: Verify room desktop shortcut
+on:
+  push:
+    paths: ['tools/room-shortcut/**','p2-room.html','p2wifi/wifi-bridge.js','p2wifi/wifi-client.mjs','.github/workflows/room-desktop-shortcut.yml']
+permissions:
+  contents: read
+jobs:
+  shortcut:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - shell: powershell
+        run: ./tools/room-shortcut/verify.ps1
+
+  scan-rooms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Android Chromium and iPhone WebKit room routes
+        run: |
+          npm install --prefix "$RUNNER_TEMP/qr-qa" playwright@1.58.2
+          "$RUNNER_TEMP/qr-qa/node_modules/.bin/playwright" install --with-deps chromium webkit
+          python3 -m http.server 8214 --bind 127.0.0.1 >/tmp/qr-server.log 2>&1 &
+          NODE_PATH="$RUNNER_TEMP/qr-qa/node_modules" node tools/room-shortcut/verify-scan.cjs

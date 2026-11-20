@@ -1,9 +1,16 @@
 export const ENDPOINT='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/p2wifi';
 export const token=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),v=>v.toString(16).padStart(2,'0')).join('');
-export const ERRORS={pairing:'PC에 표시된 P2 전용 연결번호 8자리를 확인해 주세요.',offline:'P2 연결 PC가 꺼져 있거나 인터넷 연결이 끊겼습니다.',full:'휴대폰 5대가 연결되어 있습니다. 사용하지 않는 휴대폰을 연결 해제해 주세요.',not_ready:'PC에서 P2 반주기 연결을 먼저 완료해 주세요.',disconnected:'연결 상태가 바뀌었습니다. 다시 연결해 주세요.',busy:'이전 요청을 처리하고 있습니다. 잠시 후 다시 눌러 주세요.',permission:'이 방의 연결 정보를 확인하지 못했습니다.',invalid:'곡번호 또는 예약 순서를 다시 확인해 주세요.',slow:'연결 요청이 많습니다. 잠시 후 다시 시도해 주세요.'};
+export const ERRORS={unknown_label:'등록된 방 QR을 다시 찍어 주세요.',bad_ticket:'이 방의 QR을 다시 찍어 주세요.',room_conflict:'같은 방에 두 PC가 연결되어 있습니다. 직원에게 알려 주세요.',venue_wifi:'매장 와이파이에 연결하면 자동으로 연결됩니다.',room_setup:'방 PC에서 ‘느티나무 노래방 리모컨’을 열면 연결됩니다.',room_offline:'방 PC와 반주기의 연결을 기다리고 있습니다.',room_wait:'매장 와이파이와 방 PC의 P2 연결을 확인해 주세요.',pairing:'PC에 표시된 P2 전용 연결번호 8자리를 확인해 주세요.',offline:'P2 연결 PC가 꺼져 있거나 인터넷 연결이 끊겼습니다.',full:'휴대폰 5대가 연결되어 있습니다. 사용하지 않는 휴대폰을 연결 해제해 주세요.',not_ready:'PC에서 P2 반주기 연결을 먼저 완료해 주세요.',disconnected:'연결 상태가 바뀌었습니다. 다시 연결해 주세요.',busy:'이전 요청을 처리하고 있습니다. 잠시 후 다시 눌러 주세요.',permission:'이 방의 연결 정보를 확인하지 못했습니다.',invalid:'곡번호 또는 예약 순서를 다시 확인해 주세요.',slow:'연결 요청이 많습니다. 잠시 후 다시 시도해 주세요.'};
 export class WifiClient {
  constructor({fetcher=(input, options) => globalThis.fetch(input, options),storage=globalThis.localStorage,changed=()=>{},delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){Object.assign(this,{fetcher,storage,changed,delay});this.room='';this.key='';this.data=null;this.busy=false;this.refreshing=false;}
  async call(op,extra={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);try{const response=await this.fetcher(ENDPOINT,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,room:this.room,key:this.key,session:this.data?.session,...extra}),signal:controller.signal});const b=await response.json();if(!response.ok||!b.ok)throw Object.assign(new Error(ERRORS[b.code]||'통신 결과를 확인하지 못했습니다.'),{code:b.code});return b;}finally{clearTimeout(timer);}}
+ async joinPrinted(label,ticket) {
+  if(!/^[1235678]$/.test(label)) throw new Error(ERRORS.unknown_label);
+  const extra={label,key:token(32)};
+  if(ticket!==null) extra.ticket=ticket;
+  const found=await this.call('resolvePrintRoom',extra);
+  return this.join(found.room);
+ }
  async join(room) {
   if (this.busy) throw new Error(ERRORS.busy);
   if (!/^\d{8}$/.test(room)) throw new Error(ERRORS.pairing);

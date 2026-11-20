@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 let pending=[];window.NeutiP2={command(json){pending.push(['command',json]);},saveCsv(name,text){pending.push(['save',name,text]);}};
-Promise.all([import('./wifi-client.mjs?v=1.1.0-r3'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal}])=>{
+Promise.all([import('./wifi-client.mjs?v=1.3.0-rooms'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal}])=>{
  const $=id=>document.getElementById(id), personalKey='p2wifi-personal-v1';let statusText='',lastQueueVersion='',speech=null;
  let storage;try{storage=localStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('이 브라우저에서는 저장 공간을 사용할 수 없습니다.');},removeItem(){}};}
  function personal(events=[]){try{let old=JSON.parse(storage.getItem(personalKey)||'{}'),next=mergePersonal(old,events);if(JSON.stringify(old)!==JSON.stringify(next))storage.setItem(personalKey,JSON.stringify(next));window.onP2NativePersonalSongs?.({songs:Object.values(next.songs).sort((a,b)=>b.lastPlayed-a.lastPlayed)});}catch{window.onP2NativePersonalSongs?.({error:'내 애창곡 저장 공간을 사용할 수 없습니다. 브라우저의 일반 탭에서 열어 주세요.'});}}
@@ -12,10 +12,22 @@ Promise.all([import('./wifi-client.mjs?v=1.1.0-r3'),new Promise(resolve=>documen
  const code = fragment.has('room') ? fragment.get('room') : link.searchParams.get('room');
  const label = fragment.get('label') || link.searchParams.get('label') || '';
  const roomLabel = /^[1-9][0-9]?$/.test(label) ? label + '번방' : '';
+ const ticket=fragment.get('ticket');
+ const printed=code===null && (label!=='' || ticket!==null);
+ const staffDisplay=link.searchParams.get('display')==='pc';
+ let joiningPrint=false, pausedPrint=false, nextAttempt=0;
  const explicit = code !== null || label !== '';
  if(roomLabel) document.querySelector('.native-connection .connection-caption').textContent = roomLabel;
  const client=new WifiClient({storage,changed:paint});
- function showHelp(){const modal=$('wifiConnection');if(!modal.open){if(typeof modal.showModal==='function')modal.showModal();else modal.setAttribute('open','');}$('wifiRoom').value=client.room||(explicit ? '' : storage.getItem('p2wifi-last-room'))||'';$('wifiRoom').focus();paint();}
+ async function connectPrint(force=false){
+  if(joiningPrint || client.busy || pausedPrint || (!force && (document.hidden || Date.now()<nextAttempt)))return;
+  joiningPrint=true;
+  if(!statusText){statusText=roomLabel+' 반주기에 연결 중…';paint();}
+  try{await client.joinPrinted(label,ticket);statusText='';}
+  catch(e){statusText=e.message;nextAttempt=Date.now()+12000;if(['bad_ticket','unknown_label'].includes(e.code)||!/^[1235678]$/.test(label))pausedPrint=true;}
+  finally{joiningPrint=false;paint();}
+ }
+ function showHelp(){if(printed){pausedPrint=false;nextAttempt=0;connectPrint(true);return;}const modal=$('wifiConnection');if(!modal.open){if(typeof modal.showModal==='function')modal.showModal();else modal.setAttribute('open','');}$('wifiRoom').value=client.room||(explicit ? '' : storage.getItem('p2wifi-last-room'))||'';$('wifiRoom').focus();paint();}
  async function voice(){
   if(speech)return;const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!Recognition){window.onP2NativeVoice?.([],'음성 인식을 지원하지 않는 환경입니다. 검색창을 누르고 휴대폰 키보드의 마이크로 입력해 주세요.');return;}
@@ -28,7 +40,7 @@ Promise.all([import('./wifi-client.mjs?v=1.1.0-r3'),new Promise(resolve=>documen
  async function command(text){try{
   const c=JSON.parse(text);statusText='';
   if(['connection','find'].includes(c.command)){showHelp();paint();return;}
-  if(c.command==='connect'){if(client.data?.online && client.data.state?.connected){await client.leave();}else showHelp();paint();return;}
+  if(c.command==='connect'){if(client.data?.online && client.data.state?.connected){pausedPrint=printed;await client.leave();statusText='연결을 해제했습니다.';}else showHelp();paint();return;}
   if(c.command==='status'){paint();return;}
   if(c.command==='personalSongs'){personal();return;}
   if(c.command==='personalRemove'){const record=JSON.parse(storage.getItem(personalKey)||'{}');if(record.songs)delete record.songs[Number(c.number)];storage.setItem(personalKey,JSON.stringify(record));personal();return;}
@@ -55,15 +67,34 @@ Promise.all([import('./wifi-client.mjs?v=1.1.0-r3'),new Promise(resolve=>documen
 
  $('wifiUpdate').onclick=async()=>{statusText='최신 버전을 확인하고 있습니다…';paint();try{const registration=await navigator.serviceWorker?.getRegistration();await registration?.update();registration?.waiting?.postMessage('SKIP_WAITING');setTimeout(()=>location.reload(),800);}catch{location.reload();}};
  const mine=$('personalHint');if(mine)mine.textContent='이 휴대폰에서 실행하거나 예약한 곡 중 P2의 재생이 확인된 곡을 이 기기에 저장합니다. 제어 요청과 재생 결과는 중계 서버를 거치며 전달을 위해 임시 보관됩니다. 브라우저 사이트 데이터를 지우면 내 애창곡도 지워집니다. 같은 곡을 여러 사람이 동시에 예약해 구분이 어려운 경우 기록을 생략할 수 있습니다.';
+ if(staffDisplay && roomLabel){
+  const panel=document.createElement('section');panel.className='desk-qr';panel.setAttribute('aria-label','손님용 QR');
+  const picture=document.createElement('div');picture.className='desk-qr-picture';
+  const info=document.createElement('div'),heading=document.createElement('h2'),help=document.createElement('p');
+  heading.textContent=roomLabel+' 손님용 QR';help.textContent='휴대폰 카메라로 찍으면 이 방의 리모컨이 열립니다.';
+  info.append(heading,help);panel.append(picture,info);
+  const guest=new URL('index.html',location.href);guest.searchParams.set('label',label);
+  if(ticket) guest.hash=new URLSearchParams({ticket}).toString();
+  else if(code) guest.hash=new URLSearchParams({room:code}).toString();
+  const qr=window.qrcode(0,'M');qr.addData(guest.href,'Byte');qr.make();
+  picture.innerHTML=qr.createSvgTag({cellSize:4,margin:16,scalable:true});
+  const header=document.querySelector('header');header.after(panel);
+ }
  const list=$('nativeQueueList');if(list)new MutationObserver(()=>{Array.from(list.children).forEach((row,index)=>{if(row.querySelector('.wifi-order'))return;const q=client.data?.state?.queue;if(!q?.valid||index>=q.songs.length)return;const box=document.createElement('div');box.className='wifi-order';for(const [delta,label] of [[-1,'위로'],[1,'아래로']]){const to=index+delta;if(to<0||to>=q.songs.length)continue;const button=document.createElement('button');button.textContent=label;button.setAttribute('aria-label',(index+1)+'번째 예약곡 '+label);button.onclick=()=>command(JSON.stringify({command:'queueMove',number:q.songs[index],index,to,version:q.version}));box.append(button);}row.append(box);});}).observe(list,{childList:true});
  for(const task of pending){if(task[0]==='save')save(task[1],task[2]);else command(task[1]);}pending=[];
  let initial=code;if(!explicit){try{initial=storage.getItem('p2wifi-last-room');}catch{}}
- if(initial&&/^\d{8}$/.test(initial)){client.join(initial).catch(e=>{statusText=e.message;paint();});}else {
+ if(printed){connectPrint(true);}else if(initial&&/^\d{8}$/.test(initial)){client.join(initial).catch(e=>{statusText=e.message;paint();});}else {
    if(code !== null) statusText='QR의 연결번호를 읽을 수 없습니다. 해당 방의 QR을 다시 찍어 주세요.';
    paint();
    if(!initial || explicit) showHelp();
  }
- setInterval(()=>client.refresh().catch(()=>{}),3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)client.refresh().catch(()=>{});else if(speech){try{speech.abort();}catch{}}});
+ async function tick(){
+  if(printed && !pausedPrint && (!client.data || !client.data.online || !client.data.state?.connected)){
+   await connectPrint();return;
+  }
+  await client.refresh().catch(()=>{});
+ }
+ setInterval(tick,3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();else if(speech){try{speech.abort();}catch{}}});
  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).catch(()=>{});
 }).catch(()=>{const p=document.createElement('p');p.textContent='리모컨을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.';document.body?.prepend(p);});
 })();

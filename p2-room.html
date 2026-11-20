@@ -1,11 +1,19 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102e32"><meta name="referrer" content="no-referrer"><title>방별 반주기 연결 · 느티나무</title>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search),n=q.get('room');
+  if(!location.hash && Array.from(q.keys()).length===1 && /^[1235678]$/.test(n)){
+    location.replace('./p2wifi/index.html?label='+n);
+  }
+})();
+</script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6ef;color:#123338;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;line-height:1.65}main{max-width:540px;margin:auto;padding:34px 22px 50px}.brand{font-size:14px;font-weight:700;letter-spacing:.08em}.badge{margin:30px 0 16px;display:inline-block;background:#173e42;color:white;border-radius:22px;padding:6px 17px;font-weight:700}h1{font-size:34px;line-height:1.3;margin:0 0 20px;word-break:keep-all}.lead{font-size:18px;margin:0 0 26px}.connect{display:block;text-align:center;background:#c4e88f;color:#123338;border-radius:18px;padding:21px 12px;font-size:23px;font-weight:800;text-decoration:none;margin:24px 0}section{background:white;border:1px solid #dae1d4;border-radius:20px;padding:20px;margin:22px 0}h2{font-size:19px;margin:0 0 12px}ol{padding-left:24px;margin:0}li{margin:9px 0}.note{font-size:15px;color:#456367}.status{border-left:4px solid #7b9c46;padding-left:14px}a{color:#244e50}footer{margin-top:30px;border-top:1px solid #d7dfd1;padding-top:20px;font-size:14px}[hidden]{display:none!important}
 </style><script src="./room-connect.js" defer></script></head>
 <body><main>
 <div class="brand">느티나무 노래방</div>
-<section id="webJoin" hidden><h1 id="webTitle">휴대폰 리모컨</h1><p>아이폰이나 안드로이드에서 노래를 찾아 예약하세요. 이 QR은 방번호만 담고 있어 PC의 P2 전용 연결번호 8자리가 필요합니다.</p><a class="connect" id="webRemote">설치 없이 리모컨 열기</a></section>
+<section id="webJoin" hidden><h1 id="webTitle">휴대폰 리모컨</h1><p>아이폰이나 안드로이드에서 노래를 찾아 예약하세요. 매장 와이파이에서 이 방의 반주기에 자동으로 연결합니다.</p><a class="connect" id="webRemote">설치 없이 리모컨 열기</a></section>
 <details><summary>기존 안드로이드 앱으로 직접 연결</summary><div class="badge" id="roomBadge">방별 QR</div>
 <h1 id="roomTitle">반주기 연결</h1>
 <p class="lead" id="roomIntro">QR의 방번호를 확인하고 있습니다.</p>
@@ -23,7 +31,7 @@
 const params = new URLSearchParams(location.search);
 const room = params.get('room');
 const webJoin = document.getElementById('webJoin');
-if (/^[1-8]$/.test(room) && Array.from(params.keys()).length === 1) {
+if (/^[1235678]$/.test(room) && Array.from(params.keys()).length === 1) {
   document.getElementById('webTitle').textContent = room + '번방 휴대폰 리모컨';
   document.getElementById('webRemote').href = './p2wifi/index.html?label=' + room;
   webJoin.hidden = false;

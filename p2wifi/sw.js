@@ -1,6 +1,6 @@
-const CACHE = 'neutinamu-webremote-1.1.0-r3';
+const CACHE = 'neutinamu-webremote-1.3.0-rooms';
 const FILES = ['index.html','native-search.js','favorites-ui.js','favorites-data.js','favorites.css',
-  'wifi-client.mjs','wifi-bridge.js','wifi.css','manifest.webmanifest','../chosung.js','../p2.css','../icon.svg',
+  'vendor/qrcode.js','wifi-client.mjs','wifi-bridge.js','wifi.css','manifest.webmanifest','../chosung.js','../p2.css','../icon.svg',
   '../icon-192.png','../icon-512.png','../catalog-20261018.csv','../catalog-update-20261104.csv'];
 const urls = new Set(FILES.map(file => new URL(file, self.registration.scope).href));
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(file => new Request(new URL(file,self.registration.scope),{cache:'reload'})))).then(() => self.skipWaiting())));
