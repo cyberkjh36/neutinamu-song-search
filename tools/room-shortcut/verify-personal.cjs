@@ -24,7 +24,7 @@ module.exports=async function verifyPersonal(page,base){
   await close.click();
   await page.locator('#query').fill('71541');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71541');
-  await page.locator('#nativePlay').click();await page.waitForFunction(()=>document.getElementById('nativeAction').textContent.includes('3번 재생 확인'));
+  await page.locator('#nativeNext').click();await page.waitForFunction(()=>document.getElementById('nativeAction').textContent.includes('3번 재생 확인'));
   await mine.click();await row(3).waitFor();assert.equal(await row(71541).count(),0);await close.click();
   const commands=ops.filter(x=>x==='command').length;
   await page.locator('#nativeSaveFavorite').click();await page.waitForFunction(()=>document.getElementById('favoriteSaveStatus').textContent.includes('저장했습니다'));

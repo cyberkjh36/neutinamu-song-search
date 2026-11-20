@@ -44,6 +44,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
    try {
     await require('./verify-favorites-reserve.cjs')(favoritesTab,base);
     await require('./verify-personal.cjs')(favoritesTab,base);
+    await require('./verify-song-actions.cjs')(favoritesTab,base);
    }
    finally {await favoritesTab.close();}
    await require('./verify-reconnect.cjs')(tab,base);

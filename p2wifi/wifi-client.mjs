@@ -101,6 +101,51 @@ export class WifiClient {
   } finally { this.sending = this.busy = false; this.changed(); }
  }
 }
+
+// Room PCs already verify the queue version and song number before playing a
+// particular reservation. Use that check even if another phone edits the queue.
+export async function playSearchResult(client,number){
+ if(!Number.isInteger(number)||number<1||number>99999999)throw Error(ERRORS.invalid);
+ const revision=client.revision,room=client.room,session=client.data?.session;
+ const ensureSameRoom=()=>{
+  if(!session||client.room!==room||client.revision!==revision||client.data?.session!==session||!client.data?.online)throw Error(ERRORS.disconnected);
+ };
+ async function snapshot(){
+  ensureSameRoom();
+  const state=await client.call('status');
+  ensureSameRoom();
+  if(!state.online||!state.state?.connected||state.session!==session)throw Error(ERRORS.disconnected);
+  return state.state;
+ }
+ function valid(q){return q?.valid&&/^[a-f0-9]{64}$/.test(q.version)&&Array.isArray(q.songs);}
+ async function readQueue(accept){
+  for(let i=0;i<7;i++){
+   const state=await snapshot();
+   if(!state.busy&&valid(state.queue)&&accept(state.queue))return state.queue;
+   if(i<6)await client.delay(550);
+  }
+  return null;
+ }
+ let before=(await snapshot()).queue;
+ if(!valid(before)){
+  const result=await client.send({action:'queue'});if(result.status!=='confirmed')return result;
+  before=await readQueue(()=>true);
+  if(!before)throw Error('예약 목록을 확인하지 못했습니다. 다시 실행해 주세요.');
+ }
+ let index=before.songs.indexOf(number),queue=before;
+ if(index<0){
+  ensureSameRoom();
+  const reserved=await client.send({action:'reserve',number});
+  if(reserved.status!=='confirmed')return reserved;
+  const expected=before.songs.concat(number);
+  queue=await readQueue(q=>q.songs.length===expected.length&&q.songs.every((n,i)=>n===expected[i]));
+  if(!queue)throw Error('예약은 확인했습니다. 재생 상태와 예약 목록을 확인해 주세요.');
+  index=queue.songs.length-1;
+ }
+ ensureSameRoom();
+ return client.send({action:'queuePlay',number,index,version:queue.version});
+}
+
 export function mergePersonal(record,events){
  const saved=record&&typeof record==='object'?record:{},songs={...(saved.songs||{})},seen={...(saved.seen||{})};
  const removed={...(saved.removed||{})};

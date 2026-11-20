@@ -96,3 +96,24 @@ test('a lost reservation response is recovered by reading that one job, even aft
  assert.deepEqual(calls.map(x=>x.op),['join','command','result','status']);
  assert.equal(calls[1].id,calls[2].id);assert.equal(calls[1].session,calls[2].session);
 });
+
+test('exact search uses the matched row and aborts when the room changes after reservation',async()=>{
+ const {playSearchResult}=await import('../../p2wifi/wifi-client.mjs');
+ const number=914, session='a'.repeat(32), calls=[];
+ let songs=[693,number], disconnect=false, altered=false;
+ const client={data:{session,online:true},room,revision:1,delay:async()=>{},
+  async call(){return {online:true,session,state:{connected:true,queue:{valid:true,version:'1'.repeat(64),songs:[...songs]}}};},
+  async send(c){calls.push(c);if(c.action==='reserve'){songs.push(c.number);if(disconnect)this.revision++;if(altered)songs.unshift(999);}return {status:'confirmed'};}
+ };
+ await playSearchResult(client,number);
+ assert.deepEqual(calls.map(c=>[c.action,c.number,c.index]),[['queuePlay',number,1]]);
+ calls.length=0;songs=[693];
+ await playSearchResult(client,number);
+ assert.deepEqual(calls.map(c=>[c.action,c.number,c.index]),[['reserve',number,undefined],['queuePlay',number,1]]);
+ calls.length=0;songs=[693];altered=true;
+ await assert.rejects(playSearchResult(client,number),/예약은 확인/);
+ assert.deepEqual(calls.map(c=>c.action),['reserve']);
+ calls.length=0;songs=[];disconnect=true;
+ await assert.rejects(playSearchResult(client,number),/연결/);
+ assert.deepEqual(calls.map(c=>c.action),['reserve']);
+});
