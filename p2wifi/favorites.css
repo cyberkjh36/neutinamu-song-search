@@ -20,19 +20,19 @@
 .favorites-instruction strong{color:#a9f0c0}
 .favorites-filter-label{display:block;font-size:17px;margin:18px 0 8px;font-weight:700}
 .favorites-filter-row{display:flex;gap:8px}
-#favoritesFilter{flex:1;min-width:0;width:100%;min-height:54px;padding:12px;font-size:17px;background:#091b27;border:1px solid #58818e;color:#fff;border-radius:12px;appearance:none}
+#favoritesFilter{flex:1;min-width:0;width:100%;min-height:54px;padding:12px;font-size:var(--song-input-size);background:#091b27;border:1px solid #58818e;color:#fff;border-radius:12px;appearance:none}
 #favoritesClear{flex-shrink:0;min-height:54px;padding:8px;font-size:16px;background:#23424f}
-#favoritesList{list-style:none;padding:0;margin:14px 0;display:grid;gap:12px}
+#favoritesList{list-style:none;padding:0;margin:14px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .favorite-song{display:block;text-align:left;width:100%;min-width:0;padding:18px 16px;border:1px solid #426776;background:#163342;border-radius:16px;color:#f8fafb}
 .favorite-song:active{background:#244e53}
-.favorite-song-title{display:block;font-size:28px;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
-.favorite-song-artist{display:block;margin-top:7px;font-size:22px;line-height:1.5;overflow-wrap:anywhere;color:#c2d8e2}
+.favorite-song-title{display:block;font-size:var(--song-title-size);font-weight:800;line-height:1.4;overflow-wrap:anywhere}
+.favorite-song-artist{display:block;margin-top:7px;font-size:var(--song-artist-size);font-weight:650;line-height:1.4;overflow-wrap:anywhere;color:var(--song-artist-color)}
 .favorite-song-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px}
 .favorite-song-code{font-family:Arial,sans-serif;font-size:34px;line-height:1.2;font-weight:900;color:#ffd677}
 .favorite-song-select{font-size:18px;font-weight:700;color:#b8efd0;white-space:nowrap}
 .favorites-source{border-top:1px solid #42606e;padding-top:16px;margin-top:24px;color:#bcd0d6;font-size:15px;line-height:1.7}
 .favorites-source summary{min-height:44px;cursor:pointer;font-size:16px}
-@media(max-width:340px){#favoritesTitle{font-size:23px}.favorites-sheet{padding:12px}.favorites-heading{top:-12px}.favorite-song{padding:16px 12px}.favorite-song-title{font-size:26px}#favoriteShortcuts strong{font-size:18px}}
+@media(max-width:340px){#favoritesTitle{font-size:23px}.favorites-sheet{padding:12px}.favorites-heading{top:-12px}.favorite-song{padding:16px 12px}#favoriteShortcuts strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){#favoritesPanel *{scroll-behavior:auto}}
 
 #favoriteShortcuts button[data-category=mine]{grid-column:1/-1;flex-direction:row;min-height:72px;gap:12px;background:#183f39;border-color:#578d79;color:#d5f8df}
