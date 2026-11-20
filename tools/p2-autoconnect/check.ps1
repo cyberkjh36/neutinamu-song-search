@@ -25,9 +25,13 @@ try {
 } finally { $zip.Dispose(); $stream.Dispose() }
 $csc = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319/csc.exe"
 $fixture=Join-Path $dir 'RoomFixture.exe'
-& $csc /nologo /target:exe "/out:$fixture" "/r:$dir/Neutinamu.P2Wifi.dll" "$PSScriptRoot/RoomFixture.cs"
-if ($LASTEXITCODE) { throw 'Fixture compilation failed' }
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'RoomFixture.cs') -Destination (Join-Path $dir 'RoomFixture.cs')
+Push-Location -LiteralPath $dir
+try {
+  & $csc /nologo /target:exe /out:RoomFixture.exe /r:Neutinamu.P2Wifi.dll RoomFixture.cs
+  if ($LASTEXITCODE) { throw 'Fixture compilation failed' }
+} finally { Pop-Location }
 $conf = '<configuration><startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.8"/></startup><runtime><AppContextSwitchOverrides value="Switch.System.Net.DontEnableSchUseStrongCrypto=false;Switch.System.Net.DontEnableSystemDefaultTlsVersions=false"/></runtime></configuration>'
 [IO.File]::WriteAllText("$fixture.config",$conf)
-node "$PSScriptRoot/verify.mjs" $fixture
+node (Join-Path $PSScriptRoot 'verify.mjs') $fixture
 exit $LASTEXITCODE
