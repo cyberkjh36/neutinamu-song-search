@@ -189,6 +189,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   assert.equal(await page.locator('#nativeNowNumber').textContent(),'914');
   await page.evaluate(()=>onP2NativeState({label:'● 8번방 연결됨',message:'정지 응답을 받았습니다.',busy:false,connected:true}));
   await page.evaluate(()=>onP2NativePlayback({number:0,known:true}));assert.match(await page.locator('#nativeNowTitle').textContent(),/정지/);assert.equal(await page.locator('#nativeNowNumber').textContent(),'');
+  const playsBeforeVoice=await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length);
   await page.locator('#voiceBtn').click();assert.equal(await page.evaluate(()=>commands.at(-1).command),'voice');
   await page.evaluate(()=>onP2NativeVoice(['no such song zzz','조용필 꿈'],''));
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='693');
@@ -207,14 +208,14 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='777777');
   await page.locator('#query').fill('777778');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='777778');assert.equal(await page.locator('#heroTitle img').count(),0);
-  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length),1);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length),playsBeforeVoice);
   await page.evaluate(()=>onP2NativeImport('곡번호,곡제목,가수\n'+Array.from({length:65},(_,i)=>(800000+i)+',페이지검증 '+i+',테스트').join('\n'),''));
   await page.locator('#query').fill('페이지검증');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.querySelectorAll('#results .result').length===30);
   await page.locator('#nativeMoreResults').click();assert.equal(await page.locator('#results .result').count(),60);
   await page.locator('#nativeMoreResults').click();assert.equal(await page.locator('#results .result').count(),65);
   await page.locator('#results .result').last().click();assert.equal(await page.locator('#heroNumber').textContent(),'800064');
-  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length),1);
+  assert.equal(await page.evaluate(()=>commands.filter(x=>x.command==='playExact').length),playsBeforeVoice);
   await page.evaluate(()=>{onP2NativePlayback({number:777778,known:true});onP2NativePlayback({number:914,known:true});});
   await page.waitForFunction(()=>document.getElementById('nativeNowArtist').textContent==='조용필');
   await page.evaluate(()=>onP2NativePlayback({number:777778,known:true}));
