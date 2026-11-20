@@ -35,6 +35,9 @@ self.addEventListener('fetch',function(event){
      return cache.put(req,response.clone()).then(function(){return response},function(){return response});
     }
     return response;
+   },function(){
+    // A mobile device can be on Wi-Fi while its route to GitHub is offline.
+    return new Response('',{status:503,statusText:'Offline'});
    });
   });
  }));
