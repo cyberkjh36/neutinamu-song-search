@@ -11,7 +11,7 @@ $actual = $setup.GetMethod('DirectoryFromRunValue',$private).Invoke($null,@('"' 
 if ($actual -ne $dir) { throw 'Registered startup path parsing failed' }
 $package = $setup.GetMethod('Package',$private).Invoke($null,@())
 $rejected = $false
-try { $null=$package.GetType().GetMethod('Install',[Reflection.BindingFlags]'Instance,NonPublic').Invoke($package,@($dir)) }
+try { $null=$package.GetType().GetMethod('Install',[Reflection.BindingFlags]'Instance,NonPublic').Invoke($package,[string[]]@($dir)) }
 catch { if ($_.Exception.GetBaseException() -is [IO.InvalidDataException]) { $rejected=$true } else { throw } }
 if (!$rejected -or (Get-ChildItem $dir).Count -gt 0) { throw 'Unknown installation was accepted or modified' }
 $stream = $assembly.GetManifestResourceStream('update.zip')
