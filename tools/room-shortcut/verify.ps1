@@ -3,18 +3,12 @@ $dir=Join-Path $env:RUNNER_TEMP 'room-shortcut-check'
 New-Item $dir -ItemType Directory -Force | Out-Null
 $fixture=Join-Path $dir 'fixture.json'
 [IO.File]::WriteAllText($fixture,'{"5":{"serial":"P0200000000","signer":"unused","ticket":"fixture"}}')
-$vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
-$csc=& $vswhere -latest -products '*' -find 'MSBuild\Current\Bin\Roslyn\csc.exe' | Select-Object -First 1
-if(!$csc){throw 'Visual Studio C# compiler not found'}
-$app=Join-Path $dir 'Neutinamu_Room_Remote_1.3.0.exe'
-Copy-Item (Join-Path $PSScriptRoot 'Program.cs') $dir
-Copy-Item (Join-Path $PSScriptRoot 'Remote.ico') $dir
-Copy-Item (Join-Path $PSScriptRoot 'DesktopLink.cs') $dir
-Push-Location $dir
-try {
-  & $csc /nologo /codepage:65001 /target:winexe /langversion:latest /out:Neutinamu_Room_Remote_1.3.0.exe /win32icon:Remote.ico /resource:fixture.json,rooms.json /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Net.Http.dll /r:System.Web.Extensions.dll /r:Microsoft.CSharp.dll Program.cs DesktopLink.cs
-  if($LASTEXITCODE){throw 'Build failed'}
-} finally {Pop-Location}
+$output=Join-Path $dir 'build'
+& dotnet build (Join-Path $PSScriptRoot 'RoomShortcut.csproj') -c Release "-p:RoomProfiles=$fixture" -o $output
+if($LASTEXITCODE){throw 'Build failed'}
+# Only the executable is shipped. Exercise that layout, with no sibling QR assembly.
+$app=Join-Path $dir 'Neutinamu_Room_Remote_1.3.1.exe'
+Copy-Item (Join-Path $output 'Neutinamu_Room_Remote_1.3.1.exe') $app
 $start=New-Object Diagnostics.ProcessStartInfo
 $start.FileName=$app
 $start.Arguments='--install-only'
@@ -52,3 +46,30 @@ try {
   $ok=$testKey.VerifyData([Text.Encoding]::ASCII.GetBytes($challenge),'SHA256',[Convert]::FromBase64String($sig))
   if(!$ok){throw 'Windows room registration proof failed'}
 } finally {$testKey.Dispose()}
+
+Add-Type -AssemblyName System.Windows.Forms
+$flags=[Reflection.BindingFlags]'Static,NonPublic'
+$resolver=[Delegate]::CreateDelegate([ResolveEventHandler],$type.GetMethod('EmbeddedQrLibrary',$flags))
+[AppDomain]::CurrentDomain.add_AssemblyResolve($resolver)
+$instanceFlags=[Reflection.BindingFlags]'Instance,NonPublic'
+$windowType=$type.GetNestedType('RoomQrWindow',[Reflection.BindingFlags]::NonPublic)
+$form=[Activator]::CreateInstance($windowType,$true)
+try {
+    $url=$type.GetMethod('DirectPage',$flags).Invoke($null,@('5','00001234'))
+    if($url -cne 'https://cyberkjh36.github.io/neutinamu-song-search/p2wifi/index.html#room=00001234&label=5'){throw 'Wrong room URL'}
+    $windowType.GetMethod('ShowActiveQr',$instanceFlags).Invoke($form,@('5','00001234',$url))
+    $picture=$windowType.GetField('picture',$instanceFlags).GetValue($form)
+    if(!$picture.Image -or $picture.Image.Width -lt 300){throw 'Native QR is missing'}
+    $png=Join-Path $dir 'desktop-qr.png'
+    $picture.Image.Save($png,[Drawing.Imaging.ImageFormat]::Png)
+    $windowType.GetMethod('ClearQr',$instanceFlags).Invoke($form,@('Waiting'))
+    if($picture.Image){throw 'Stale QR survived disconnect'}
+} finally {
+    $form.Dispose()
+    [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)
+}
+& python -m pip -q install zxing-cpp pillow
+if($LASTEXITCODE){throw 'QR decoder installation failed'}
+& python -c "import sys,zxingcpp;from PIL import Image;code=zxingcpp.read_barcode(Image.open(sys.argv[1]));assert code and code.text==sys.argv[2]" $png $url
+if($LASTEXITCODE){throw 'The rendered QR did not open the configured room'}
+Write-Host 'Verified native QR scan, leading zeroes, and QR removal after disconnect.'

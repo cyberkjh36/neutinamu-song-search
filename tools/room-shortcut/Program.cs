@@ -17,21 +17,24 @@ using Microsoft.Win32;
 
 public sealed class PrintedRoom { public string serial,signer,ticket; }
 public sealed class ActiveLink { public string room,name; public bool online; public long updated; }
-internal static class RoomShortcut {
+internal static partial class RoomShortcut {
     internal const string Title="느티나무 노래방 리모컨";
     const string Host="WorldKaraoke.P2Background.exe";
     const string Endpoint="https://world-karaoke-connect.almondjoy11.chatgpt.site/api/p2wifi";
     const string Page="https://cyberkjh36.github.io/neutinamu-song-search/p2wifi/index.html";
     static readonly JavaScriptSerializer Json=new JavaScriptSerializer();
     static readonly HttpClient Http=new HttpClient(new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false}){Timeout=TimeSpan.FromSeconds(10)};
-    internal static string GuestPage(string label,PrintedRoom profile) => Page+"?display=pc&label="+label+"#ticket="+profile.ticket;
+    internal static string DirectPage(string label,string code) {
+        if(!Regex.IsMatch(label??"", @"\A[1235678]\z") || !Regex.IsMatch(code??"", @"\A[0-9]{8}\z"))throw new InvalidDataException("방 연결 정보를 확인해 주세요.");
+        return Page+"#room="+code+"&label="+label;
+    }
     static Dictionary<string,PrintedRoom> Rooms(){
         using(var s=Assembly.GetExecutingAssembly().GetManifestResourceStream("rooms.json"))
         using(var r=new StreamReader(s))return Json.Deserialize<Dictionary<string,PrintedRoom>>(r.ReadToEnd());
     }
     static string Sha(string file){using(var h=SHA256.Create())using(var data=File.OpenRead(file))return BitConverter.ToString(h.ComputeHash(data)).Replace("-","").ToLowerInvariant();}
     static void InstallShortcut(){
-        var dir=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","NeutinamuRoomRemote","1.3.0");
+        var dir=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","NeutinamuRoomRemote","1.3.1");
         Directory.CreateDirectory(dir);
         string self=Application.ExecutablePath,exe=Path.Combine(dir,"RoomRemote.exe");
         if(!string.Equals(self,exe,StringComparison.OrdinalIgnoreCase)&&(!File.Exists(exe)||Sha(self)!=Sha(exe))){
@@ -56,7 +59,10 @@ internal static class RoomShortcut {
     }
     static string SavedSerial(string host){
         var path=Path.Combine(Path.GetDirectoryName(host),"WorldKaraoke.P2Memory.dll");
-        if(Sha(path)!="3114c426df37573578be92176ff038a2e600f19cc43fa8c9db12a71b95284b2e")throw new IOException("P2 자동연결 버전을 확인해 주세요.");
+        string hash=Sha(path);
+        if(hash!="3114c426df37573578be92176ff038a2e600f19cc43fa8c9db12a71b95284b2e" &&
+           hash!="cfa26919c0583f54c5055e4fb87dbe9e76403a2fbe9d846e00adb594f25d39a4")
+            throw new IOException("이 버전의 P2 방 설정 파일을 확인할 수 없습니다. 방 PC의 자동연결 버전을 확인해 주세요.");
         var type=Assembly.LoadFrom(path).GetType("WorldKaraoke.P2Memory.RoomStore",true);
         var instance=type.GetMethod("Default").Invoke(null,null);
         var record=type.GetMethod("Read").Invoke(instance,null);
@@ -105,9 +111,10 @@ internal static class RoomShortcut {
         using(Process.Start(new ProcessStartInfo(path,option){WorkingDirectory=Path.GetDirectoryName(path),UseShellExecute=false})){}
     }
     [STAThread] static void Main(string[] args){
+        AppDomain.CurrentDomain.AssemblyResolve+=EmbeddedQrLibrary;
         Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
         ServicePointManager.SecurityProtocol=SecurityProtocolType.SystemDefault;
-        Http.DefaultRequestHeaders.UserAgent.ParseAdd("NeutinamuRoomRemote/1.3.0");
+        Http.DefaultRequestHeaders.UserAgent.ParseAdd("NeutinamuRoomRemote/1.3.1");
         try{if(!args.SequenceEqual(new[]{"--open"}))InstallShortcut();}
         catch(Exception e){
             Environment.ExitCode=1;
@@ -116,35 +123,11 @@ internal static class RoomShortcut {
             return;
         }
         if(args.SequenceEqual(new[]{"--install-only"}))return;
-        using(var f=new Form{Text=Title,ClientSize=new Size(430,165),StartPosition=FormStartPosition.CenterScreen,Font=new Font("맑은 고딕",10),Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath)}){
-            var status=new Label{AutoSize=true,MaximumSize=new Size(380,0),Text="이 방의 반주기 연결을 확인하고 있습니다."};
-            var retry=new Button{Text="다시 연결",AutoSize=true,Visible=false};var settings=new Button{Text="TV연결 설정",AutoSize=true,Visible=false};
-            var list=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(18),AutoScroll=true};
-            list.Controls.Add(status);list.Controls.Add(retry);list.Controls.Add(settings);f.Controls.Add(list);string host=null;
-            Func<Task> open=async()=>{
-                retry.Visible=settings.Visible=false;
-                try{
-                    var rooms=Rooms();host=HostPath();OpenHost(host,"--background");
-                    for(int i=0;i<45 && !f.IsDisposed;i++){
-                        string serial=SavedSerial(host);var pair=rooms.FirstOrDefault(v=>v.Value.serial==serial);
-                        if(serial!=null && pair.Key==null)throw new IOException("이 PC의 반주기가 등록된 7개 방과 일치하지 않습니다. TV연결 설정에서 이 방의 P2를 확인해 주세요.");
-                        status.Text=pair.Key==null?"TV연결 설정에서 이 방의 반주기를 먼저 지정해 주세요.":pair.Key+"번방 P2 자동연결을 기다리고 있습니다…";
-                        settings.Visible=true;
-                        var active=pair.Key==null?null:Online(host,serial);
-                        if(active!=null){
-                            status.Text=pair.Key+"번방 리모컨과 QR을 여는 중…";
-                            await Bind(pair.Key,pair.Value,active.room);
-                            if(f.IsDisposed)return;
-                            Process.Start(new ProcessStartInfo(GuestPage(pair.Key,pair.Value)){UseShellExecute=true});
-                            f.Close();return;
-                        }
-                        await Task.Delay(1500);
-                    }
-                    if(!f.IsDisposed)throw new IOException("이 방의 P2 연결이 아직 준비되지 않았습니다. 방 PC의 인터넷과 TV연결 설정을 확인해 주세요.");
-                }catch(Exception e){if(!f.IsDisposed){status.Text=e is TaskCanceledException||e is HttpRequestException?"인터넷 연결을 확인하고 다시 눌러 주세요.":e.GetBaseException().Message;retry.Visible=true;settings.Visible=host!=null;}}
-            };
-            settings.Click+=(s,e)=>{try{OpenHost(host,"--settings");}catch(Exception err){status.Text=err.Message;}};
-            f.Shown+=async(s,e)=>await open();retry.Click+=async(s,e)=>await open();Application.Run(f);
-        }
+        using(var window=new RoomQrWindow())Application.Run(window);
+    }
+    static Assembly EmbeddedQrLibrary(object sender,ResolveEventArgs args){
+        if(new AssemblyName(args.Name).Name!="QRCoder")return null;
+        using(var src=typeof(RoomShortcut).Assembly.GetManifestResourceStream("QRCoder.dll"))
+        using(var buffer=new MemoryStream()){src.CopyTo(buffer);return Assembly.Load(buffer.ToArray());}
     }
 }
