@@ -30,7 +30,7 @@
     .hero{display:none;text-align:center;padding:18px 10px 14px}.hero.show{display:block}.hero .number{font-size:clamp(62px,18vw,118px);font-weight:950;line-height:.98;letter-spacing:.02em;color:var(--yellow);text-shadow:0 6px 30px #ffd16655;overflow-wrap:anywhere}.hero .title{font-size:clamp(22px,6vw,32px);font-weight:850;margin-top:14px}.hero .artist{font-size:17px;color:var(--muted);margin-top:5px}.matchlabel{font-size:12px;color:var(--cyan);letter-spacing:.12em;font-weight:800;margin-bottom:10px}
     .message{min-height:22px;color:var(--muted);font-size:14px;margin:12px 0 0}.message.error{color:var(--red)}
     .results{display:grid;gap:9px;margin-top:14px}.result{display:flex;align-items:center;gap:14px;text-align:left;background:#0b1b2c;border:1px solid #27435e;border-radius:14px;padding:12px 14px}.result .num{font-weight:900;color:var(--yellow);font-size:24px;min-width:82px;text-align:center}.result .meta{min-width:0}.result .songtitle{font-size:16px;font-weight:800}.result .songartist{font-size:13px;color:var(--muted);margin-top:2px}.result:active{transform:scale(.99)}
-    details{border-top:1px solid var(--line);padding-top:15px;margin-top:14px}summary{cursor:pointer;font-weight:800}.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.filebtn{text-align:center;display:block}.filebtn input{display:none}.secondary{background:#10243a}.danger{color:#ffc1c1}.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:13px 0 0}.dbcount{font-weight:900;color:var(--cyan)}.footer{color:#90a8be;font-size:12px;line-height:1.55;text-align:center;padding:8px}
+    details{border-top:1px solid var(--line);padding-top:15px;margin-top:14px}summary{cursor:pointer;font-weight:800}.tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.filebtn{text-align:center;display:block}.filebtn input{display:none}.secondary{background:#10243a}.danger{color:#ffc1c1}.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:13px 0 0}.dbcount{font-weight:900;color:var(--cyan)}.footer{word-break:keep-all;color:#90a8be;font-size:12px;line-height:1.55;text-align:center;padding:8px}
     @media(max-width:440px){main{padding:19px 14px}.searchrow{display:grid;grid-template-columns:1fr auto}.searchrow input{grid-column:1/-1}.tools{grid-template-columns:1fr}.panel{padding:15px;border-radius:18px}}
 
     h1{font-size:30px;font-size:clamp(27px,7vw,38px);line-height:1.3;word-break:keep-all}
@@ -153,7 +153,7 @@
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.4.3"></script>
+  <script src="wifi-bridge.js?v=1.4.4"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
   <script src="../catalog-sync.js" defer></script>
@@ -193,7 +193,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>2026년 11월 20일까지 TJ미디어에서 발표한 신곡 128곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <div class="footer">느티나무 노래방 · P2 리모컨</div>
+  <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.4<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogStatus">
   <h2 id="voiceDialogTitle">음성검색</h2>
