@@ -155,9 +155,20 @@ input::placeholder { color: #54695d; opacity: 1; }
   color: #144d38; background: #d6efdc; border: 1px solid #a7cdb1;
 }
 .native-controls #nativeQueue, .native-controls #nativeSaveFavorite { background: #eef5ef; color: #234a3a; border-color: #b8ccbd; }
-#nativePlayback #nativeStart { background: var(--green); border-color: var(--green); color: white; }
-#nativePlayback #nativeStop { background: #fff1dc; border-color: #dec393; color: #694418; }
-#nativePlayback #nativeNext, #nativeQueueNext { background: #e2efe7; border-color: #a8c4b2; color: #214c38; }
+#nativePlayback > button {
+  border: 3px solid #b62840;
+  min-height: 60px;
+  font-size: clamp(1.0625rem, 4.5vw, 1.25rem);
+  font-weight: 800;
+  flex-wrap: wrap;
+}
+#nativePlayback #nativeStart { background: var(--green); color: white; box-shadow: inset 0 0 0 2px white; }
+#nativePlayback #nativeStop { background: #fff1dc; color: #694418; }
+#nativePlayback #nativeNext, #nativeQueueNext { background: #e2efe7; color: #214c38; }
+#nativeQueueNext { border-color: #a8c4b2; }
+@media (max-width: 389px) {
+  #nativePlayback > button { flex-direction: column; gap: 4px; }
+}
 .native-nav {
   max-width: 620px; background: #fff; border: 1px solid #c7d4c9; border-bottom: none;
   border-radius: 21px 21px 0 0; box-shadow: 0 -4px 20px #32463312;

@@ -24,6 +24,29 @@ module.exports=async function checkRemote(browser,base,ua,catalogCount){
  await page.goto(base+'p2wifi/index.html#room=00001234&label=5');
  await page.waitForFunction(()=>document.getElementById('nativeState')?.textContent.includes('연결됨')).catch(async error=>{throw new Error('방 연결 확인 실패: '+await page.locator('#nativeStatus').textContent()+' / '+errors.join(', '),{cause:error});});
  assert.equal(await page.locator('.native-connection .connection-caption').textContent(),'5번방');
+ const viewport=page.viewportSize();
+ for(const width of [320,360,375,390,412,430]){
+  await page.setViewportSize({...viewport,width});
+  for(const paused of [false,true]){
+   const row=await page.evaluate(paused=>{
+    window.onP2NativePlayback({known:true,number:0,paused});
+    return Array.from(document.querySelectorAll('#nativePlayback > button'),button=>{
+     const box=button.getBoundingClientRect(),style=getComputedStyle(button),range=document.createRange();
+     range.selectNodeContents(button.lastChild);
+     const label=range.getBoundingClientRect(),icon=button.querySelector('svg').getBoundingClientRect();
+     return {text:button.textContent,top:box.top,height:box.height,border:[style.borderTopWidth,style.borderTopStyle,style.borderTopColor],
+      fits:Math.min(label.left,icon.left)>=box.left+2 && Math.max(label.right,icon.right)<=box.right-2};
+    });
+   },paused);
+   assert.deepEqual(row.map(b=>b.text),['실행',paused?'다시 시작':'일시정지','다음곡']);
+   for(const b of row){
+    assert.deepEqual(b.border,['3px','solid','rgb(182, 40, 64)']);
+    assert.ok(b.fits && b.height>=60 && b.top===row[0].top,JSON.stringify({width,b}));
+   }
+  }
+ }
+ await page.setViewportSize(viewport);
+ await page.evaluate(()=>window.onP2NativePlayback({known:true,number:0,paused:false}));
  const footer=page.locator('footer.footer');
  assert.match(await footer.innerText(),/made by cyberkjh[\s\S]*느티나무 노래방에서 직접 제작했습니다\.[\s\S]*무단 복제·배포·도용을 금합니다\./u);
  assert.ok(await footer.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
