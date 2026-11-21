@@ -34,18 +34,18 @@ export function createPlaylistUi({connection,getLanguage,blocked=()=>false,$=id=
    info.append(badge,title);li.append(number,image,info);$('playlist-list').append(li);rows.push({...video,badge});
   }
  }
- async function load(page){
+ async function load(page,manual=false){
   if(destroyed||panel().hidden||doc.hidden||pending||!connection.playlistSupported||!connected())return;
   if(blocked()||connection.state!=='ready'){schedule(1000);return;}
   stop();const g=connection.generation;let deferred=false;pending=true;status='loading';render();
-  try{const catalog=await connection.playlist(page,getLanguage());if(g!==connection.generation||destroyed)return;show(catalog);status='';}
+  try{const catalog=await connection.playlist(page,getLanguage(),manual);if(g!==connection.generation||destroyed)return;show(catalog);status='';}
   catch(error){if(g===connection.generation&&!destroyed){deferred=error?.code==='deferred';status=deferred?(snapshot?'':'loading'):'failed';}}
   finally{if(g===connection.generation&&!destroyed){pending=false;render();schedule(deferred?1000:interval);}}
  }
- $('playlist-open').addEventListener('click',()=>{if($('playlist-open').disabled)return;panel().hidden=!panel().hidden;render();if(panel().hidden)stop();else void load(snapshot?.page||0);});
- $('playlist-refresh').addEventListener('click',()=>{if(!$('playlist-refresh').disabled)void load(snapshot?.page||0);});
- $('playlist-previous').addEventListener('click',()=>{if(!$('playlist-previous').disabled)void load(snapshot.page-1);});
- $('playlist-next').addEventListener('click',()=>{if(!$('playlist-next').disabled)void load(snapshot.page+1);});
+ $('playlist-open').addEventListener('click',()=>{if($('playlist-open').disabled)return;panel().hidden=!panel().hidden;render();if(panel().hidden)stop();else void load(snapshot?.page||0,true);});
+ $('playlist-refresh').addEventListener('click',()=>{if(!$('playlist-refresh').disabled)void load(snapshot?.page||0,true);});
+ $('playlist-previous').addEventListener('click',()=>{if(!$('playlist-previous').disabled)void load(snapshot.page-1,true);});
+ $('playlist-next').addEventListener('click',()=>{if(!$('playlist-next').disabled)void load(snapshot.page+1,true);});
  const visibility=()=>{if(doc.hidden)stop();else if(!panel().hidden)void load(snapshot?.page||0);};doc.addEventListener('visibilitychange',visibility);
  render();
  return{render,changeLanguage:render,resume(){if(!panel().hidden)void load(snapshot?.page||0);},destroy(){destroyed=true;stop();doc.removeEventListener('visibilitychange',visibility);}};

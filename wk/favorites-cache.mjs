@@ -67,9 +67,11 @@ const byRank = (a,b) => b.count-a.count || (a.lastPlayed < b.lastPlayed ? 1 : a.
 
 export function createFavoritesCache({onChange = () => {}, fetchList = (...args) => fetch(...args)} = {}) {
   let current, refreshing, visit, saved = false;
+  const rankedCountries=new Map();
   function accept(snapshot, persisted) {
     if (!snapshot || (current && revision(snapshot) < revision(current))) return;
     if (current && revision(snapshot) === revision(current) && (saved || !persisted)) return;
+    if(current!==snapshot)rankedCountries.clear();
     current = snapshot;
     saved = persisted;
     onChange();
@@ -115,10 +117,14 @@ export function createFavoritesCache({onChange = () => {}, fetchList = (...args)
   function page(language, query, requestedPage) {
     const country = language === 'zh-CN' ? language : language.split('-')[0];
     const terms = query.trim().split(/\s+/u).map(searchKey).filter(Boolean);
-    const matches = current.rows.filter(row => row.country === country &&
-      (!terms.length || terms.every(term => searchKey(row.title).includes(term)))).sort(byRank);
+    if(!rankedCountries.has(country)){
+      const rows=current.rows.filter(row=>row.country===country).sort(byRank);
+      rankedCountries.set(country,rows.map(row=>({row,titleKey:searchKey(row.title)})));
+    }
+    const ranked=rankedCountries.get(country);
+    const matches=terms.length?ranked.filter(entry=>terms.every(term=>entry.titleKey.includes(term))):ranked;
     const page = Math.min(requestedPage, Math.max(0, Math.ceil(matches.length/20)-1));
-    const items = matches.slice(page*20, (page+1)*20).map(row => ({
+    const items = matches.slice(page*20, (page+1)*20).map(({row}) => ({
       id:row.id, title:row.title.replace(/[\u0000-\u001f\u007f-\u009f]/g,' ').trim().slice(0,200).replace(/[\uD800-\uDBFF]$/, '') || row.id,
       channel:String(row.count), duration:''
     }));

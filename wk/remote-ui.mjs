@@ -112,7 +112,7 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   query=normalizeTypedQuery(query);
   if(query.length>160){favoriteStatus='long';failed=true;render();return;}
   const sequence=++loadSequence, startingLanguage=getLanguage(), startingRoom=connection.generation;
-  if(!cache?.snapshot && cache?.refreshing){
+  if(!cache?.snapshot && cache?.refreshing && !(connection.state==='ready'&&connection.favoritesSupported)){
    favoriteStatus='loading';failed=false;render();
    await cache.refreshing;
    if(sequence!==loadSequence||startingLanguage!==getLanguage()||startingRoom!==connection.generation||$('favorites-panel').hidden)return;
@@ -120,7 +120,7 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   if(cache?.snapshot){showSaved(target,query);render();return;}
   if(connection.state!=='ready'||!connection.favoritesSupported)return;
   const g=connection.generation,lang=getLanguage();pending=true;favoriteStatus='loading';failed=false;render();
-  try{const catalog=await connection.favorites(query,target,lang);if(g!==connection.generation||lang!==getLanguage())return;
+  try{const catalog=await connection.favorites(query,target,lang);if(g!==connection.generation||lang!==getLanguage()||sequence!==loadSequence||$('favorites-panel').hidden)return;
    if(cache?.snapshot){showSaved(target,query);return;}
    if(catalog.error)throw Error('failed');show(catalog);page=target;more=rows.length===20&&page<99999;applied=query;loaded=true;favoriteStatus=rows.length?'':'empty';
   }catch{if(g===connection.generation&&lang===getLanguage()){
