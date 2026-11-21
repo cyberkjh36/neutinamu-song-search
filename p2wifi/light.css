@@ -1,7 +1,7 @@
 /* The room QR remote has its own palette, including the sheets opened from its dock. */
 :root {
   color-scheme: light;
-  --bg: #f5f6ee;
+  --bg: #faf7f0;
   --panel: #fff;
   --panel2: #edf4ee;
   --text: #172e27;
@@ -33,20 +33,36 @@ button, .filebtn, .secondary {
 button:disabled { cursor: default; }
 .remote-masthead, .p2-native .remote-masthead {
   position: relative; isolation: isolate; overflow: hidden; display: block;
-  background: linear-gradient(115deg, #e8f4d6 8%, #d7eed2 64%, #b9dfc3);
-  border: 1px solid #a9c8ac; border-radius: 22px; padding: 19px clamp(110px, calc(32vw - 16px), 164px) 20px 20px;
+  background: radial-gradient(ellipse at 87% 110%, #f7c481 0, transparent 64%), #ffedb7;
+  border: 1px solid #ebd398; border-radius: 22px; padding: 19px clamp(109px, 31vw, 175px) 20px 20px;
   margin: 0 0 12px; color: #133e31;
 }
-/* Etched record grooves, paper label and spindle, drawn at every screen density. */
-.remote-masthead::after {
-  content: ""; position: absolute; z-index: -1; pointer-events: none;
-  width: clamp(132px, 32vw, 176px); aspect-ratio: 1; right: -30px; top: 50%;
-  transform: translateY(-47%) rotate(-19deg); border-radius: 50%;
+/* A record peeks out of a printed sleeve. Its size follows the space beside the title. */
+.record-art {
+  position: absolute; z-index: -1; pointer-events: none;
+  right: clamp(10px, 3vw, 22px); top: 50%; width: clamp(95px, 27vw, 144px);
+  aspect-ratio: .87; transform: translateY(-47%) rotate(-11deg);
+}
+.record-art .vinyl {
+  position: absolute; width: 85%; aspect-ratio: 1; top: -3%; right: -4%; border-radius: 50%;
   background:
-    radial-gradient(circle, #294a3c 0 2.5%, #ffc676 2.8% 15%, #ffe2ac 15.5% 21.5%, transparent 22%),
+    radial-gradient(circle, #243c30 0 2.5%, #ffd682 2.8% 14%, #ffad8e 14.5% 25%, transparent 25.5%),
     repeating-radial-gradient(circle, transparent 0 2px, #96cfaa44 2.4px 3px, transparent 3.5px 5px),
     conic-gradient(from 12deg, #21493b, #416d55 19%, #193c31 36%, #2d5543 54%, #547e60 70%, #193a2e 88%, #21493b);
-  border: 2px solid #244537; box-shadow: -5px 8px 0 #33513b18;
+  border: 1px solid #244537; box-shadow: 2px 3px 1px #594d2824;
+}
+.record-art .sleeve {
+  position: absolute; bottom: 0; left: 0; width: 87%; aspect-ratio: 1;
+  overflow: hidden; border-radius: 2px; background: #ff8568;
+  box-shadow: inset 0 0 0 1px #983e3230, 0 5px 0 -2px #c98356, 1px 8px 12px #825a332c;
+}
+.sleeve::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 94% 105%, #173f38 0 13%, #ffdf8e 13.5% 21%, #173f38 21.5% 29%, #ffdf8e 29.5% 37%, #173f38 37.5% 45%, #ffdf8e 45.5% 53%, #173f38 53.5% 61%, transparent 61.5%);
+}
+.sleeve::after {
+  content: ""; position: absolute; width: 24%; aspect-ratio: 1; top: 12%; left: 12%;
+  background: #fff2c9; clip-path: polygon(50% 0, 61% 37%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
 }
 .remote-masthead .brand, .p2-native .remote-masthead .brand {
   display: inline-flex; align-items: center; gap: 7px; color: #315a41;
@@ -78,12 +94,16 @@ button:disabled { cursor: default; }
 .native-section-title { color: #163a30; font-size: 1.45rem; letter-spacing: -.035em; margin: 0 0 15px; }
 .p2-native #favoriteShortcuts { gap: 8px; margin-bottom: 15px; }
 #favoriteShortcuts button {
-  min-height: 88px; padding: 9px 3px; gap: 2px; border-radius: 14px;
-  color: #23564c; background: #edf7f0; border-color: #c0d9ca;
+  min-height: 88px; padding: 10px 3px; gap: 2px; border-radius: 14px;
+  color: #164940; background: #d7f0e3; border-color: #badfce;
 }
-#favoriteShortcuts button:nth-child(2) { background: #f1effa; color: #54467b; border-color: #d7cfe9; }
-#favoriteShortcuts button:nth-child(3) { background: #fff1dc; color: #7c4d15; border-color: #ead2a6; }
+#favoriteShortcuts button:nth-child(2) { background: #e8e1fa; color: #4f3a78; border-color: #d6caef; }
+#favoriteShortcuts button:nth-child(3) { background: #ffe4ce; color: #78391f; border-color: #f3cfb1; }
 #favoriteShortcuts svg { width: 25px; height: 25px; margin: 0 0 3px; }
+#favoriteShortcuts button:not([data-category=mine]) svg {
+  box-sizing: content-box; padding: 5px; width: 22px; height: 22px;
+  border-radius: 50%; background: #ffffff91;
+}
 #favoriteShortcuts strong { white-space: normal; overflow-wrap: anywhere; }
 #favoriteShortcuts span { font-weight: 600; }
 #favoriteShortcuts button[data-category=mine] {
@@ -93,12 +113,28 @@ button:disabled { cursor: default; }
 #favoriteShortcuts button[data-category=mine] svg { margin: 0; color: #845816; fill: #ffe3a2; }
 #favoriteShortcuts button[data-category=mine] strong { font-size: 1.25rem; }
 #favoriteShortcuts button[data-category=mine] span { margin-left: auto; }
+#favoriteShortcuts button[data-category=mine]::after {
+  content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 1.5px 1.5px 0 0;
+  transform: rotate(45deg); flex: none;
+}
 .p2-native .voice {
   min-height: 54px; margin-bottom: 12px; padding: 12px; border-radius: 14px;
-  background: linear-gradient(110deg, #00694f, #005b49); color: white;
-  border: 1px solid #00634d; box-shadow: 0 3px 0 #054a370f;
+  background: linear-gradient(115deg, #00775c, #045b4c); color: white;
+  border: 1px solid #00634d; box-shadow: 0 3px 5px #054a3714;
 }
-.voice .mic { display: inline-block; vertical-align: middle; }
+.p2-native .voice .mic {
+  display: inline-block; position: relative; vertical-align: middle; width: 30px; height: 30px;
+  margin: -2px 8px 0 0; font-size: 0; border-radius: 50%; color: #e0fff2;
+  background: linear-gradient(currentColor 0 0) center 22px / 2px 3px no-repeat, #ffffff26;
+}
+.voice .mic::before {
+  content: ""; position: absolute; width: 7px; height: 12px; top: 5px; left: 50%;
+  transform: translateX(-50%); border-radius: 5px; background: currentColor;
+}
+.voice .mic::after {
+  content: ""; position: absolute; width: 12px; height: 7px; left: 50%; top: 14px;
+  transform: translateX(-50%); border: 1.8px solid currentColor; border-top: 0; border-radius: 0 0 8px 8px;
+}
 .searchrow input, .p2-native .searchrow input, #favoritesFilter, #wifiRoom {
   color: var(--text); background: #f9fbf7; border: 1px solid #85a392;
 }
@@ -169,8 +205,8 @@ input::placeholder { color: #54695d; opacity: 1; }
 @media (max-width: 350px) {
   .p2-native main { padding-inline: 9px; }
   .p2-native .panel { padding: 13px; }
-  .remote-masthead, .p2-native .remote-masthead { padding: 15px 77px 16px 14px; }
-  .remote-masthead::after { right: -58px; }
+  .remote-masthead, .p2-native .remote-masthead { padding: 16px 99px 17px 14px; }
+  .record-art { width: 79px; right: 10px; }
   .native-nav button { font-size: .85rem; }
 }
 @media (min-width: 650px) {
