@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-20T07:44:47.599Z",
+  "updatedAt": "2026-11-21T14:39:44.864Z",
   "countries": [
     "ko",
     "th",
@@ -30,16 +30,16 @@
       "id": "KbrnsipC2Aw",
       "title": "미련이 춤을 춰",
       "url": "https://www.youtube.com/watch?v=KbrnsipC2Aw",
-      "count": 15,
-      "lastPlayed": "2026-11-04T06:23:23.6023321Z"
+      "count": 16,
+      "lastPlayed": "2026-11-21T14:16:17.8910779Z"
     },
     {
       "country": "ko",
       "id": "rZ4ztl-HcMM",
       "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
       "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 14,
-      "lastPlayed": "2026-11-20T07:44:40.1612500Z"
+      "count": 15,
+      "lastPlayed": "2026-11-21T14:19:44.0495647Z"
     },
     {
       "country": "ko",
@@ -115,11 +115,35 @@
     },
     {
       "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 5,
+      "lastPlayed": "2026-11-21T13:10:15.8580573Z"
+    },
+    {
+      "country": "ko",
+      "id": "qDD8yRQg39Y",
+      "title": "알리 - 365일 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 221001 방송",
+      "url": "https://www.youtube.com/watch?v=qDD8yRQg39Y",
+      "count": 5,
+      "lastPlayed": "2026-11-21T12:45:44.1681914Z"
+    },
+    {
+      "country": "ko",
       "id": "5oFnMWvEPsY",
       "title": "김범수 지나간다",
       "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
       "count": 5,
       "lastPlayed": "2026-11-04T06:46:19.6948191Z"
+    },
+    {
+      "country": "ko",
+      "id": "sp3gSwWEsbI",
+      "title": "장사익 - 봄날은 간다 [가요무대/Music Stage] | KBS 240916 방송",
+      "url": "https://www.youtube.com/watch?v=sp3gSwWEsbI",
+      "count": 4,
+      "lastPlayed": "2026-11-21T14:23:51.1327507Z"
     },
     {
       "country": "ko",
@@ -147,14 +171,6 @@
     },
     {
       "country": "ko",
-      "id": "j7IuU3wJ2pk",
-      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
-      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
-      "count": 4,
-      "lastPlayed": "2026-11-18T13:39:19.1358895Z"
-    },
-    {
-      "country": "ko",
       "id": "1cKc1rkZwf8",
       "title": "PSY - 예술이야(IT'S ART) M/V",
       "url": "https://www.youtube.com/watch?v=1cKc1rkZwf8",
@@ -176,14 +192,6 @@
       "url": "https://www.youtube.com/watch?v=Jj5hmtvNVRI",
       "count": 4,
       "lastPlayed": "2026-11-01T06:32:15.6879205Z"
-    },
-    {
-      "country": "ko",
-      "id": "qDD8yRQg39Y",
-      "title": "알리 - 365일 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 221001 방송",
-      "url": "https://www.youtube.com/watch?v=qDD8yRQg39Y",
-      "count": 4,
-      "lastPlayed": "2026-10-31T08:14:16.4642710Z"
     },
     {
       "country": "ko",
@@ -216,14 +224,6 @@
       "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
       "count": 3,
       "lastPlayed": "2026-11-04T07:05:36.8264880Z"
-    },
-    {
-      "country": "ko",
-      "id": "sp3gSwWEsbI",
-      "title": "장사익 - 봄날은 간다 [가요무대/Music Stage] | KBS 240916 방송",
-      "url": "https://www.youtube.com/watch?v=sp3gSwWEsbI",
-      "count": 3,
-      "lastPlayed": "2026-11-02T06:48:18.7382699Z"
     },
     {
       "country": "ko",
@@ -312,6 +312,70 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "-Zz9Z2PTPl8",
+      "title": "(1997) 심수봉 - 백만 송이 장미 [싱크가사/Lyric Video]",
+      "url": "https://www.youtube.com/watch?v=-Zz9Z2PTPl8",
+      "count": 1,
+      "lastPlayed": "2026-11-21T14:39:21.5733866Z"
+    },
+    {
+      "country": "ko",
+      "id": "x4YGWPZTFLY",
+      "title": "부활 - 회상 III (1987年) 마지막 콘서트",
+      "url": "https://www.youtube.com/watch?v=x4YGWPZTFLY",
+      "count": 1,
+      "lastPlayed": "2026-11-21T14:29:10.0287165Z"
+    },
+    {
+      "country": "ko",
+      "id": "POu_1kHWNC8",
+      "title": "Jo Sung Mo (조성모) - Thorn Tree (가시나무)",
+      "url": "https://www.youtube.com/watch?v=POu_1kHWNC8",
+      "count": 1,
+      "lastPlayed": "2026-11-21T14:09:25.6320429Z"
+    },
+    {
+      "country": "ko",
+      "id": "AWVvHi2xLoo",
+      "title": "[트로트] 최진희 -천상재회-가사",
+      "url": "https://www.youtube.com/watch?v=AWVvHi2xLoo",
+      "count": 1,
+      "lastPlayed": "2026-11-21T14:03:59.9046619Z"
+    },
+    {
+      "country": "ko",
+      "id": "D49A1ou8r-w",
+      "title": "[Official Audio] 최진희(Choi JinHee) - 천상재회(Heavenly Reunion)",
+      "url": "https://www.youtube.com/watch?v=D49A1ou8r-w",
+      "count": 1,
+      "lastPlayed": "2026-11-21T13:59:48.4381519Z"
+    },
+    {
+      "country": "ko",
+      "id": "F09u2ZBUw9I",
+      "title": "김수철 '87 A02 목소리",
+      "url": "https://www.youtube.com/watch?v=F09u2ZBUw9I",
+      "count": 1,
+      "lastPlayed": "2026-11-21T13:24:59.0245870Z"
+    },
+    {
+      "country": "ko",
+      "id": "9hSjifYnFUg",
+      "title": "내일  -  김수철",
+      "url": "https://www.youtube.com/watch?v=9hSjifYnFUg",
+      "count": 1,
+      "lastPlayed": "2026-11-21T13:21:13.1957662Z"
+    },
+    {
+      "country": "ko",
+      "id": "9vNtdxr340o",
+      "title": "[KBS무대] 현역가왕 _가수 반가희 _별리",
+      "url": "https://www.youtube.com/watch?v=9vNtdxr340o",
+      "count": 1,
+      "lastPlayed": "2026-11-21T13:17:57.0111535Z"
     },
     {
       "country": "ko",
