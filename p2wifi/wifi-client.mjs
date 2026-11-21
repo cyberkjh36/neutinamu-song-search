@@ -5,7 +5,7 @@ const queueActions=new Set(['queue','reserve','queueMove','queueCancel','queuePl
 function validQueue(q){return q?.valid===true && /^[a-f0-9]{64}$/.test(q.version) && Array.isArray(q.songs)
  && q.songs.length<=255 && q.songs.every(n=>Number.isInteger(n)&&n>0&&n<=99999999);}
 export class WifiClient {
- constructor({fetcher=(input, options) => globalThis.fetch(input, options),storage=globalThis.localStorage,changed=()=>{},delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){Object.assign(this,{fetcher,storage,changed,delay});this.room='';this.key='';this.data=null;this.busy=false;this.refreshing=false;this.queueEpoch=0;this.revision=0;this.sending=false;}
+ constructor({fetcher=(input, options) => globalThis.fetch(input, options),storage=globalThis.localStorage,changed=()=>{},delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){Object.assign(this,{fetcher,storage,changed,delay});this.room='';this.key='';this.data=null;this.busy=false;this.refreshing=false;this.queueEpoch=0;this.playbackEpoch=0;this.revision=0;this.sending=false;}
  async call(op,extra={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);try{const response=await this.fetcher(ENDPOINT,{method:'POST',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({op,room:this.room,key:this.key,session:this.data?.session,...extra}),signal:controller.signal});const b=await response.json();if(!response.ok||!b.ok)throw Object.assign(new Error(ERRORS[b.code]||'통신 결과를 확인하지 못했습니다.'),{code:b.code});return b;}finally{clearTimeout(timer);}}
  invalidate() {
   this.revision++;
@@ -46,7 +46,7 @@ export class WifiClient {
  }
  async refresh() {
   if (!this.data || this.refreshing || (this.busy && !this.sending)) return;
-  const revision = this.revision, queueEpoch=this.queueEpoch;
+  const revision = this.revision, queueEpoch=this.queueEpoch, playbackEpoch=this.playbackEpoch;
   let finish;
   this.refreshing = new Promise(resolve=>{finish=resolve;});
   try {
@@ -59,6 +59,9 @@ export class WifiClient {
     if (revision === this.revision) {
       if(queueEpoch!==this.queueEpoch && next.online && next.state?.connected && next.session===this.data?.session){
         next={...next,state:{...next.state,queue:this.data.state.queue}};
+      }
+      if(playbackEpoch!==this.playbackEpoch && next.online && next.state?.connected && next.session===this.data?.session){
+        next={...next,state:{...next.state,playback:this.data.state.playback}};
       }
       this.data = next;
     }
@@ -131,8 +134,9 @@ export class WifiClient {
      const p=result.playback;
      if (command.action==='pause' && result.status==='confirmed' && p && typeof p.paused==='boolean'
          && typeof p.known==='boolean' && Number.isInteger(p.number) && p.number>=0 && p.number<=99999999
-         && !this.refreshing && this.data?.online && this.data.state?.connected && this.room===request.room
+         && this.data?.online && this.data.state?.connected && this.room===request.room
          && result.session===request.session && this.data.session===request.session) {
+      this.playbackEpoch++;
       this.data={...this.data,state:{...this.data.state,playback:p}};
       return {...result,requestId:request.id,playbackApplied:true};
      }

@@ -200,3 +200,21 @@ test('the original success survives a dropped queue snapshot and a foreign room 
  assert.equal((await client.send({action:'queueCancel'})).message,'취소 확인');assert.equal(client.data.state.queue,undefined);
  assert.equal(calls.filter(x=>x.op==='command').length,1);
 });
+
+test('an older status in flight cannot undo a confirmed pause or resume',async()=>{
+ let release;
+ const roomState=success(), p={known:true,number:4985,paused:true};
+ const {client}=fixture(b=>{
+  if(b.op==='result')return {ok:true,status:'confirmed',session:roomState.session,playback:p};
+  if(b.op==='status')return new Promise(resolve=>{release=()=>resolve({...roomState,state:{connected:true,playback:{known:true,number:0,paused:false}}});});
+  return roomState;
+ });
+ await client.join(room);
+ for(const paused of [true,false]){
+  p.paused=paused;
+  const pending=client.refresh();
+  assert.equal((await client.send({action:'pause'})).playbackApplied,true);
+  release();await pending;
+  assert.deepEqual(client.data.state.playback,{known:true,number:4985,paused});
+ }
+});
