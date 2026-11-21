@@ -123,8 +123,7 @@
       try{
         if(!payload || payload.error)throw new Error(payload && payload.error || '내 애창곡을 읽지 못했습니다.');
         if(!Array.isArray(payload.songs) || payload.songs.length > 5000 || !payload.songs.every(s=>Number.isInteger(s.number)&&s.number>0&&s.number<=99999999&&Number.isSafeInteger(s.lastPlayed)&&s.lastPlayed>0))throw new Error('내 애창곡 정보를 확인하지 못했습니다.');
-        let songs=[];try{songs=await allSongs();}catch{}
-        var catalog = new Map(songs.map(s=>[String(s.code),s]));
+        let catalog;try{catalog=await songIndex();}catch{catalog=new Map();}
         if(revision !== personalRevision)return;
         mine.songs = payload.songs.map(row=>{var song=catalog.get(String(row.number));return {code:String(row.number),title:song?song.title:'곡번호 '+row.number,artist:song?song.artist:'가수 정보 없음'};});
         personalError = '';

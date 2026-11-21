@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 let pending=[];window.NeutiP2={command(json){pending.push(['command',json]);},saveCsv(name,text){pending.push(['save',name,text]);}};
-Promise.all([import('./wifi-client.mjs?v=1.4.6'),import('./room-connection.mjs?v=1.3.4'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal,token,playSearchResult},{RoomConnection}])=>{
+Promise.all([import('./wifi-client.mjs?v=1.4.7'),import('./room-connection.mjs?v=1.3.4'),new Promise(resolve=>document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}):setTimeout(resolve,0))]).then(([{WifiClient,mergePersonal,token,playSearchResult},{RoomConnection}])=>{
  const $=id=>document.getElementById(id), personalKey='p2wifi-personal-v1';let statusText='',lastQueueVersion='';
  let storage;try{storage=localStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('이 브라우저에서는 저장 공간을 사용할 수 없습니다.');},removeItem(){}};}
  let exactInProgress=false,checkingPause=false;
@@ -90,6 +90,7 @@ Promise.all([import('./wifi-client.mjs?v=1.4.6'),import('./room-connection.mjs?v
   if(c.command==='connect'){if(connection.target||connection.ready){
     connection.stop();closeAfterJoin=false;await client.leave().catch(()=>{});statusText='연결을 해제했습니다.';
    }else showHelp();paint();return;}
+  if(c.command==='queueView'){connection.wake();return;}
   if(c.command==='status'){paint();return;}
   if(c.command==='personalSongs'){personal();return syncPersonalRooms();}
   if(c.command==='personalAdd'){
@@ -120,6 +121,8 @@ Promise.all([import('./wifi-client.mjs?v=1.4.6'),import('./room-connection.mjs?v
   const exact=c.command==='playExact';
   if(c.command==='next')statusText='첫 번째 예약곡을 확인하고 있습니다…';
   if(c.command==='pause'){checkingPause=true;statusText='반주기의 일시정지 상태를 확인하고 있습니다…';}
+  const requestLabels={queue:'예약 목록 확인 중…',queueCancel:'예약 취소 중…',queueMove:'예약 순서 변경 중…',queuePlay:'예약곡 실행 중…',cancel:'정지 요청 중…',video:'영상선택 전송 중…',left:'왼쪽 버튼 전송 중…',right:'오른쪽 버튼 전송 중…',select:'선택 버튼 전송 중…'};
+  if(requestLabels[c.command])statusText=requestLabels[c.command];
   if(c.command==='reserve')statusText=payload.number+'번 예약 요청 중…';
   if(exact){exactInProgress=true;statusText=c.number+'번 실행을 준비합니다…';paint();}
   try {
@@ -146,10 +149,11 @@ Promise.all([import('./wifi-client.mjs?v=1.4.6'),import('./room-connection.mjs?v
  function closeJoin(){if(typeof dialog.close==='function')dialog.close();else dialog.removeAttribute('open');}
  document.body.append(dialog);$('wifiClose').onclick=()=>closeJoin();dialog.onclick=e=>{if(e.target===dialog)closeJoin();};
  $('wifiJoin').onsubmit=e=>{e.preventDefault();if(client.busy)return;const room=$('wifiRoom').value.trim();if(!/^\d{8}$/.test(room))return;statusText='';closeAfterJoin=true;connection.start({room});};
- $('wifiDiagnostic').onclick=async()=>{const d=client.data;const info='느티나무 P2 웹 리모컨 1.4.6\nPC_ONLINE='+!!d?.online+'\nP2_CONNECTED='+!!d?.state?.connected+'\nQUEUE_VALID='+!!d?.state?.queue?.valid+'\nMESSAGE='+($('nativeStatus')?.textContent||statusText||d?.state?.message||'연결 전');try{await navigator.clipboard.writeText(info);$('wifiDiagnosticResult').textContent='진단 내용을 복사했습니다.';}catch{$('wifiDiagnosticResult').textContent=info;}};
+ $('wifiDiagnostic').onclick=async()=>{const d=client.data;const info='느티나무 P2 웹 리모컨 1.4.7\nPC_ONLINE='+!!d?.online+'\nP2_CONNECTED='+!!d?.state?.connected+'\nQUEUE_VALID='+!!d?.state?.queue?.valid+'\nMESSAGE='+($('nativeStatus')?.textContent||statusText||d?.state?.message||'연결 전');try{await navigator.clipboard.writeText(info);$('wifiDiagnosticResult').textContent='진단 내용을 복사했습니다.';}catch{$('wifiDiagnosticResult').textContent=info;}};
  const input=document.createElement('input');input.type='file';input.accept='.csv,text/csv';input.id='wifiImport';input.hidden=true;input.onchange=async()=>{try{const file=input.files[0];if(!file)return;if(file.size>20000000)throw Error('20MB 이하의 CSV 파일을 선택해 주세요.');await window.onP2NativeImport?.(await file.text(),'');}catch(e){window.onP2NativeImport?.('',e.message);}finally{input.value='';}};document.body.append(input);
- const extra=document.createElement('div');extra.className='wifi-extra';extra.innerHTML='<h3>재생 · TV 연결</h3><div class="wifi-buttons"><button data-wifi="pause">일시정지</button><button data-wifi="video">영상선택</button><button data-wifi="left">◀ 왼쪽</button><button data-wifi="right">오른쪽 ▶</button><button data-wifi="select">선택</button></div><p>TV 전환 버튼은 누른 뒤 TV 화면에서 확인하세요.</p><details><summary>홈 화면에 추가</summary><p>아이폰은 Safari 공유 메뉴, 안드로이드는 브라우저 메뉴에서 ‘홈 화면에 추가’를 선택하세요.</p></details><button id="wifiUpdate">최신 버전 불러오기</button><p class="wifi-version">P2 웹 리모컨 1.4.6 · made by cyberkjh</p>';
- $('nativeTools')?.append(extra);extra.querySelectorAll('[data-wifi]').forEach(b=>{b.onclick=()=>command(JSON.stringify({command:b.dataset.wifi}));});
+ const extra=document.createElement('div');extra.className='wifi-extra';extra.innerHTML='<h3>재생 · TV 연결</h3><div class="wifi-buttons"><button data-wifi="pause">일시정지</button><button data-wifi="video">영상선택</button><button data-wifi="left">◀ 왼쪽</button><button data-wifi="right">오른쪽 ▶</button><button data-wifi="select">선택</button></div><p>TV 전환 버튼은 누른 뒤 TV 화면에서 확인하세요.</p><details><summary>홈 화면에 추가</summary><p>아이폰은 Safari 공유 메뉴, 안드로이드는 브라우저 메뉴에서 ‘홈 화면에 추가’를 선택하세요.</p></details><button id="wifiUpdate">최신 버전 불러오기</button><p class="wifi-version">P2 웹 리모컨 1.4.7 · made by cyberkjh</p>';
+ $('nativeTools')?.append(extra);const tvFeedback=document.createElement('p');tvFeedback.setAttribute('role','status');extra.querySelector('.wifi-buttons').after(tvFeedback);
+ extra.querySelectorAll('[data-wifi]').forEach(b=>{b.onclick=async()=>{if(b.disabled)return;tvFeedback.textContent=b.textContent+' 요청 중…';const reply=await command(JSON.stringify({command:b.dataset.wifi}));if(reply?.message)tvFeedback.textContent=reply.message;};});
  if($('nativeFind'))$('nativeFind').textContent='방 연결번호 입력 · PC 연결 안내';
 
  $('wifiUpdate').onclick=async()=>{statusText='최신 버전을 확인하고 있습니다…';paint();try{const registration=await navigator.serviceWorker?.getRegistration();await registration?.update();registration?.waiting?.postMessage('SKIP_WAITING');setTimeout(()=>location.reload(),800);}catch{location.reload();}};
@@ -167,7 +171,6 @@ Promise.all([import('./wifi-client.mjs?v=1.4.6'),import('./room-connection.mjs?v
   picture.innerHTML=qr.createSvgTag({cellSize:4,margin:16,scalable:true});
   const header=document.querySelector('header');header.after(panel);
  }
- const list=$('nativeQueueList');if(list)new MutationObserver(()=>{Array.from(list.children).forEach((row,index)=>{if(row.querySelector('.wifi-order'))return;const q=client.data?.state?.queue;if(!q?.valid||index>=q.songs.length)return;const box=document.createElement('div');box.className='wifi-order';for(const [delta,label] of [[-1,'위로'],[1,'아래로']]){const to=index+delta;if(to<0||to>=q.songs.length)continue;const button=document.createElement('button');button.textContent=label;button.setAttribute('aria-label',(index+1)+'번째 예약곡 '+label);button.onclick=()=>command(JSON.stringify({command:'queueMove',number:q.songs[index],index,to,version:q.version}));box.append(button);}row.append(box);});}).observe(list,{childList:true});
  for(const task of pending){if(task[0]==='save')save(task[1],task[2]);else command(task[1]);}pending=[];
  let initial=code;if(!explicit){try{initial=storage.getItem('p2wifi-last-room');}catch{}}
  if(printed){connection.start({label,ticket});}else if(initial&&/^\d{8}$/.test(initial)){connection.start({room:initial});}else {

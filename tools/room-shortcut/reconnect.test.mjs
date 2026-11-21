@@ -123,7 +123,7 @@ test('reservation checks promptly, then backs off while awaiting the same confir
  const {client,calls}=fixture(b=>b.op==='result'?{ok:true,status:statuses.shift()}:success());
  await client.join(room);client.delay=async ms=>{delays.push(ms);};
  assert.equal((await client.send({action:'reserve',number:123})).status,'confirmed');
- assert.deepEqual(delays,[150,300,600,1000]);
+ assert.deepEqual(delays,[80,160,280,280]);
  const submissions=calls.filter(b=>b.op==='command'), reads=calls.filter(b=>b.op==='result');
  assert.equal(submissions.length,1);
  assert(reads.every(b=>b.id===submissions[0].id&&b.session===submissions[0].session));
@@ -136,17 +136,17 @@ test('reservation backs off on a read error without sending another command',asy
  });
  await client.join(room);client.delay=async ms=>{delays.push(ms);};
  assert.equal((await client.send({action:'reserve',number:123})).status,'confirmed');
- assert.deepEqual(delays,[150,1000]);assert.equal(calls.filter(b=>b.op==='command').length,1);
+ assert.deepEqual(delays,[80,1000]);assert.equal(calls.filter(b=>b.op==='command').length,1);
 });
 
 test('playback buttons check one job promptly and keep late results and failed inputs distinct',async()=>{
- for(const action of ['pause','next','play','queuePlay']){
+ for(const action of ['pause','next','play','queuePlay','queue','queueCancel','queueMove','cancel','video','left','right','select']){
   const delays=[],statuses=['pending','claimed','claimed',action==='pause'?'failed':'confirmed'];
   const {client,calls}=fixture(b=>b.op==='result'?{ok:true,status:statuses.shift()}:success());
   await client.join(room);client.delay=async ms=>{delays.push(ms);};
   const sending=client.send({action});await assert.rejects(client.send({action}));
   assert.equal((await sending).status,action==='pause'?'failed':'confirmed');
-  assert.deepEqual(delays,[120,240,400,400]);
+  assert.deepEqual(delays,[80,160,280,280]);
   const sent=calls.filter(b=>b.op==='command');assert.equal(sent.length,1);
   assert(calls.filter(b=>b.op==='result').every(b=>b.id===sent[0].id));
  }
@@ -170,4 +170,33 @@ test('a reported track start is shown once while the original queue cleanup is s
  await client.join(room);
  const final=await client.send({action:'next'},m=>{assert(client.busy);progress.push(m);});
  assert.deepEqual(progress,[message]);assert.equal(final.status,'failed');assert.equal(calls.filter(c=>c.op==='command').length,1);
+});
+
+test('confirmed queue receipt updates duplicate rows and defeats a stale status in flight',async()=>{
+ let release,reads=0;
+ const old={valid:true,version:'1'.repeat(64),songs:[777,777,22]};
+ const queue={valid:true,version:'2'.repeat(64),songs:[777,22]};
+ const state=()=>({...success(),state:{connected:true,queue:old}});
+ const {client,calls}=fixture(b=>{
+  if(b.op==='status')return new Promise(resolve=>{release=()=>resolve(state());});
+  if(b.op==='result')return {ok:true,status:'confirmed',queueReceipt:true,...(++reads===1?{}:{queue,session:'b'.repeat(32)})};
+  return state();
+ });
+ await client.join(room);const stale=client.refresh();
+ const done=await client.send({action:'queueCancel',number:777,index:1,version:old.version});
+ assert(done.queueApplied);assert.deepEqual(client.data.state.queue,queue);release();await stale;
+ assert.deepEqual(client.data.state.queue,queue);
+ assert.equal(calls.filter(x=>x.op==='command').length,1);assert.equal(reads,2);
+});
+test('the original success survives a dropped queue snapshot and a foreign room cannot replace it',async()=>{
+ let error=false;
+ const {client,calls}=fixture(b=>{
+  if(b.op==='result'){if(error)throw TypeError();error=true;
+   return {ok:true,status:'confirmed',message:'취소 확인',queueReceipt:true,session:'9'.repeat(32),
+    queue:{valid:true,version:'1'.repeat(64),songs:[]}};}
+  return success();
+ });
+ await client.join(room);
+ assert.equal((await client.send({action:'queueCancel'})).message,'취소 확인');assert.equal(client.data.state.queue,undefined);
+ assert.equal(calls.filter(x=>x.op==='command').length,1);
 });

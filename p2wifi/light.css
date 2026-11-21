@@ -212,3 +212,6 @@ input::placeholder { color: #54695d; opacity: 1; }
 @media (min-width: 650px) {
   .p2-native main { padding-top: 25px; }
 }
+
+.queue-row-feedback:not(:empty) { display: block; grid-column: 1 / -1; color: var(--ink, #203f33); font-weight: 700; }
+.queue-row-feedback:empty { display: none; }

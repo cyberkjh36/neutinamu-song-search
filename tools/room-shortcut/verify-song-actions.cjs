@@ -10,6 +10,12 @@ module.exports=async function verifySongActions(page,base){
     if(queue.length)playing=queue.shift();
     else results.set(b.id,{status:'failed',message:'다음 예약곡이 없습니다. 노래를 먼저 예약해 주세요.'});
    }
+   if(c.action==='queueCancel' || c.action==='queueMove'){
+    assert.equal(c.version,'b'.repeat(64));assert.equal(queue[c.index],c.number);
+    const [song]=queue.splice(c.index,1);if(c.action==='queueMove')queue.splice(c.to,0,song);
+    results.set(b.id,{status:'confirmed',message:'반주기 확인',session,queueReceipt:true,queue:{valid:true,songs:queue.slice(),version:'b'.repeat(64)}});
+    await new Promise(resolve=>setTimeout(resolve,180));
+   }
    if(c.action==='queuePlay'){assert.equal(queue[c.index],c.number);playing=queue.splice(c.index,1)[0];}
   }else if(b.op==='result')Object.assign(json,results.get(b.id)||{status:'confirmed',message:'입력을 확인했습니다.'});
   else Object.assign(json,{name:'곡별 버튼 시험',online:true,session,events:[],state:{connected:true,busy:false,queue:{valid:true,songs:queue,version:'b'.repeat(64)},playback:{known:true,number:playing}}});
@@ -39,6 +45,19 @@ module.exports=async function verifySongActions(page,base){
   assert.equal(calls.length,6);
   await page.setViewportSize({width:320,height:700});
   assert(await second.evaluate(el=>{const b=el.getBoundingClientRect();return b.right<=innerWidth&&b.left>=0&&[...el.querySelectorAll('.result-actions button')].every(x=>x.offsetHeight>=44);}));
+  await first.locator('.result-reserve').click();await ready();
+  await second.locator('.result-reserve').click();await ready();
+  await page.locator('#nativeQueueNav').click();
+  const entries=page.locator('#nativeQueueList > li');await entries.nth(1).waitFor();
+  const startCalls=calls.length;
+  await entries.nth(1).getByRole('button',{name:/위로/}).click();await ready();
+  await page.waitForFunction(n=>document.querySelector('.queue-song > span')?.textContent.startsWith(n+' ·'),n2);
+  await entries.first().locator('.queue-cancel').click();
+  assert.equal(await entries.first().locator('.queue-cancel').textContent(),'예약 취소 중…');
+  await page.waitForFunction(()=>document.querySelectorAll('#nativeQueueList > li').length===1);
+  assert.equal(await entries.first().locator('.queue-song > span').textContent().then(s=>s.split(' · ')[0]),String(n1));
+  assert.deepEqual(calls.slice(startCalls).map(c=>c.action),['queueMove','queueCancel']);assert.deepEqual(queue,[n1]);
+  console.log('Verified immediate row feedback, real queue revisions, and single cancellation.');
   console.log('Verified reserved start without search and independent per-song controls on a narrow phone.');
  }finally{await page.unroute('**/api/p2wifi',route);}
 };

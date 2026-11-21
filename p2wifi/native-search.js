@@ -13,28 +13,52 @@ function send(command,number,feedback){
 }
 function icon(name){var paths={remove:'<path d="m6 6 12 12M18 6 6 18"/>',list:'<path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/>',next:'<path d="m2 5 10 7-10 7Zm11 0 10 7-10 7Z" fill="currentColor" stroke="none"/>',plus:'<path d="M12 5v14M5 12h14"/>',play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',pause:'<path d="M8 5v14M16 5v14" stroke-width="4"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'};return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+paths[name]+'</svg>';}
 function friendly(message){if(/^\[A01\]/.test(message))return '[A01] 반주기가 연결을 승인하지 않았습니다. 연결 설정에서 확인해 주세요.';if(/^\[C00\]/.test(message))return '먼저 P2에 연결해 주세요. 곡 시작·예약 명령은 보내지 않았습니다.';return message||'';}
-function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!connected||!selected||busy;});['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
+function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!connected||!selected||busy;});['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel,.wifi-order button').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
 function playbackCommand(command,feedback){
  if(busy||!connected)return;
  if(feedback)activeFeedback=feedback;
  busy=true;buttons();send(command,null,feedback);
 }
 function requestQueue(){if(busy)return;busy=true;buttons();send('queue');}
-function toggleQueue(open){queueOpen=typeof open==='boolean'?open:!queueOpen;$('nativeQueuePanel').hidden=!queueOpen;['nativeQueue','nativeQueueNav'].forEach(id=>$(id).setAttribute('aria-expanded',String(queueOpen)));$('nativeQueueNav').classList.toggle('active',queueOpen);$('nativeSearchNav').classList.toggle('active',!queueOpen);document.body.classList.toggle('queue-open',queueOpen);if(queueOpen){$('nativeQueueClose').focus();requestQueue();}else $('nativeQueueNav').focus();}
+function toggleQueue(open){queueOpen=typeof open==='boolean'?open:!queueOpen;$('nativeQueuePanel').hidden=!queueOpen;['nativeQueue','nativeQueueNav'].forEach(id=>$(id).setAttribute('aria-expanded',String(queueOpen)));$('nativeQueueNav').classList.toggle('active',queueOpen);$('nativeSearchNav').classList.toggle('active',!queueOpen);document.body.classList.toggle('queue-open',queueOpen);if(queueOpen){$('nativeQueueClose').focus();if(connected&&queueData.valid)send('queueView');else requestQueue();}else $('nativeQueueNav').focus();}
 async function renderQueue(){
- var revision=++queueRevision,data=queueData,list=$('nativeQueueList');if(!list)return;list.replaceChildren();$('nativeQueueMessage').textContent=data.message;
+ var revision=++queueRevision,data=queueData,list=$('nativeQueueList');if(!list)return;$('nativeQueueMessage').textContent=data.message;
  var valid=connected&&data.valid;document.querySelectorAll('.queue-count').forEach(el=>el.textContent=valid?String(data.songs.length):'—');
- if(!valid){$('nativeQueueEmpty').textContent=connected?'목록을 확인한 뒤 예약 순서를 표시합니다.':'연결된 방의 예약곡을 여기에서 확인할 수 있습니다.';$('nativeQueueEmpty').hidden=false;return;}
+ if(!valid){list.replaceChildren();$('nativeQueueEmpty').textContent=connected?'목록을 확인한 뒤 예약 순서를 표시합니다.':'연결된 방의 예약곡을 여기에서 확인할 수 있습니다.';$('nativeQueueEmpty').hidden=false;return;}
  $('nativeQueueEmpty').hidden=data.songs.length>0;$('nativeQueueEmpty').textContent='아직 예약곡이 없습니다. 노래를 찾아 ‘예약’을 눌러 주세요.';
- var songs=[];try{songs=await allSongs();}catch(e){}if(revision!==queueRevision||!connected||!queueData.valid)return;
- var catalog=new Map(songs.map(s=>[String(s.code),s]));data.songs.forEach((number,index)=>{
+ if(!data.songs.length){list.replaceChildren();return;}
+ var catalog;try{catalog=await songIndex();}catch{catalog=new Map();}
+ if(revision!==queueRevision||!connected||!queueData.valid)return;
+ const rows=document.createDocumentFragment();data.songs.forEach((number,index)=>{
   var song=catalog.get(String(number)),row=document.createElement('li'),button=document.createElement('button'),order=document.createElement('span'),meta=document.createElement('span'),title=document.createElement('strong'),detail=document.createElement('span'),start=document.createElement('span'),cancel=document.createElement('button');
   button.type='button';button.className='queue-play';button.disabled=busy;order.className='queue-order';order.textContent=index+1;meta.className='queue-song';title.textContent=song?song.title:'제목 정보 없음';detail.textContent=number+' · '+(song&&song.artist?song.artist:'가수 정보 없음');start.className='queue-start';start.innerHTML=icon('play')+'실행';button.setAttribute('aria-label',(index+1)+'번째 예약곡 '+title.textContent+' '+detail.textContent+' 실행');
-  button.onclick=()=>{if(busy||!connected||!queueData.valid||queueData.songs[index]!==number||revision!==queueRevision)return;busy=true;buttons();$('nativeQueueMessage').textContent=title.textContent+' · 실행 요청 중…';native.command(JSON.stringify({command:'queuePlay',number:String(number),index:index,version:data.version}));};
+  const feedback=document.createElement('span');feedback.className='queue-row-feedback';feedback.setAttribute('role','status');
+  async function change(action,label,to){
+   if(busy||!connected||!queueData.valid||queueData.songs[index]!==number||revision!==queueRevision)return;
+   busy=true;buttons();row.setAttribute('aria-busy','true');feedback.textContent=label;
+   if(action==='queueCancel')cancel.textContent=label;
+   try{
+    const response=await native.command(JSON.stringify({command:action,number:String(number),index,version:data.version,...(to===undefined?{}:{to})}));
+    if(feedback.isConnected&&response?.message)feedback.textContent=friendly(response.message);
+   }finally{
+    row.removeAttribute('aria-busy');
+    if(action==='queueCancel'&&cancel.isConnected)cancel.innerHTML=icon('remove')+'예약 취소';
+   }
+  }
+  button.onclick=()=>change('queuePlay','실행 중…');
   cancel.type='button';cancel.className='queue-cancel';cancel.disabled=busy;cancel.innerHTML=icon('remove')+'예약 취소';cancel.setAttribute('aria-label',(index+1)+'번째 예약곡 '+title.textContent+' '+detail.textContent+' 예약 취소');
-  cancel.onclick=()=>{if(busy||!connected||!queueData.valid||queueData.songs[index]!==number||revision!==queueRevision)return;busy=true;buttons();$('nativeQueueMessage').textContent=title.textContent+' · 예약 취소 확인 중…';native.command(JSON.stringify({command:'queueCancel',number:String(number),index:index,version:data.version}));};
-  meta.append(title,detail);button.append(order,meta,start);row.append(button,cancel);list.append(row);
+  cancel.onclick=()=>change('queueCancel','예약 취소 중…');
+  meta.append(title,detail);button.append(order,meta,start);row.append(button,cancel);
+  const moves=document.createElement('div');moves.className='wifi-order';
+  for(const [delta,label] of [[-1,'위로'],[1,'아래로']]){
+   const to=index+delta;if(to<0||to>=data.songs.length)continue;
+   const move=document.createElement('button');move.type='button';move.textContent=label;move.disabled=busy;
+   move.setAttribute('aria-label',(index+1)+'번째 예약곡 '+label);
+   move.onclick=()=>change('queueMove',label+' 이동 중…',to);moves.append(move);
+  }
+  row.append(moves,feedback);rows.append(row);
  });
+ list.replaceChildren(rows);
 
 }
 async function renderPlayback(){
@@ -50,9 +74,8 @@ async function renderPlayback(){
  if(!data.known){$('nativeNowTitle').textContent='재생 정보를 기다리는 중입니다.';return;}
  if(!data.number){$('nativeNowTitle').textContent='현재 곡이 정지되었습니다.';return;}
  $('nativeNowNumber').textContent=String(data.number);$('nativeNowTitle').textContent='곡번호 '+data.number;
- var songs=[];try{songs=await allSongs();}catch(e){}
+ var song;try{song=(await songIndex()).get(String(data.number));}catch{}
  if(revision!==playbackRevision||!connected)return;
- var song=songs.find(item=>String(item.code)===String(data.number));
  $('nativeNowTitle').textContent=song?song.title:'제목 정보 없음';$('nativeNowArtist').textContent=song&&song.artist?song.artist:'가수 정보 없음';
 }
 document.documentElement.classList.add('p2-native');
