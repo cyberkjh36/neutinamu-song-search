@@ -154,7 +154,6 @@ const supported = secure && window.isSecureContext && Boolean(window.fetch && wi
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
 browseUi=createBrowseUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
 remoteUi=createRemoteUi({connection,cache:favoriteCache,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active),onRender:()=>phoneKeyboard?.refresh()});
-void favoriteCache.restore();
 playlistUi=createPlaylistUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)});
 phoneKeyboard=createNativeKeyboard({getLanguage:()=>currentLanguage.code,blocked:()=>Boolean(voice?.active)||busy});
 for (const language of LANGUAGES) {
@@ -264,7 +263,7 @@ $('connect').addEventListener('click', () => {
   const attempt = ++connectionAttempt;
   feedback('connecting');
   connection.connect($('code').value.trim(), currentLanguage.name).then(() => {
-    if (attempt === connectionAttempt) void favoriteCache.refresh();
+    if (attempt === connectionAttempt) refreshFavorites();
   }).catch(error => {
     if (attempt !== connectionAttempt) return;
     connectionError = error?.code || 'connect'; renderConnection(); showError(error); refreshControls();
@@ -367,10 +366,16 @@ $('listening').addEventListener('keydown', event => {
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   }
 });
-bindPhoneLifecycle({connection,onSuspend:closeVoice});
-if(supported&&connection.restore(handoff.room)){
-  $('code').value=connection.room;void favoriteCache.refresh();
+function refreshFavorites() {
+  if (supported && navigator.onLine !== false && !favoriteCache.refreshing) void favoriteCache.refresh();
 }
+// Guest favorites are public and can be saved before a room PC is paired.
+void favoriteCache.restore();
+refreshFavorites();
+window.addEventListener('online', refreshFavorites);
+window.addEventListener('pageshow', event => { if (event.persisted) refreshFavorites(); });
+bindPhoneLifecycle({connection,onSuspend:closeVoice});
+if (supported && connection.restore(handoff.room)) $('code').value = connection.room;
 refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.

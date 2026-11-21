@@ -6,6 +6,7 @@ import {chromium, webkit} from 'playwright';
 import {LANGUAGES,REMOTE_TEXT} from '../wk/ui-text.mjs';
 
 const root=resolve('wk');
+const favorites=JSON.parse(await readFile(resolve('data/favorites/all.json'),'utf8'));
 const productionRelay='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
 let room, actions, ready, latest, expired, requests;
 const api=createServer(async(req,res)=>{
@@ -30,6 +31,10 @@ const api=createServer(async(req,res)=>{
 await new Promise(r=>api.listen(0,'127.0.0.1',r));
 const testRelay='http://127.0.0.1:'+api.address().port+'/api/relay';
 const server=createServer(async(req,res)=>{
+  if (new URL(req.url,'http://localhost').pathname==='/data/favorites/all.json') {
+    res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(favorites));
+    return;
+  }
   const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html'));
   if(!path.startsWith(root+sep)){res.writeHead(404).end();return;}
   try{
@@ -58,12 +63,34 @@ try{
     room='01234567';actions=[];ready=false;latest=null;expired=false;requests=[];
     const errors=[],httpErrors=[];
     const ctx=await browser.newContext({locale:lang.code,hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+    await ctx.route('https://raw.githubusercontent.com/**/data/favorites/all.json', route=>
+      route.fulfill({json:favorites,headers:{'Access-Control-Allow-Origin':'*'}}));
     const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
     page.on('requestfailed',req=>httpErrors.push([req.method(),new URL(req.url()).pathname,req.failure()?.errorText]));
     page.on('console',msg=>{if(msg.type()==='error')httpErrors.push(msg.text().slice(0,180));});
     try{
       await page.goto(url+'#language='+lang.code);
       await page.waitForFunction(code=>document.documentElement.lang===code,lang.code);
+      if (lang.code==='ko-KR') {
+        const saved=page.locator('#favorites-storage');
+        await saved.filter({hasText:'휴대폰에 저장된 애창곡'}).waitFor();
+        assert.ok((await saved.textContent()).includes(String(favorites.rows.length)));
+        assert.equal(requests.length,0,'a first visit saves all countries without joining a room');
+        const first=favorites.rows.find(row=>row.country==='ko');
+        const unavailable=route=>route.fulfill({status:503,headers:{'Access-Control-Allow-Origin':'*'},body:''});
+        await ctx.route('**/all.json',unavailable);
+        await page.reload();
+        await saved.filter({hasText:'휴대폰에 저장된 애창곡'}).waitFor();
+        await page.locator('#favorites-open').tap();
+        await page.locator('#favorites-query').fill(first.title.slice(0,20));
+        await page.locator('#favorites-search').tap();
+        await page.locator('#favorites-list strong').first().waitFor();
+        assert.ok((await page.locator('#favorites-list strong').allTextContents()).some(title=>title.includes(first.title.slice(0,20))));
+        assert.equal(await page.locator('#favorites-list button').first().isDisabled(),true);
+        assert.equal(requests.length,0,'a returning unpaired phone can browse its stored list');
+        await page.locator('#favorites-open').tap();
+        await ctx.unroute('**/all.json',unavailable);
+      }
       const zero={'th-TH':0xe50,'ne-NP':0x966,'lo-LA':0xed0,'my-MM':0x1040,'mn-MN':0x1810,'zh-CN':0xff10}[lang.code];
       await page.locator('#code').fill(zero?room.replace(/\d/g,n=>String.fromCharCode(zero+Number(n))):room);
       assert.equal(await page.locator('#code').inputValue(),room);
