@@ -52,6 +52,9 @@ module.exports=async function checkRemote(browser,base,ua,catalogCount){
  await page.waitForFunction(()=>document.getElementById('nativeAction').textContent.includes('P2 확인'));
  await page.locator('#nativeQueueNav').click();await page.waitForFunction(()=>document.querySelector('#nativeQueueList .queue-cancel:not(:disabled)'));
  await capture('queue');
+ assert.deepEqual(log.filter(x=>x.op==='command').map(x=>x.command.action),['reserve']);
+ await page.locator('#nativeQueueRefresh').click();
+ await page.waitForFunction(()=>document.querySelector('#nativeQueueList .queue-cancel:not(:disabled)'));
  await page.locator('.queue-cancel').first().click();
  await page.waitForFunction(()=>document.querySelector('#nativeQueueEmpty')?.textContent.includes('아직')&&!document.querySelector('#nativeQueueEmpty')?.hidden);
  assert.deepEqual(log.filter(x=>x.op==='command').map(x=>x.command.action),['reserve','queue','queueCancel']);

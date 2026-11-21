@@ -14,6 +14,11 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
     await route.fulfill({json,headers:{'Access-Control-Allow-Origin':'*'}});
    });
    tab.on('pageerror',e=>errors.push(e.message));
+   // Complete the catalog request before immediately navigating the same mobile tab to another room.
+   async function finishRoomLoad(){
+    await tab.waitForFunction(()=>document.getElementById('statusDot')?.classList.contains('ready')&&!document.getElementById('searchBtn').disabled);
+    await tab.waitForLoadState('networkidle');
+   }
    for(const n of labels){
     const start=ops.length;
     await tab.goto(base+'p2-room.html?room='+n,{waitUntil:'domcontentloaded'});
@@ -24,15 +29,17 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
     assert(sequence.some(x=>x.op==='join'&&x.room===codes[n]));
     assert(!sequence.some(x=>x.op==='command'||x.op==='join'&&x.room!==codes[n]));
     assert(!(await tab.locator('#wifiConnection').evaluate(d=>d.open)));
+    await finishRoomLoad();
    }
    off=true;const start=ops.length;
    await tab.goto(base+'p2-room.html?room=5');
    await tab.waitForFunction(()=>document.body.textContent.includes('방 PC와 반주기의 연결을 기다리고 있습니다.'));
-   assert(!ops.slice(start).some(x=>x.op==='join'));off=false;
+   assert(!ops.slice(start).some(x=>x.op==='join'));off=false;await finishRoomLoad();
    await tab.goto(base+'p2wifi/index.html?display=pc&label=5#ticket='+'a'.repeat(64));
    await tab.waitForSelector('.desk-qr-picture svg');
    await tab.waitForFunction(()=>document.body.textContent.includes('모의 반주기 연결됨'));
    assert.equal(await tab.locator('.desk-qr h2').textContent(),'5번방 손님용 QR');
+   await finishRoomLoad();
    await require('./verify-voice.cjs')(tab,base);
    showSong=true;
    await tab.evaluate(()=>window.dispatchEvent(new Event('pageshow')));
