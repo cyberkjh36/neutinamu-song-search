@@ -93,3 +93,5 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 .tv-menu-actions{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:8px}
 .tv-menu-actions button{min-height:48px;white-space:pre-line}
 #tv-menu-help{white-space:pre-line}
+
+#youtube-results{display:inline-block;padding:.5rem .85rem;border-radius:.55rem;font-weight:700}

@@ -4,8 +4,8 @@ import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.17';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
-import { createBrowseUi } from './browse-ui.mjs?v=3.8';
-import { KaraokeConnection } from './relay-client.mjs?v=3.17';
+import { createBrowseUi } from './browse-ui.mjs?v=3.18';
+import { KaraokeConnection } from './relay-client.mjs?v=3.18';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
@@ -65,6 +65,8 @@ function renderVoice() {
 const countryButtons = new Map();
 const actionKeys = {queryHint:3, connected:6, disconnected:7, sent:8, sending:9};
 function message(key, error = false) {
+  if (key === 'browseUnavailable') return BROWSE_TEXT[currentLanguage.code].unavailable;
+  if (key === 'browseEmpty') return BROWSE_TEXT[currentLanguage.code].empty;
   if (error && key === 'upgrade') return BROWSE_TEXT[currentLanguage.code].upgrade;
   if (error) return MESSAGES[currentLanguage.code].errors[key] || MESSAGES[currentLanguage.code].errors.connect;
   if (!error && key === 'queryHint') return BROWSE_TEXT[currentLanguage.code].hint;
@@ -74,6 +76,7 @@ function message(key, error = false) {
   return key in actionKeys ? currentLanguage.text[actionKeys[key]] : MESSAGES[currentLanguage.code][key];
 }
 function renderFeedback() {
+  $('confirm-help').hidden = feedbackState.error || ['sending','sent','browseEmpty'].includes(feedbackState.key);
   $('feedback').textContent = message(feedbackState.key, feedbackState.error);
   $('feedback').classList.toggle('error', feedbackState.error);
 }
@@ -146,7 +149,7 @@ const connection = new KaraokeConnection(undefined, (state, detail) => {
   if (state === 'error') showError(detail);
   if (state === 'ready' && detail) {feedback('connected');playlistUi?.resume();}
   if (state === 'reconnecting') feedback('connecting');
-  if (state === 'idle') feedback('disconnected');
+  if (state === 'idle') {searchComplete=false; feedback('disconnected');}
   refreshControls();
 },{storage:phoneSessionStorage,isOnline:()=>navigator.onLine!==false});
 const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -272,7 +275,7 @@ $('connect').addEventListener('click', () => {
 $('disconnect').addEventListener('click', () => { connectionAttempt++; void connection.disconnect(); });
 bindTypedSearch({field:$('query'), submit:searchVideos,
   canSubmit:() => !$('send').disabled,
-  onDraft:() => { searchComplete = false; refreshControls(); }});
+  onDraft:() => { searchComplete = false; browseUi.clear(); feedback('queryHint'); refreshControls(); }});
 $('send').addEventListener('click', searchVideos);
 async function searchVideos() {
   if ($('send').disabled) return;
@@ -286,8 +289,23 @@ async function searchVideos() {
   if(query.length>200){$('feedback').textContent=BROWSE_TEXT[currentLanguage.code].long;return;}
   $('query').value = query;
   browseUi.clear();feedback('sending');
-  try { const catalog = await connection.browse(query, currentLanguage.code); browseUi.show(catalog); searchComplete = !catalog.error; feedback(catalog.error?'confirmHelp':'sent'); if(catalog.items.length)$('results').scrollIntoView({behavior:'smooth',block:'start'}); }
-  catch (error) { showError(error); }
+  const generation=connection.generation, language=currentLanguage.code;
+  const stillCurrent=()=>generation===connection.generation && language===currentLanguage.code && $('query').value===query;
+  try {
+    const catalog=await connection.browse(query,language);
+    if(!stillCurrent())return;
+    browseUi.show(catalog,query);
+    searchComplete=catalog.items.length>0;
+    feedback(catalog.error?'browseUnavailable':searchComplete?'sent':'browseEmpty',Boolean(catalog.error));
+    $('results').scrollIntoView({behavior:'smooth',block:'start'});
+  } catch (error) {
+    if(!stillCurrent())return;
+    if(['response','failed','timeout','networkTimeout'].includes(error.code)){
+      browseUi.show({v:1,items:[],error:'unavailable'},query);
+      feedback('browseUnavailable',true);
+      $('results').scrollIntoView({behavior:'smooth',block:'start'});
+    } else showError(error);
+  }
   finally { refreshControls(); }
 }
 $('legacy-search').addEventListener('click',async()=>{if($('legacy-search').disabled)return;try{const query=normalizeTypedQuery($('query').value);$('query').value=query;const r=await connection.search(query,currentLanguage.code);if(!r.ok)showError(r.code);else feedback('connected');}catch(e){showError(e);}finally{refreshControls();}});
@@ -311,7 +329,7 @@ voice = new VoiceInput({
     $('interim').textContent = preview;
     renderVoice();
     // Dictation is a draft only: the user still presses Search to send it to the PC.
-    if (text) { $('query').value = text; searchComplete = false; }
+    if (text) { $('query').value = text; searchComplete = false; browseUi.clear(); }
   },
   onFinish(reason) {
     if (reason !== 'error') {

@@ -37,6 +37,7 @@ export class KaraokeConnection {
       const interval=reply.timing?.sendIntervalMs;
       this.quick=reply.timing?.fastControls===1 && interval===130;
       this.sendMs=this.quick?interval:Number.isInteger(interval)&&interval>=300&&interval<=1550?interval:1550;
+      this.relayVideoSearch=reply.videoSearch===1;
       this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
       this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
       this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.serverName=this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server;
@@ -121,10 +122,34 @@ export class KaraokeConnection {
     },misses?Math.min(2000,this.pingMs):this.pingMs);
   }
   async browse(query,language){
-    if(!this.browseSupported)throw failure('upgrade');
+    if(!this.browseSupported && !(this.queueSupported && this.relayVideoSearch))throw failure('upgrade');
+    if(this.state!=='ready')throw failure('disconnected');
+    const generation=this.generation;
     if(!this.browseDraft||this.browseDraft.query!==query||this.browseDraft.language!==language)this.browseDraft={query,language,request:random(16)};
-    const result=await this.search(browseCommand(query,this.browseDraft.request,language),language);
-    if(!result.ok)throw failure(result.code);const catalog=readCatalog(result.catalog);this.browseDraft=null;return catalog;
+    const command=browseCommand(query,this.browseDraft.request,language);
+    let primary;
+    if(this.browseSupported){
+      try{
+        const result=await this.search(command,language);
+        if(!result.ok)throw failure(result.code);
+        primary=readCatalog(result.catalog);
+        this.browseDraft=null;
+        if(primary.items.length||primary.error==='blocked'||!this.relayVideoSearch)return primary;
+      }catch(e){
+        if(!this.relayVideoSearch||!['busy','failed','networkTimeout','timeout','response'].includes(e.code))throw e;
+      }
+    }
+    if(generation!==this.generation||this.state!=='ready')throw failure('disconnected');
+    this.foreground++;
+    this.set('sending');
+    try{
+      const reply=await this.call('videoCatalog',{query,language},generation);
+      const recovered=readCatalog(reply.catalog);
+      this.browseDraft=null;
+      return recovered.error && primary?.error===null ? primary : recovered;
+    }finally{
+      if(generation===this.generation){this.foreground--;if(this.state==='sending')this.set('ready');}
+    }
   }
   async control(action,request,language){
     if(!this.controlSupported)throw failure('upgrade');
@@ -234,7 +259,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.nextSend=0;this.quick=false;this.set('idle');
+    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.relayVideoSearch=false;this.nextSend=0;this.quick=false;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

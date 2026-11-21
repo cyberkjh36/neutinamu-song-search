@@ -27,7 +27,7 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
 test('UI event harness: explicit search, dictation and reconnect states',async t=>{
   const html=await readFile(new URL('../wk/index.html',import.meta.url),'utf8');
   const elements=new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(x=>[x[1],new Element()]));
-  const head=new Element(),events=new Map(),sent=[],storage=new Map();let speech, nextResult=true;
+  const head=new Element(),events=new Map(),sent=[],storage=new Map();let speech, nextResult=true, emptyCatalog=false;
   globalThis.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};
   globalThis.document={addEventListener(){},removeEventListener(){},getElementById:id=>{assert.ok(elements.has(id),id);return elements.get(id);},querySelector:()=>head,documentElement:{},createElement:()=>new Element()};
   globalThis.location={protocol:'https:',hostname:'example.test',hash:'#12345678'};
@@ -38,7 +38,7 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     abort(){this.onend?.();}
   }
   globalThis.window={isSecureContext:true,SpeechRecognition:Speech,addEventListener:(k,v)=>events.set(k,v)};
-  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'WKQ1 WKS1 TEST-PC',pending:false,result:nextResult,catalog:{v:1,items:[{id:'abcdefghijk',title:'노래 ไทย',channel:'Channel',duration:'3:00'}],error:null}});};
+  globalThis.fetch=async function(url,options){assert.equal(this,globalThis,'native fetch receiver');const message=JSON.parse(options.body);sent.push(message);return Response.json({ok:true,server:'WKQ1 WKS1 TEST-PC',pending:false,result:nextResult,catalog:{v:1,items:emptyCatalog?[]:[{id:'abcdefghijk',title:'노래 ไทย',channel:'Channel',duration:'3:00'}],error:null}});};
   window.fetch=globalThis.fetch;window.crypto=globalThis.crypto;
   Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'ko-KR',userAgent:'Mozilla/5.0 (Linux; Android 10) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36'}});
   const $=id=>elements.get(id);
@@ -147,6 +147,8 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
     await t.test('failed search keeps the title and retry action; editing a successful title starts a new search',async()=>{
       $('query').value='재시도할 노래';$('query').fire('input');nextResult=false;
       await $('send').fire('click');assert.equal($('query').value,'재시도할 노래');assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);assert.equal($('send').disabled,false);
+      assert.equal($('feedback').textContent,BROWSE_TEXT['ko-KR'].unavailable);
+      assert.equal($('youtube-results').hidden,false);assert.equal(new URL($('youtube-results').href).searchParams.get('search_query'),'재시도할 노래');
       nextResult=true;await $('send').fire('click');assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
       $('query').value='직접 고친 노래';$('query').fire('input');assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);
       const count=sent.length;await $('send').fire('click');assert.ok(sent[count].text.endsWith(":"+'직접 고친 노래'));assert.equal($('query').value,'직접 고친 노래');
@@ -158,6 +160,15 @@ test('UI event harness: explicit search, dictation and reconnect states',async t
       assert.equal($('query').value,'เพลงใหม่');assert.equal(sent.length,count);assert.equal($('send').textContent,BROWSE_TEXT['th-TH'].search);
       await $('send').fire('click');assert.ok(sent[count].text.endsWith(":"+'เพลงใหม่'));assert.equal(sent[count].language,'th-TH');
       await $('send').fire('click');assert.equal($('query').value,'');assert.equal(sent.length,count+2);
+    });
+    await t.test('an empty catalog allows repeating the same titled search',async()=>{
+      choose('ko-KR');emptyCatalog=true;
+      $('query').value='손흥민';$('query').fire('input');
+      await $('send').fire('click');
+      assert.equal($('feedback').textContent,BROWSE_TEXT['ko-KR'].empty);
+      assert.equal($('send').textContent,BROWSE_TEXT['ko-KR'].search);
+      emptyCatalog=false;await $('send').fire('click');
+      assert.equal($('query').value,'손흥민');assert.equal($('send').textContent,NEXT_SEARCH['ko-KR']);
     });
     await t.test('Chrome button preserves current fields, releases session and never claims app-launch success',async()=>{
       choose('vi-VN');$('query').value='Bài hát & 노래';let prevented=false;

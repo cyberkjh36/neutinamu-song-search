@@ -9,6 +9,8 @@ const root=resolve('wk');
 const favorites=JSON.parse(await readFile(resolve('data/favorites/all.json'),'utf8'));
 const productionRelay='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
 const githubFavorites='https://raw.githubusercontent.com/cyberkjh36/neutinamu-song-search/main/data/favorites/all.json';
+const searches={"ko-KR":"손흥민","th-TH":"เบิร์ด ธงไชย คาราโอเกะ","fil-PH":"Buwan Juan Karlos karaoke","vi-VN":"Nơi này có anh karaoke","ne-NP":"रेशम फिरिरी कराओके","mn-MN":"Харанга Толин хул караоке","id-ID":"Bengawan Solo karaoke","lo-LA":"ສາວຈຳປາ ຄາລາໂອເກະ","my-MM":"ထူးအိမ်သင် ကာရာအိုကေ","zh-CN":"邓丽君 月亮代表我的心 伴奏","ja-JP":"上を向いて歩こう カラオケ"};
+const sample=title=>({v:1,error:null,items:[{id:'abcdefghijk',title,channel:'Test',duration:'3:00'}]});
 let favoritesAvailable=true;
 function sendFavorites(res) {
   res.writeHead(favoritesAvailable?200:503,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'})
@@ -23,8 +25,19 @@ const api=createServer(async(req,res)=>{
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
     const b=JSON.parse(raw);assert.equal(b.room,room);requests.push(b);
-    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Test';ready=true;expired=false;}
+    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Test';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
     if(b.op==='ping'&&ready)reply=expired?{ok:false,code:'disconnected'}:{ok:true,capabilities:{p2TvMenu:1}};
+    if(b.op==='search')reply.id=b.id;
+    if(b.op==='result'){
+      const job=requests.find(r=>r.op==='search'&&r.id===b.id);
+      assert.ok(job);reply.pending=false;reply.result=true;
+      if(job.text.startsWith('WKF1:')){
+        const query=job.text.split(':').slice(3).join(':');
+        reply.catalog=query.endsWith(' 2')?{v:1,error:'unavailable',items:[]}:sample(query);
+      }
+      if(job.text.startsWith('WKL1:'))reply.catalog={v:1,kind:'queue',page:0,total:0,items:[]};
+    }
+    if(b.op==='videoCatalog')reply.catalog=sample(b.query);
     if(b.op==='setTvInput'){
       assert.ok(ready);assert.match(b.request,/^[a-f0-9]{32}$/);actions.push(b.input);latest=b;
       reply={ok:true,request:b.request,input:b.input,status:'queued'};
@@ -74,6 +87,11 @@ try{
     room='01234567';actions=[];ready=false;latest=null;expired=false;requests=[];
     const errors=[],httpErrors=[];
     const ctx=await browser.newContext({locale:lang.code,hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+    await ctx.addInitScript(()=>{window.SpeechRecognition=class {
+      constructor(){window.testMic=this;}
+      start(){this.onstart?.();}
+      abort(){}
+    };});
     const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
     page.on('requestfailed',req=>httpErrors.push([req.method(),new URL(req.url()).pathname,req.failure()?.errorText]));
     page.on('console',msg=>{if(msg.type()==='error')httpErrors.push(msg.text().slice(0,180));});
@@ -114,6 +132,31 @@ try{
       }
       assert.deepEqual(actions,['VIDEO','LEFT','RIGHT','SELECT']);
       assert.equal(await page.locator('#tv-select').textContent(),REMOTE_TEXT[lang.code].tvSelect);
+      const query=searches[lang.code],field=page.locator('#query'), row=page.locator('#results-list button').first();
+      for(const mode of ['keyboard','voice']){
+        const title=mode==='keyboard'?query:query+' 2';
+        if(mode==='keyboard'){
+          await field.fill(title);await field.press('Enter');
+        }else{
+          await page.locator('#voice').tap();
+          assert.equal(await page.evaluate(()=>window.testMic.lang),lang.code);
+          await page.evaluate(value=>{
+            const result=[{transcript:value}];result.isFinal=true;
+            window.testMic.onresult({results:[result]});window.testMic.onend();
+          },title);
+          assert.equal(await field.inputValue(),title);
+          await page.locator('#send').tap();
+        }
+        await row.locator('strong').filter({hasText:title}).waitFor();
+        assert.equal(await row.locator('strong').textContent(),title);
+        if(mode==='voice'){
+          const retry=requests.filter(b=>b.op==='videoCatalog').at(-1);
+          assert.equal(retry.query,title);assert.equal(retry.language,lang.code);
+        }
+        await row.tap();await page.locator('#results-list button.reserved').waitFor();
+        const booking=requests.filter(b=>b.op==='search'&&b.text.startsWith('WKQ2:')).at(-1);
+        assert.equal(booking.language,lang.code);assert.ok(booking.text.endsWith(':abcdefghijk:'+title));
+      }
       const firstKey=requests.find(b=>b.op==='join').key;
       await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
       assert.equal(await page.locator('#connect').isDisabled(),true);

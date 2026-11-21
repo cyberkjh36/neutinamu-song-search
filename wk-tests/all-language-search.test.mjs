@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {LANGUAGES} from '../wk/labels.mjs';
-import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.17';
+import {KaraokeConnection} from '../wk/relay-client.mjs?v=3.18';
 
 const titles={
  'ko-KR':'사랑은 늘 도망가', 'th-TH':'เพลงรักของเรา', 'fil-PH':'Awit ng pag-ibig',
@@ -37,10 +37,15 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
  globalThis.fetch=async(_,o)=>{
   const request=JSON.parse(o.body);calls.push(request);
   if(request.op==='search')jobs.set(request.id,request);
+  if(request.op==='videoCatalog')return Response.json({ok:true,catalog:{v:1,items:[{id:'abcdefghijk',title:request.query,channel:'1',duration:'3:00'}],error:null}});
   const job=jobs.get(request.id),title=titles[job?.language]||'Song';
-  return Response.json({ok:true,server:'WKQ1 WKS1 WKT1 WKC1 WKV1 TEST-PC',pending:false,result:true,catalog:{v:1,items:[{id:'abcdefghijk',title,channel:'1',duration:'3:00'}],error:null}});
+  if(job?.text.endsWith(':'+title+' 2'))return Response.json({ok:true,pending:false,result:true,catalog:{v:1,items:[],error:'unavailable'}});
+  return Response.json({ok:true,videoSearch:1,server:'WKQ1 WKS1 WKT1 WKC1 WKV1 TEST-PC',pending:false,result:true,catalog:{v:1,items:[{id:'abcdefghijk',title,channel:'1',duration:'3:00'}],error:null}});
  };
  globalThis.window={fetch:globalThis.fetch,crypto:globalThis.crypto,isSecureContext:true,addEventListener:events.addEventListener.bind(events)};
+ let recognition;
+ class Speech {constructor(){recognition=this;}start(){this.onstart?.();}abort(){}}
+ window[device.startsWith('iPhone')?'webkitSpeechRecognition':'SpeechRecognition']=Speech;
  const requests=()=>calls.filter(c=>c.op==='search'),type=async(field,value)=>{field.value=value;await field.fire('input');};
  const choose=code=>$('countries').children[LANGUAGES.findIndex(l=>l.code===code)].click();
  const settled=()=>!$('send').disabled&&!$('favorites-search').disabled;
@@ -86,6 +91,18 @@ for(const device of ['Android Chrome/130','iPhone OS 14_8 Safari','iPhone OS 18_
    assert.ok(requests().at(-1).text.endsWith(':'+language.code+':0:'+title+' karaoke'));
    assert.equal($('query').value,title+' karaoke','favorites leaves the video draft intact');
    $('favorites-open').click();assert.equal($('favorites-panel').hidden,true);
+   count=requests().length;
+   $('voice').click();assert.equal(recognition.lang,language.code);
+   const spoken=title+' 2', result=[{transcript:spoken}];result.isFinal=true;
+   recognition.onresult({results:[result]});recognition.onend();
+   assert.equal($('query').value,spoken);assert.equal(requests().length,count,'dictation waits for confirmation');
+   $('send').click();await wait(()=>settled()&&$('results-list').children[0]?.children[1]?.children[0]?.textContent===spoken);
+   const fallback=calls.filter(c=>c.op==='videoCatalog').at(-1);
+   assert.equal(fallback.language,language.code);assert.equal(fallback.query,spoken);
+   $('results-list').children[0].click();await wait(()=>requests().length===count+2&&settled());
+   assert.equal(requests().at(-1).language,language.code);
+   assert.ok(requests().at(-1).text.endsWith(':abcdefghijk:'+spoken));
+
   });
   assert.equal(calls.filter(c=>c.op==='join').length,1);
   assert.ok(requests().every(c=>c.room==='12345678'&&/^[a-f0-9]{64}$/.test(c.key)));
