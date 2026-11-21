@@ -1,4 +1,5 @@
 const assert=require('node:assert/strict');
+const path=require('node:path');
 module.exports=async function checkRemote(browser,base,ua,catalogCount){
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,userAgent:ua,serviceWorkers:'block'});
  try {
@@ -26,14 +27,28 @@ module.exports=async function checkRemote(browser,base,ua,catalogCount){
  await page.waitForFunction(()=>document.getElementById('statusDot')?.classList.contains('ready'),{},{timeout:60000});
  // This track is delivered only by the online catalog, including on existing phones.
  await page.waitForFunction(n=>Number(document.querySelector('#dbCount .dbcount')?.textContent.replace(/[^0-9]/g,''))===n,catalogCount,{timeout:60000});
+ const capture=name=>page.screenshot({path:path.join(__dirname,'../browser-report',browser.browserType().name()+'-room-'+name+'.png')});
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),'light');
+ await page.evaluate(()=>window.scrollTo(0,0));
+ await capture('home');
+ await page.setViewportSize({width:320,height:740});
+ await page.locator('#favoriteShortcuts [data-category=trot]').click();
+ await page.locator('#favoritesPanel:not([hidden]) .favorite-song').first().waitFor();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth && document.querySelector('.favorites-sheet').scrollWidth<=document.querySelector('.favorites-sheet').clientWidth+1));
+ await capture('favorites');
+ await page.locator('#favoritesClose').click();
+ await page.setViewportSize({width:390,height:844});
  await page.locator('#query').fill('71548');await page.locator('#searchBtn').click();
  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71548');
  assert.equal(await page.locator('#heroTitle').textContent(),'Boundary');
  await page.locator('#query').fill('김희재 여름밤에 우린');await page.locator('#searchBtn').click();
  await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71541');
+ await page.locator('#hero').scrollIntoViewIfNeeded();
+ await capture('result');
  await page.locator('#nativeReserve').click();
  await page.waitForFunction(()=>document.getElementById('nativeAction').textContent.includes('P2 확인'));
  await page.locator('#nativeQueueNav').click();await page.waitForFunction(()=>document.querySelector('#nativeQueueList .queue-cancel:not(:disabled)'));
+ await capture('queue');
  await page.locator('.queue-cancel').first().click();
  await page.waitForFunction(()=>document.querySelector('#nativeQueueEmpty')?.textContent.includes('아직')&&!document.querySelector('#nativeQueueEmpty')?.hidden);
  assert.deepEqual(log.filter(x=>x.op==='command').map(x=>x.command.action),['reserve','queue','queueCancel']);

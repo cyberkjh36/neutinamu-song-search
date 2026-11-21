@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#10243a">
+  <meta name="theme-color" content="#f5f6ee">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="느티나무 P2 리모컨">
@@ -153,22 +153,25 @@
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.3.9"></script>
+  <script src="wifi-bridge.js?v=1.4.0"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
   <script src="../catalog-sync.js" defer></script>
   <script src="../chosung.js"></script>
   <script src="native-search.js?v=1.3.8" defer></script>
   <link rel="stylesheet" href="favorites.css?v=1.3.5">
+  <link rel="stylesheet" href="light.css">
   <script src="favorites-data.js" defer></script>
   <script src="favorites-ui.js?v=1.3.6" defer></script>
 
 </head>
 <body>
 <main>
-  <header><div class="brand">느티나무 노래방</div><div id="dbCount" class="small">노래 데이터 확인 중</div></header>
+  <header class="remote-masthead">
+    <div class="brand">느티나무 노래방</div><div id="dbCount" class="small">노래 데이터 확인 중</div>
   <h1>느티나무 P2 리모컨</h1>
   <p class="lead">태진 P2 곡 데이터에서 제목이나 가수를 찾아 번호를 크게 보여줍니다.</p>
+  </header>
   <section class="panel">
     <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">노래 데이터 파일을 불러오면 검색할 수 있어요.</span></div>
     <div class="searchrow"><input id="query" type="search" placeholder="제목 · 가수 · 초성 (예: ㅅㄹ)" autocomplete="off"><button id="searchBtn" class="searchbtn">검색</button></div>

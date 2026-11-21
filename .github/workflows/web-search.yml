@@ -1,10 +1,10 @@
 name: Web search and home screen
 on:
   pull_request:
-    paths: ['index.html', 'p2-room.html', 'room-connect.js', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', 'tools/p2wifi-browser-check.cjs', 'p2wifi/index.html', 'catalog-sync.js', 'catalog-updates.json', '.github/workflows/web-search.yml']
+    paths: ['index.html', 'p2-room.html', 'room-connect.js', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', 'tools/p2wifi-browser-check.cjs', 'p2wifi/index.html', 'p2wifi/light.css', 'catalog-sync.js', 'catalog-updates.json', '.github/workflows/web-search.yml']
   push:
     branches: [main]
-    paths: ['index.html', 'p2-room.html', 'room-connect.js', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', 'tools/p2wifi-browser-check.cjs', 'p2wifi/index.html', 'catalog-sync.js', 'catalog-updates.json', '.github/workflows/web-search.yml']
+    paths: ['index.html', 'p2-room.html', 'room-connect.js', 'sw.js', 'chosung.js', 'manifest.webmanifest', 'p2-ui.mjs', 'tests/**', 'tools/web-browser-check.cjs', 'tools/p2wifi-browser-check.cjs', 'p2wifi/index.html', 'p2wifi/light.css', 'catalog-sync.js', 'catalog-updates.json', '.github/workflows/web-search.yml']
 permissions:
   contents: read
 jobs:
