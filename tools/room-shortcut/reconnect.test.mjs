@@ -138,3 +138,27 @@ test('reservation backs off on a read error without sending another command',asy
  assert.equal((await client.send({action:'reserve',number:123})).status,'confirmed');
  assert.deepEqual(delays,[150,1000]);assert.equal(calls.filter(b=>b.op==='command').length,1);
 });
+
+test('playback buttons check one job promptly and keep late results and failed inputs distinct',async()=>{
+ for(const action of ['pause','next','play','queuePlay']){
+  const delays=[],statuses=['pending','claimed','claimed',action==='pause'?'failed':'confirmed'];
+  const {client,calls}=fixture(b=>b.op==='result'?{ok:true,status:statuses.shift()}:success());
+  await client.join(room);client.delay=async ms=>{delays.push(ms);};
+  const sending=client.send({action});await assert.rejects(client.send({action}));
+  assert.equal((await sending).status,action==='pause'?'failed':'confirmed');
+  assert.deepEqual(delays,[120,240,400,400]);
+  const sent=calls.filter(b=>b.op==='command');assert.equal(sent.length,1);
+  assert(calls.filter(b=>b.op==='result').every(b=>b.id===sent[0].id));
+ }
+});
+
+test('pause uses the confirmed room state from its own session and ignores a foreign snapshot',async()=>{
+ const p={known:true,number:10092,paused:true};
+ let session;
+ const {client,calls}=fixture(b=>b.op==='result'?{ok:true,status:'confirmed',session,playback:p}:success());
+ await client.join(room);session=client.data.session;
+ assert.equal((await client.send({action:'pause'})).playbackApplied,true);assert.deepEqual(client.data.state.playback,p);
+ session='f'.repeat(32);
+ assert.equal((await client.send({action:'pause'})).playbackApplied,false);
+ assert(calls.filter(c=>c.op==='result').every(c=>c.readPlayback===true));
+});

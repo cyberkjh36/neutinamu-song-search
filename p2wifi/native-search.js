@@ -14,7 +14,11 @@ function send(command,number,feedback){
 function icon(name){var paths={remove:'<path d="m6 6 12 12M18 6 6 18"/>',list:'<path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/>',next:'<path d="m2 5 10 7-10 7Zm11 0 10 7-10 7Z" fill="currentColor" stroke="none"/>',plus:'<path d="M12 5v14M5 12h14"/>',play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',pause:'<path d="M8 5v14M16 5v14" stroke-width="4"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'};return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+paths[name]+'</svg>';}
 function friendly(message){if(/^\[A01\]/.test(message))return '[A01] 반주기가 연결을 승인하지 않았습니다. 연결 설정에서 확인해 주세요.';if(/^\[C00\]/.test(message))return '먼저 P2에 연결해 주세요. 곡 시작·예약 명령은 보내지 않았습니다.';return message||'';}
 function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!connected||!selected||busy;});['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
-function playbackCommand(command,feedback){if(busy||!connected)return;busy=true;buttons();send(command,null,feedback);}
+function playbackCommand(command,feedback){
+ if(busy||!connected)return;
+ if(feedback)activeFeedback=feedback;
+ busy=true;buttons();send(command,null,feedback);
+}
 function requestQueue(){if(busy)return;busy=true;buttons();send('queue');}
 function toggleQueue(open){queueOpen=typeof open==='boolean'?open:!queueOpen;$('nativeQueuePanel').hidden=!queueOpen;['nativeQueue','nativeQueueNav'].forEach(id=>$(id).setAttribute('aria-expanded',String(queueOpen)));$('nativeQueueNav').classList.toggle('active',queueOpen);$('nativeSearchNav').classList.toggle('active',!queueOpen);document.body.classList.toggle('queue-open',queueOpen);if(queueOpen){$('nativeQueueClose').focus();requestQueue();}else $('nativeQueueNav').focus();}
 async function renderQueue(){
@@ -73,16 +77,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  var pause=document.createElement('button');
  pause.type='button';pause.id='nativeStop';pause.innerHTML=icon('pause')+'일시정지';
  pause.setAttribute('aria-describedby','nativePauseHint');
- pause.onclick=()=>playbackCommand('pause');
+ pause.onclick=()=>playbackCommand('pause',playbackStatus);
  var hint=document.createElement('p');
  hint.id='nativePauseHint';hint.className='hint';hint.textContent='일시정지한 곡은 ‘다시 시작’을 누르면 이어집니다.';
  var start=document.createElement('button');start.type='button';start.id='nativeStart';start.innerHTML=icon('play')+'실행';
  var playbackStatus=document.createElement('p');playbackStatus.id='nativePlaybackStatus';playbackStatus.className='hint';playbackStatus.setAttribute('role','status');
  start.onclick=()=>{
   if(busy||!connected)return;
-  activeFeedback=playbackStatus;playbackCommand('next',playbackStatus);
+  playbackCommand('next',playbackStatus);
  };
- var playback=document.createElement('div');playback.id='nativePlayback';var next=document.createElement('button');next.id='nativeNext';next.type='button';next.innerHTML=icon('next')+'다음곡';next.onclick=()=>playbackCommand('next');playback.append(start,pause,next,hint,playbackStatus);$('hero').after(playback);
+ var playback=document.createElement('div');playback.id='nativePlayback';var next=document.createElement('button');next.id='nativeNext';next.type='button';next.innerHTML=icon('next')+'다음곡';next.onclick=()=>playbackCommand('next',playbackStatus);playback.append(start,pause,next,hint,playbackStatus);$('hero').after(playback);
 
  var clear=document.createElement('button');clear.id='nativeNew';clear.textContent='새 검색';clear.type='button';$('searchBtn').after(clear);clear.onclick=()=>{++searchRevision;$('query').value='';$('results').replaceChildren();$('hero').classList.remove('show');window.P2Remote.setSong(null);setMessage('새 노래 제목·가수 또는 초성을 입력해 주세요.');$('query').focus();};
  var queue=document.createElement('section');queue.id='nativeQueuePanel';queue.hidden=true;queue.setAttribute('role','dialog');queue.setAttribute('aria-modal','true');queue.setAttribute('aria-labelledby','nativeQueueTitle');queue.innerHTML='<div class="queue-sheet"><div class="queue-heading"><div><span class="connection-caption">반주기의 재생 순서</span><h2 id="nativeQueueTitle">예약곡 <span class="queue-count">—</span></h2></div><button id="nativeQueueClose" type="button">닫기</button></div><p id="nativeQueueRoom" class="hint"></p><section id="nativeNowPlaying" class="now-playing" aria-label="현재 재생곡" aria-live="polite"><span id="nativeNowLabel" class="now-label">현재 재생</span><strong id="nativeNowTitle">재생 정보를 기다리는 중입니다.</strong><div class="now-meta"><span id="nativeNowNumber"></span><span id="nativeNowArtist"></span></div></section><button id="nativeQueueNext" type="button">'+icon('next')+'다음곡 실행</button><div class="queue-toolbar"><p id="nativeQueueMessage" role="status"></p><button id="nativeQueueRefresh" type="button">↻ 새로고침</button></div><p id="nativeQueueAction" class="hint" role="status"></p><p id="nativeQueueEmpty" class="queue-empty"></p><p class="queue-help">곡을 누르면 해당 곡을 먼저 실행합니다. 실행한 항목은 예약에서 빠지고, 나머지는 원래 순서대로 진행합니다. 예약 취소는 해당 항목만 지웁니다.</p><ol id="nativeQueueList"></ol><p class="hint">다른 휴대폰이나 리모컨으로 예약한 곡도 반주기 목록에 함께 표시됩니다. 새로고침하면 최신 순서를 확인할 수 있습니다.</p></div>';document.body.append(queue);$('nativeQueueClose').onclick=()=>toggleQueue(false);$('nativeQueueRefresh').onclick=requestQueue;$('nativeQueueNext').onclick=()=>playbackCommand('next');

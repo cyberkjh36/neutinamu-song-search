@@ -87,16 +87,28 @@ export class WifiClient {
     if (error.code) throw error;
     // The PC may already have acted. Only read the original request's result.
    }
-   let pollDelay = command.action === 'reserve' ? 150 : 1000;
+   const playback = ['pause','next','play','queuePlay'].includes(command.action);
+   let fastUntil = Date.now() + 3000;
+   let pollDelay = playback ? 120 : command.action === 'reserve' ? 150 : 1000;
    while (Date.now() < deadline) {
     await this.delay(pollDelay);
-    pollDelay = Math.min(1000, pollDelay * 2);
+    pollDelay = Math.min(playback && Date.now() < fastUntil ? 400 : 1000, pollDelay * 2);
     if (Date.now() >= deadline) break;
     try {
-     const result = await this.call('result',request);
-     if (!['pending','claimed'].includes(result.status)) return {...result,requestId:request.id};
+     const result = await this.call('result',command.action==='pause'?{...request,readPlayback:true}:request);
+     if (['pending','claimed'].includes(result.status)) continue;
+     const p=result.playback;
+     if (command.action==='pause' && result.status==='confirmed' && p && typeof p.paused==='boolean'
+         && typeof p.known==='boolean' && Number.isInteger(p.number) && p.number>=0 && p.number<=99999999
+         && !this.refreshing && this.data?.online && this.data.state?.connected && this.room===request.room
+         && result.session===request.session && this.data.session===request.session) {
+      this.data={...this.data,state:{...this.data.state,playback:p}};
+      return {...result,requestId:request.id,playbackApplied:true};
+     }
+     return {...result,requestId:request.id,playbackApplied:false};
     } catch (error) {
      if (['permission','disconnected','expired'].includes(error.code)) break;
+     fastUntil = 0;
      pollDelay = 1000;
     }
    }
