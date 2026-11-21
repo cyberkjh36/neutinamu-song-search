@@ -39,3 +39,18 @@ test('disconnect invalidates a late join response',async()=>{
  const joining=c.connect('12345678','iPhone');await tick();await c.disconnect();release(Response.json({ok:true,server:'PC'}));
  await assert.rejects(joining,e=>e.code==='disconnected');assert.equal(c.state,'idle');
 });
+
+test('an already connected phone refreshes the full PC name without rejoining or losing capabilities',async()=>{
+ const prefix='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 ',calls=[],states=[];
+ const c=new KaraokeConnection(null,state=>states.push(state),{fetch:async(_,opts)=>{
+   const {op}=JSON.parse(opts.body);calls.push(op);
+   return Response.json(op==='join'?{ok:true,server:prefix+'NULTI-0'}:{ok:true,pcName:'NULTI-05'});
+ }});
+ try{
+   await c.connect('12345678','Phone');assert.equal(c.serverName,'NULTI-0');
+   const before=states.length;await c.refreshTvStatus();
+   assert.equal(c.serverName,'NULTI-05');assert.equal(c.windowSupported,true);
+   assert.deepEqual(states.slice(before),['ready']);assert.deepEqual(calls,['join','ping']);
+   await c.refreshTvStatus();assert.equal(states.length,before+1);
+ }finally{await c.disconnect();}
+});

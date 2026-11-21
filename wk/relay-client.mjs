@@ -41,7 +41,8 @@ export class KaraokeConnection {
       this.windowSupported=typeof reply.server==='string' && reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 ');
       this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
       this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
-      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.serverName=this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?(?:M1 )?/,''):reply.server;
+      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');
+      this.serverName=typeof reply.pcName==='string' ? reply.pcName : (this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?(?:M1 )?/,''):reply.server);
   }
   remember(){
     if(!this.accepted||!this.key||!this.room)return;
@@ -72,7 +73,7 @@ export class KaraokeConnection {
     const task=(async()=>{
       try{
         if(!this.needsJoin){
-          try{const reply=await this.call('ping',{},generation);this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;}
+          try{const reply=await this.call('ping',{},generation);if(typeof reply.pcName==='string')this.serverName=reply.pcName;this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;}
           catch(e){if(e.code!=='disconnected'||generation!==this.generation)throw e;this.needsJoin=true;}
         }
         if(this.needsJoin){const reply=await this.call('join',{name:this.name,fastControls:true},generation);this.acceptJoin(reply);this.needsJoin=false;}
@@ -102,7 +103,9 @@ export class KaraokeConnection {
     const read=this.call('ping',{},generation).then(reply=>{
       if(generation!==this.generation)throw failure('disconnected');
       const menu=reply.capabilities?.p2TvMenu===1, available=menu||reply.capabilities?.p2HdmiInput===1;
-      if(menu!==this.tvMenuSupported||available!==this.tvInputSupported){
+      const nameChanged=typeof reply.pcName==='string' && reply.pcName!==this.serverName;
+      if(nameChanged)this.serverName=reply.pcName;
+      if(nameChanged||menu!==this.tvMenuSupported||available!==this.tvInputSupported){
         this.tvMenuSupported=menu;this.tvInputSupported=available;this.change(this.state);
       }
       this.confirmedAt=Date.now();this.remember();

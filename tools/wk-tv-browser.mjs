@@ -26,7 +26,7 @@ const api=createServer(async(req,res)=>{
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
     const b=JSON.parse(raw);assert.equal(b.room,room);requests.push(b);
-    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 Test';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
+    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 NULTI-05';reply.pcName='NULTI-05';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
     if(b.op==='ping'&&ready)reply=expired?{ok:false,code:'disconnected'}:{ok:true,capabilities:{p2TvMenu:1}};
     if(b.op==='search')reply.id=b.id;
     if(b.op==='result'){
@@ -175,12 +175,12 @@ try{
       assert.equal(requests.some(b=>b.op==='leave'),false);
       expired=true;
       await page.evaluate(()=>{window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));window.dispatchEvent(new Event('focus'));});
-      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.endsWith('NULTI-05'));
       assert.equal(requests.filter(b=>b.op==='join').length,2);
       assert.equal(requests.filter(b=>b.op==='join').at(-1).key,firstKey);
       // Real sessionStorage and actual module startup must restore on reload.
       await page.reload();
-      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.endsWith('NULTI-05'));
       assert.equal(await page.locator('#code').inputValue(),room);
       assert.equal(requests.filter(b=>b.op==='join').at(-1).key,firstKey);
       assert.deepEqual(actions,['VIDEO','LEFT','RIGHT','SELECT'],'recovery never replays TV commands');
@@ -190,7 +190,7 @@ try{
       assert.equal(await page.locator('#send').isDisabled(),true);
       await ctx.setOffline(false);
       await page.evaluate(()=>window.dispatchEvent(new Event('online')));
-      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.includes('Test'));
+      await page.waitForFunction(()=>document.querySelector('#connection-state').textContent.endsWith('NULTI-05'));
       await page.locator('#disconnect').tap();
       await page.waitForFunction(()=>!document.querySelector('#connect').disabled);
       const joins=requests.filter(b=>b.op==='join').length;

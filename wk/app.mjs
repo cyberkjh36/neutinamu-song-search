@@ -6,7 +6,7 @@ import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.20';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
 import { createBrowseUi } from './browse-ui.mjs?v=3.18';
-import { KaraokeConnection } from './relay-client.mjs?v=3.19';
+import { KaraokeConnection } from './relay-client.mjs?v=3.21';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
@@ -15,7 +15,7 @@ import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
 
 const $ = id => document.getElementById(id);
 const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);
-let currentLanguage = LANGUAGES[0], voice = null, serverName = '', busy = false, connectionError = null, connectionAttempt = 0;
+let currentLanguage = LANGUAGES[0], voice = null, busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
 let searchComplete = false;
 let playlistUi;
@@ -73,7 +73,7 @@ function message(key, error = false) {
   if (!error && key === 'queryHint') return BROWSE_TEXT[currentLanguage.code].hint;
   if (!error && key === 'sent') return BROWSE_TEXT[currentLanguage.code].hint;
   if (!error && key === 'sending') return BROWSE_TEXT[currentLanguage.code].searching;
-  if (key === 'connected') return currentLanguage.text[6] + ' · ' + serverName;
+  if (key === 'connected') return currentLanguage.text[6] + ' · ' + connection.serverName;
   return key in actionKeys ? currentLanguage.text[actionKeys[key]] : MESSAGES[currentLanguage.code][key];
 }
 function renderFeedback() {
@@ -145,8 +145,8 @@ const favoriteCache = createFavoritesCache({onChange:()=>remoteUi?.render()});
 let phoneSessionStorage;try{phoneSessionStorage=globalThis.sessionStorage;}catch{}
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
-  if (state === 'ready' && detail) serverName = detail;
   renderConnection();
+  if (feedbackState.key === 'connected') renderFeedback();
   if (state === 'error') showError(detail);
   if (state === 'ready' && detail) {feedback('connected');playlistUi?.resume();}
   if (state === 'reconnecting') feedback('connecting');
