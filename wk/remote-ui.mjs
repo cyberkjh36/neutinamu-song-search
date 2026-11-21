@@ -1,3 +1,4 @@
+import {windowWords} from './window-text.mjs?v=3.19';
 import {REMOTE_TEXT} from './ui-text.mjs?v=3.13';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';
@@ -19,6 +20,11 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   status.hidden=!status.textContent;
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
+  const windowText=windowWords(getLanguage());
+  $('remote-window').disabled=off||!connection.windowSupported;
+  $('remote-window-label').textContent=windowText.label;
+  $('window-availability').textContent=windowText.upgrade;
+  $('window-availability').hidden=!connected()||Boolean(connection.windowSupported);
   const tv=$('remote-tv');
   tv.disabled=off;
   const availability=$('tv-availability');
@@ -46,7 +52,7 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   for(const row of rows){row.button.disabled=off||connection.queueSupported===false||row.state==='added';row.badge.textContent=w[row.state];row.button.setAttribute('aria-label',row.title+' · '+w[row.state]);row.meta.textContent=row.count+' '+w.plays;row.button.classList.toggle('reserved',row.state==='added');}
   onRender();
  }
- for(const action of ['play','pause','next'])$('remote-'+action).addEventListener('click',async()=>{
+ for(const action of ['play','pause','next','window'])$('remote-'+action).addEventListener('click',async()=>{
   if($('remote-'+action).disabled||pending)return;
   const g=connection.generation;pending=true;controlStatus='working';if(!retries.has(action))retries.set(action,requestId());render();
   try{const result=await connection.control(action,retries.get(action),getLanguage());if(g!==connection.generation)return;retries.delete(action);controlStatus=result.ok?'done':'failed';}

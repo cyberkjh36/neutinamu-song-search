@@ -95,3 +95,7 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 #tv-menu-help{white-space:pre-line}
 
 #youtube-results{display:inline-block;padding:.5rem .85rem;border-radius:.55rem;font-weight:700}
+
+.window-toggle{width:100%;margin-top:.65rem;min-height:52px;display:flex;align-items:center;justify-content:center;gap:.65rem}
+.window-toggle svg{width:29px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#remote-window-label{white-space:pre-line}#window-availability{margin:.3rem 0;font-size:.88rem}

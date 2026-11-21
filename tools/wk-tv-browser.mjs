@@ -3,6 +3,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve, extname, sep} from 'node:path';
 import {chromium, webkit} from 'playwright';
+import {windowWords} from '../wk/window-text.mjs';
 import {LANGUAGES,REMOTE_TEXT} from '../wk/ui-text.mjs';
 
 const root=resolve('wk');
@@ -25,7 +26,7 @@ const api=createServer(async(req,res)=>{
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
     const b=JSON.parse(raw);assert.equal(b.room,room);requests.push(b);
-    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Test';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
+    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 Test';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
     if(b.op==='ping'&&ready)reply=expired?{ok:false,code:'disconnected'}:{ok:true,capabilities:{p2TvMenu:1}};
     if(b.op==='search')reply.id=b.id;
     if(b.op==='result'){
@@ -157,6 +158,15 @@ try{
         const booking=requests.filter(b=>b.op==='search'&&b.text.startsWith('WKQ2:')).at(-1);
         assert.equal(booking.language,lang.code);assert.ok(booking.text.endsWith(':abcdefghijk:'+title));
       }
+      const windowButton=page.locator('#remote-window');
+      assert.equal(await page.locator('#remote-window-label').textContent(),windowWords(lang.code).label);
+      for(let click=0;click<2;click++){
+        await windowButton.tap();
+        await page.waitForFunction(()=>!document.querySelector('#remote-window').disabled);
+      }
+      const toggles=requests.filter(r=>r.op==='search'&&r.text.startsWith('WKUI1:'));
+      assert.equal(toggles.length,2);assert.notEqual(toggles[0].text,toggles[1].text);
+      assert.ok(toggles.every(r=>r.language===lang.code));
       const firstKey=requests.find(b=>b.op==='join').key;
       await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
       assert.equal(await page.locator('#connect').isDisabled(),true);

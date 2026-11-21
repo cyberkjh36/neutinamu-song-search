@@ -2,10 +2,10 @@ import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PE
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.17';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.17';
+import {createRemoteUi} from './remote-ui.mjs?v=3.19';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
 import { createBrowseUi } from './browse-ui.mjs?v=3.18';
-import { KaraokeConnection } from './relay-client.mjs?v=3.18';
+import { KaraokeConnection } from './relay-client.mjs?v=3.19';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';

@@ -38,9 +38,10 @@ export class KaraokeConnection {
       this.quick=reply.timing?.fastControls===1 && interval===130;
       this.sendMs=this.quick?interval:Number.isInteger(interval)&&interval>=300&&interval<=1550?interval:1550;
       this.relayVideoSearch=reply.videoSearch===1;
+      this.windowSupported=typeof reply.server==='string' && reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 ');
       this.tvMenuSupported=reply.capabilities?.p2TvMenu===1;
       this.tvInputSupported=this.tvMenuSupported||reply.capabilities?.p2HdmiInput===1;
-      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.serverName=this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?/,''):reply.server;
+      this.queueSupported=typeof reply.server==='string'&&reply.server.startsWith(CAPABILITY);this.browseSupported=this.queueSupported&&reply.server.startsWith('WKQ1 WKS1 ');this.titleSupported=this.browseSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 ');this.controlSupported=this.titleSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 ');this.favoritesSupported=this.controlSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 ');this.playlistSupported=this.favoritesSupported&&reply.server.startsWith('WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 ');this.serverName=this.queueSupported?reply.server.replace(/^WKQ1 (?:WKS1 )?(?:WKT1 )?(?:WKC1 )?(?:WKV1 )?(?:WKL1 )?(?:M1 )?/,''):reply.server;
   }
   remember(){
     if(!this.accepted||!this.key||!this.room)return;
@@ -152,8 +153,9 @@ export class KaraokeConnection {
     }
   }
   async control(action,request,language){
-    if(!this.controlSupported)throw failure('upgrade');
-    const text=controlCommand(action,request),generation=this.generation;
+    if(!this.controlSupported || (action==='window'&&!this.windowSupported))throw failure('upgrade');
+    if(action==='window'&&!/^[a-f0-9]{32}$/.test(request||''))throw failure('invalid');
+    const text=action==='window'?'WKUI1:'+request:controlCommand(action,request),generation=this.generation;
     for(let attempt=0;attempt<3;attempt++){
       try{return await this.search(text,language);}
       catch(e){
@@ -259,7 +261,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.relayVideoSearch=false;this.nextSend=0;this.quick=false;this.set('idle');
+    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.windowSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.relayVideoSearch=false;this.nextSend=0;this.quick=false;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

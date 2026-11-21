@@ -141,3 +141,16 @@ test('a transient heartbeat failure recovers the same phone session',async()=>{
   assert.equal(new Set(calls.map(x=>x.key)).size,1);
  }finally{await c.disconnect();}
 });
+
+test('window icon negotiates PC support and preserves a toggle identity through retry',async()=>{
+ const c=new KaraokeConnection(null,()=>{});
+ c.acceptJoin({server:'WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 Old'});
+ await assert.rejects(c.control('window',nonce,'ko-KR'),e=>e.code==='upgrade');
+ c.acceptJoin({server:'WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 Room 5'});
+ assert.equal(c.windowSupported,true);assert.equal(c.serverName,'Room 5');c.state='ready';
+ const sent=[];c.wait=async()=>{};c.search=async text=>{sent.push(text);if(sent.length===1)throw Object.assign(Error('timeout'),{code:'networkTimeout'});return {ok:true};};
+ assert.equal((await c.control('window',nonce,'ko-KR')).ok,true);
+ assert.deepEqual(sent,['WKUI1:'+nonce,'WKUI1:'+nonce]);
+ await c.control('window','b'.repeat(32),'th-TH');assert.notEqual(sent[1],sent[2]);
+ await assert.rejects(c.control('window','wrong','ko-KR'),e=>e.code==='invalid');
+});
