@@ -73,7 +73,7 @@ export class WifiClient {
     this.changed();
   }
  }
- async send(command) {
+ async send(command,onPlaybackStarted) {
   if (this.busy) throw new Error(ERRORS.busy);
   if (!this.data?.online || !this.data.state?.connected) throw new Error(ERRORS.not_ready);
   this.busy = this.sending = true;
@@ -88,6 +88,7 @@ export class WifiClient {
     // The PC may already have acted. Only read the original request's result.
    }
    const playback = ['pause','next','play','queuePlay'].includes(command.action);
+   let reportedStart = false;
    let fastUntil = Date.now() + 3000;
    let pollDelay = playback ? 120 : command.action === 'reserve' ? 150 : 1000;
    while (Date.now() < deadline) {
@@ -96,7 +97,13 @@ export class WifiClient {
     if (Date.now() >= deadline) break;
     try {
      const result = await this.call('result',command.action==='pause'?{...request,readPlayback:true}:request);
-     if (['pending','claimed'].includes(result.status)) continue;
+     if (['pending','claimed'].includes(result.status)) {
+      if(!reportedStart && command.action==='next' && result.status==='claimed' && typeof onPlaybackStarted==='function'
+          && /^[1-9]\d{0,7}번 재생을 확인했습니다\.$/u.test(result.message) && this.room===request.room && this.data?.session===request.session){
+       reportedStart=true;onPlaybackStarted(result.message);
+      }
+      continue;
+     }
      const p=result.playback;
      if (command.action==='pause' && result.status==='confirmed' && p && typeof p.paused==='boolean'
          && typeof p.known==='boolean' && Number.isInteger(p.number) && p.number>=0 && p.number<=99999999

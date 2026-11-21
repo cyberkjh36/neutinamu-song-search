@@ -162,3 +162,12 @@ test('pause uses the confirmed room state from its own session and ignores a for
  assert.equal((await client.send({action:'pause'})).playbackApplied,false);
  assert(calls.filter(c=>c.op==='result').every(c=>c.readPlayback===true));
 });
+
+test('a reported track start is shown once while the original queue cleanup is still pending',async()=>{
+ const progress=[],message='10092번 재생을 확인했습니다.';
+ const results=[{status:'claimed',message:''},{status:'claimed',message},{status:'claimed',message},{status:'failed',message:'예약 순서가 바뀌었습니다.'}];
+ const {client,calls}=fixture(b=>b.op==='result'?{ok:true,...results.shift()}:success());
+ await client.join(room);
+ const final=await client.send({action:'next'},m=>{assert(client.busy);progress.push(m);});
+ assert.deepEqual(progress,[message]);assert.equal(final.status,'failed');assert.equal(calls.filter(c=>c.op==='command').length,1);
+});
