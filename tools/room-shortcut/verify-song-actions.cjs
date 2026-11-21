@@ -1,14 +1,17 @@
 const assert = require('node:assert/strict');
 module.exports=async function verifySongActions(page,base){
- const calls=[],queue=[693],session='f'.repeat(32);let playing=0;
+ const calls=[],queue=[693],session='f'.repeat(32);let playing=0;const results=new Map();
  async function route(r){
   const b=r.request().postDataJSON();let json={ok:true};
   if(b.op==='command'){
    const c=b.command;calls.push(c);
    if(c.action==='reserve')queue.push(c.number);
-   if(c.action==='next')playing=queue.shift()||0;
+   if(c.action==='next'){
+    if(queue.length)playing=queue.shift();
+    else results.set(b.id,{status:'failed',message:'다음 예약곡이 없습니다. 노래를 먼저 예약해 주세요.'});
+   }
    if(c.action==='queuePlay'){assert.equal(queue[c.index],c.number);playing=queue.splice(c.index,1)[0];}
-  }else if(b.op==='result')Object.assign(json,{status:'confirmed',message:'입력을 확인했습니다.'});
+  }else if(b.op==='result')Object.assign(json,results.get(b.id)||{status:'confirmed',message:'입력을 확인했습니다.'});
   else Object.assign(json,{name:'곡별 버튼 시험',online:true,session,events:[],state:{connected:true,busy:false,queue:{valid:true,songs:queue,version:'b'.repeat(64)},playback:{known:true,number:playing}}});
   await r.fulfill({json,headers:{'Access-Control-Allow-Origin':'*'}});
  }
@@ -28,6 +31,12 @@ module.exports=async function verifySongActions(page,base){
   await first.locator('.result-reserve').click();await ready();
   await second.locator('.result-play').click();await ready();
   assert.equal(playing,n2);assert.deepEqual(queue,[n1]);assert.deepEqual(calls.map(c=>c.action),['next','reserve','reserve','queuePlay']);
+  await page.waitForFunction(number=>document.querySelector('#nativeNowNumber')?.textContent===String(number),n2);
+  await page.locator('#nativeStart').click();await ready();assert.equal(playing,n1);
+  assert.deepEqual(queue,[]);assert.equal(calls.at(-1).action,'next');assert.equal(calls.length,5);
+  await page.locator('#nativeStart').click();await ready();assert.equal(playing,n1);
+  await page.waitForFunction(()=>document.getElementById('nativePlaybackStatus').textContent.includes('다음 예약곡이 없습니다'));
+  assert.equal(calls.length,6);
   await page.setViewportSize({width:320,height:700});
   assert(await second.evaluate(el=>{const b=el.getBoundingClientRect();return b.right<=innerWidth&&b.left>=0&&[...el.querySelectorAll('.result-actions button')].every(x=>x.offsetHeight>=44);}));
   console.log('Verified reserved start without search and independent per-song controls on a narrow phone.');

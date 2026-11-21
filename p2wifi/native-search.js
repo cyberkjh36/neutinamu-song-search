@@ -34,9 +34,13 @@ async function renderQueue(){
 
 }
 async function renderPlayback(){
- var revision=++playbackRevision,data=playbackData,card=$('nativeNowPlaying');if(!card)return;
+ var revision=++playbackRevision,data=playbackData,card=$('nativeNowPlaying');
+ var pause=$('nativeStop'),paused=connected&&data.paused===true;
+ if(pause)pause.innerHTML=paused?icon('play')+'다시 시작':icon('pause')+'일시정지';
+ var other=document.querySelector('[data-wifi="pause"]');if(other)other.textContent=paused?'다시 시작':'일시정지';
+ if(!card)return;
  card.classList.toggle('playing',connected&&data.known&&data.number>0);
- $('nativeNowLabel').textContent=connected&&data.known&&data.number>0?'▶ 현재 재생 중':'현재 재생';
+ $('nativeNowLabel').textContent=connected&&data.known&&data.number>0?(paused?'일시정지 중':'▶ 현재 재생 중'):'현재 재생';
  $('nativeNowNumber').textContent='';$('nativeNowArtist').textContent='';
  if(!connected){$('nativeNowTitle').textContent='먼저 P2에 연결해 주세요.';return;}
  if(!data.known){$('nativeNowTitle').textContent='재생 정보를 기다리는 중입니다.';return;}
@@ -71,12 +75,11 @@ document.addEventListener('DOMContentLoaded',()=>{
  pause.setAttribute('aria-describedby','nativePauseHint');
  pause.onclick=()=>playbackCommand('pause');
  var hint=document.createElement('p');
- hint.id='nativePauseHint';hint.className='hint';hint.textContent='일시정지를 다시 누르면 같은 곡이 이어집니다.';
+ hint.id='nativePauseHint';hint.className='hint';hint.textContent='일시정지한 곡은 ‘다시 시작’을 누르면 이어집니다.';
  var start=document.createElement('button');start.type='button';start.id='nativeStart';start.innerHTML=icon('play')+'실행';
  var playbackStatus=document.createElement('p');playbackStatus.id='nativePlaybackStatus';playbackStatus.className='hint';playbackStatus.setAttribute('role','status');
  start.onclick=()=>{
   if(busy||!connected)return;
-  if(playbackData.known&&playbackData.number>0){playbackStatus.textContent='현재 곡이 있습니다. 다음 예약곡으로 넘어가려면 ‘다음곡’을 누르세요.';return;}
   activeFeedback=playbackStatus;playbackCommand('next',playbackStatus);
  };
  var playback=document.createElement('div');playback.id='nativePlayback';var next=document.createElement('button');next.id='nativeNext';next.type='button';next.innerHTML=icon('next')+'다음곡';next.onclick=()=>playbackCommand('next');playback.append(start,pause,next,hint,playbackStatus);$('hero').after(playback);
@@ -114,7 +117,7 @@ window.onP2NativeState=function(state){busy=!!state.busy;reconnecting=!!state.re
  if(activeFeedback&&state.message){activeFeedback.textContent=friendly(state.message);if(!busy)activeFeedback=null;}
  var wasConnected=connected;connected=!!state.connected;if($('nativeState'))$('nativeState').textContent=state.label;if($('nativeStatus'))$('nativeStatus').textContent=friendly(state.message);if($('nativeAction'))$('nativeAction').textContent=friendly(state.message);if($('nativeQueueRoom'))$('nativeQueueRoom').textContent=state.label;if($('nativeQueueAction'))$('nativeQueueAction').textContent=friendly(state.message);if(!connected&&wasConnected){playbackKey='';playbackData={number:0,known:false};queueKey='';queueData={songs:[],valid:false,message:'연결이 끊겼습니다. P2에 다시 연결해 주세요.'};renderQueue();}if(wasConnected!==connected)renderPlayback();buttons();};
 window.onP2NativeQueue=function(data){var valid=!!data.valid&&Array.isArray(data.songs)&&data.songs.length<=255&&data.songs.every(n=>Number.isInteger(n)&&n>0&&n<=99999999);var next={version:valid?data.version:'',songs:valid?data.songs:[],message:String(data.message||''),valid:valid};var key=JSON.stringify(next);if(key===queueKey)return;queueKey=key;queueData=next;renderQueue();};
-window.onP2NativePlayback=function(data){var valid=connected&&!!data&&data.known===true&&Number.isInteger(data.number)&&data.number>=0&&data.number<=99999999;var next={number:valid?data.number:0,known:valid},key=JSON.stringify(next);if(key===playbackKey)return;playbackKey=key;playbackData=next;renderPlayback();};
+window.onP2NativePlayback=function(data){var valid=connected&&!!data&&data.known===true&&Number.isInteger(data.number)&&data.number>=0&&data.number<=99999999;var next={number:valid?data.number:0,known:valid,paused:connected&&data?.paused===true},key=JSON.stringify(next);if(key===playbackKey)return;playbackKey=key;playbackData=next;renderPlayback();};
 window.onP2NativeQueueOpen=function(){toggleQueue(true);};
 window.onP2NativeImport=async function(text,error){if(error){setMessage(error,true);return;}try{var n=await importCSVText(text);renderCount(await countSongs());setMessage(n.toLocaleString()+'곡을 불러왔습니다.');renderQueue();renderPlayback();}catch(e){setMessage('곡 데이터 파일을 읽지 못했습니다. CSV 형식을 확인해 주세요.',true);}};
 window.onP2NativeFile=function(message){setMessage(message);};
