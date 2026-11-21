@@ -117,3 +117,24 @@ test('exact search uses the matched row and aborts when the room changes after r
  await assert.rejects(playSearchResult(client,number),/연결/);
  assert.deepEqual(calls.map(c=>c.action),['reserve']);
 });
+
+test('reservation checks promptly, then backs off while awaiting the same confirmed job',async()=>{
+ const statuses=['pending','claimed','claimed','confirmed'], delays=[];
+ const {client,calls}=fixture(b=>b.op==='result'?{ok:true,status:statuses.shift()}:success());
+ await client.join(room);client.delay=async ms=>{delays.push(ms);};
+ assert.equal((await client.send({action:'reserve',number:123})).status,'confirmed');
+ assert.deepEqual(delays,[150,300,600,1000]);
+ const submissions=calls.filter(b=>b.op==='command'), reads=calls.filter(b=>b.op==='result');
+ assert.equal(submissions.length,1);
+ assert(reads.every(b=>b.id===submissions[0].id&&b.session===submissions[0].session));
+});
+test('reservation backs off on a read error without sending another command',async()=>{
+ const delays=[];let reads=0;
+ const {client,calls}=fixture(b=>{
+  if(b.op==='result')return ++reads===1?fail('slow'):{ok:true,status:'confirmed'};
+  return success();
+ });
+ await client.join(room);client.delay=async ms=>{delays.push(ms);};
+ assert.equal((await client.send({action:'reserve',number:123})).status,'confirmed');
+ assert.deepEqual(delays,[150,1000]);assert.equal(calls.filter(b=>b.op==='command').length,1);
+});

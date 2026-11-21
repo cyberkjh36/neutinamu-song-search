@@ -87,14 +87,17 @@ export class WifiClient {
     if (error.code) throw error;
     // The PC may already have acted. Only read the original request's result.
    }
+   let pollDelay = command.action === 'reserve' ? 150 : 1000;
    while (Date.now() < deadline) {
-    await this.delay(1000);
+    await this.delay(pollDelay);
+    pollDelay = Math.min(1000, pollDelay * 2);
     if (Date.now() >= deadline) break;
     try {
      const result = await this.call('result',request);
      if (!['pending','claimed'].includes(result.status)) return {...result,requestId:request.id};
     } catch (error) {
      if (['permission','disconnected','expired'].includes(error.code)) break;
+     pollDelay = 1000;
     }
    }
    return {status:'unknown',message:'결과를 확인하지 못했습니다.'};
