@@ -1,8 +1,9 @@
 import {BROWSE_TEXT, LANGUAGES, MESSAGES, CHROME_TEXT, NEXT_SEARCH, MIC_TEXT, PERMISSION_TEXT, VOICE_TEXT, SAFARI_TEXT} from './ui-text.mjs?v=3.8';
+import {windowWords} from './window-text.mjs?v=3.20';
 import {createPlaylistUi} from './playlist-ui.mjs?v=3.17';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
-import {createRemoteUi} from './remote-ui.mjs?v=3.19';
+import {createRemoteUi} from './remote-ui.mjs?v=3.20';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
 import { createBrowseUi } from './browse-ui.mjs?v=3.18';
 import { KaraokeConnection } from './relay-client.mjs?v=3.19';
@@ -198,7 +199,7 @@ function selectLanguage(code) {
   $('search-title').textContent = t[0].replace('🎙 ', ''); $('voice-text').textContent = t[0].replace('🎙 ', '');
   $('query-label').textContent = t[3]; $('query').placeholder = t[3]; $('send').textContent = searchComplete ? NEXT_SEARCH[currentLanguage.code] : BROWSE_TEXT[currentLanguage.code].search; $('listening-title').textContent = t[5];
   const browseWords=BROWSE_TEXT[currentLanguage.code];$('advanced-title').textContent=browseWords.advanced;$('legacy-search').textContent=browseWords.legacy;$('shared-help').textContent=browseWords.shared;
-  $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
+  $('help-list').replaceChildren(...[...words.steps.slice(0,3),browseWords.search,browseWords.hint,windowWords(currentLanguage.code).idle].map(step => { const li=document.createElement('li'); li.textContent=step; return li; }));
   $('compatibility').hidden = supported;
   $('compatibility').textContent = supported ? '' : message(secure ? 'unsupported' : 'insecure', true);
   renderConnection(); renderFeedback(); renderChromeHandoff(); renderSafariHandoff(); renderVoice(); queueUi?.render(); browseUi?.render(); remoteUi?.render(); playlistUi?.render(); phoneKeyboard?.refresh();

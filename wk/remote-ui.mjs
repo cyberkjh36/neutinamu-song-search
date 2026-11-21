@@ -1,4 +1,4 @@
-import {windowWords} from './window-text.mjs?v=3.19';
+import {windowWords} from './window-text.mjs?v=3.20';
 import {REMOTE_TEXT} from './ui-text.mjs?v=3.13';
 import {requestId} from './queue-protocol.mjs?v=3.1';
 import {readCatalog} from './browse-protocol.mjs?v=3.0';

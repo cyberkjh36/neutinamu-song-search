@@ -158,6 +158,8 @@ try{
         const booking=requests.filter(b=>b.op==='search'&&b.text.startsWith('WKQ2:')).at(-1);
         assert.equal(booking.language,lang.code);assert.ok(booking.text.endsWith(':abcdefghijk:'+title));
       }
+      assert.equal(await page.locator('#help-list li').last().textContent(),windowWords(lang.code).idle);
+      assert.match(windowWords(lang.code).idle.split('\n')[0],/25/);
       const windowButton=page.locator('#remote-window');
       assert.equal(await page.locator('#remote-window-label').textContent(),windowWords(lang.code).label);
       for(let click=0;click<2;click++){
