@@ -8,10 +8,17 @@ import {LANGUAGES,REMOTE_TEXT} from '../wk/ui-text.mjs';
 const root=resolve('wk');
 const favorites=JSON.parse(await readFile(resolve('data/favorites/all.json'),'utf8'));
 const productionRelay='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/relay';
+const githubFavorites='https://raw.githubusercontent.com/cyberkjh36/neutinamu-song-search/main/data/favorites/all.json';
+let favoritesAvailable=true;
+function sendFavorites(res) {
+  res.writeHead(favoritesAvailable?200:503,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'})
+    .end(favoritesAvailable?JSON.stringify(favorites):'');
+}
 let room, actions, ready, latest, expired, requests;
 const api=createServer(async(req,res)=>{
   const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, GET, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Content-Type':'application/json'};
   if(req.method==='OPTIONS'){res.writeHead(204,headers).end();return;}
+  if(req.url==='/data/favorites/all.json') {sendFavorites(res);return;}
   let reply={ok:true};
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
@@ -32,7 +39,7 @@ await new Promise(r=>api.listen(0,'127.0.0.1',r));
 const testRelay='http://127.0.0.1:'+api.address().port+'/api/relay';
 const server=createServer(async(req,res)=>{
   if (new URL(req.url,'http://localhost').pathname==='/data/favorites/all.json') {
-    res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify(favorites));
+    sendFavorites(res);
     return;
   }
   const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html'));
@@ -46,6 +53,10 @@ const server=createServer(async(req,res)=>{
       const originalOrigin=new URL(productionRelay).origin;
       assert.ok(body.includes("connect-src 'self' "+originalOrigin));
       body=body.toString().replace("connect-src 'self' "+originalOrigin,"connect-src 'self' "+new URL(testRelay).origin);
+    }
+    const testFavorites=new URL('/data/favorites/all.json',testRelay).href;
+    if(path.endsWith('/index.html')||path.endsWith('/favorites-cache.mjs')){
+      assert.ok(body.includes(githubFavorites));body=body.toString().replace(githubFavorites,testFavorites);
     }
     if(path.endsWith('/relay-client.mjs')){
       assert.ok(body.includes(productionRelay));body=body.toString().replace(productionRelay,testRelay);
@@ -63,8 +74,6 @@ try{
     room='01234567';actions=[];ready=false;latest=null;expired=false;requests=[];
     const errors=[],httpErrors=[];
     const ctx=await browser.newContext({locale:lang.code,hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
-    await ctx.route('https://raw.githubusercontent.com/**/data/favorites/all.json', route=>
-      route.fulfill({json:favorites,headers:{'Access-Control-Allow-Origin':'*'}}));
     const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
     page.on('requestfailed',req=>httpErrors.push([req.method(),new URL(req.url()).pathname,req.failure()?.errorText]));
     page.on('console',msg=>{if(msg.type()==='error')httpErrors.push(msg.text().slice(0,180));});
@@ -77,9 +86,10 @@ try{
         assert.ok((await saved.textContent()).includes(String(favorites.rows.length)));
         assert.equal(requests.length,0,'a first visit saves all countries without joining a room');
         const first=favorites.rows.find(row=>row.country==='ko');
-        const unavailable=route=>route.fulfill({status:503,headers:{'Access-Control-Allow-Origin':'*'},body:''});
-        await ctx.route('**/all.json',unavailable);
+        favoritesAvailable=false;
+        const failedMirror=page.waitForResponse(r=>r.url()===url+'data/favorites/all.json' && r.status()===503);
         await page.reload();
+        await failedMirror;
         await saved.filter({hasText:'휴대폰에 저장된 애창곡'}).waitFor();
         await page.locator('#favorites-open').tap();
         await page.locator('#favorites-query').fill(first.title.slice(0,20));
@@ -89,7 +99,7 @@ try{
         assert.equal(await page.locator('#favorites-list button').first().isDisabled(),true);
         assert.equal(requests.length,0,'a returning unpaired phone can browse its stored list');
         await page.locator('#favorites-open').tap();
-        await ctx.unroute('**/all.json',unavailable);
+        favoritesAvailable=true;
       }
       const zero={'th-TH':0xe50,'ne-NP':0x966,'lo-LA':0xed0,'my-MM':0x1040,'mn-MN':0x1810,'zh-CN':0xff10}[lang.code];
       await page.locator('#code').fill(zero?room.replace(/\d/g,n=>String.fromCharCode(zero+Number(n))):room);

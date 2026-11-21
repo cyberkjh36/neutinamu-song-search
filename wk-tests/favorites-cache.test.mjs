@@ -98,3 +98,21 @@ test('a failed primary uses the published mirror without saving a partial respon
   assert.equal(cache.saved,true);
   assert.deepEqual(cache.snapshot.rows,[]);
 });
+
+test('leaving the page cancels its download without starting a mirror request and a return can retry', async () => {
+  globalThis.indexedDB = new IDBFactory();
+  const calls = [];
+  const latest = snapshot(12,[song('ko',1,'돌아와서 저장')]);
+  const cache = createFavoritesCache({fetchList:async (url,{signal}) => {
+    calls.push(url);
+    if (calls.length > 1) return Response.json(latest);
+    return new Promise((resolve,reject) => signal.addEventListener('abort',() => reject(Error('left page'))));
+  }});
+  const leaving = cache.refresh();
+  cache.cancelRefresh();
+  await leaving;
+  assert.equal(calls.length,1);
+  await cache.refresh();
+  assert.deepEqual(calls,[calls[0],calls[0]]);
+  assert.equal(cache.saved,true);
+});

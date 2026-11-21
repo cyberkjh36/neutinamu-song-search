@@ -66,7 +66,7 @@ const byRank = (a,b) => b.count-a.count || (a.lastPlayed < b.lastPlayed ? 1 : a.
   (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 export function createFavoritesCache({onChange = () => {}, fetchList = (...args) => fetch(...args)} = {}) {
-  let current, refreshing, saved = false;
+  let current, refreshing, visit, saved = false;
   function accept(snapshot, persisted) {
     if (!snapshot || (current && revision(snapshot) < revision(current))) return;
     if (current && revision(snapshot) === revision(current) && (saved || !persisted)) return;
@@ -79,10 +79,13 @@ export function createFavoritesCache({onChange = () => {}, fetchList = (...args)
     try { accept(await storedSnapshot(), true); } catch { /* browsing the PC still works */ }
   }
 
-  async function download() {
+  async function download(signal) {
     for (const source of sources) {
+      if (signal.aborted) return;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10000);
+      const abort = () => controller.abort();
+      signal.addEventListener('abort', abort, {once:true});
+      const timer = setTimeout(abort, 10000);
       try {
         const response = await fetchList(source, {cache:'no-cache', credentials:'omit', signal:controller.signal});
         if (!response.ok) continue;
@@ -91,14 +94,22 @@ export function createFavoritesCache({onChange = () => {}, fetchList = (...args)
         catch { accept(snapshot, false); }
         return;
       } catch { /* try the other public copy, keeping the last complete list */ }
-      finally { clearTimeout(timer); }
+      finally { clearTimeout(timer); signal.removeEventListener('abort', abort); }
     }
   }
 
   function refresh() {
-    const task = download();
+    if (typeof AbortController !== 'function') return Promise.resolve();
+    if (!visit) visit = new AbortController();
+    const task = download(visit.signal);
     refreshing = task;
     return task.finally(() => { if (refreshing === task) refreshing = undefined; });
+  }
+
+  function cancelRefresh() {
+    visit?.abort();
+    visit = undefined;
+    refreshing = undefined;
   }
 
   function page(language, query, requestedPage) {
@@ -114,5 +125,5 @@ export function createFavoritesCache({onChange = () => {}, fetchList = (...args)
     return {catalog:{v:1, items, error:null}, page, more:(page+1)*20 < matches.length};
   }
 
-  return {restore, refresh, page, get refreshing(){return refreshing;}, get snapshot(){return current;}, get saved(){return saved;}};
+  return {restore, refresh, cancelRefresh, page, get refreshing(){return refreshing;}, get snapshot(){return current;}, get saved(){return saved;}};
 }

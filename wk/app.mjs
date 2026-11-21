@@ -3,7 +3,7 @@ import {createPlaylistUi} from './playlist-ui.mjs?v=3.15';
 import {createNativeKeyboard} from './keyboard/native-ui.mjs?v=3.8';
 import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.13';
-import {createFavoritesCache} from './favorites-cache.mjs?v=3.14';
+import {createFavoritesCache} from './favorites-cache.mjs?v=3.16';
 import { createBrowseUi } from './browse-ui.mjs?v=3.8';
 import { KaraokeConnection } from './relay-client.mjs?v=3.15';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
@@ -373,6 +373,7 @@ function refreshFavorites() {
 void favoriteCache.restore();
 refreshFavorites();
 window.addEventListener('online', refreshFavorites);
+window.addEventListener('pagehide', () => favoriteCache.cancelRefresh());
 window.addEventListener('pageshow', event => { if (event.persisted) refreshFavorites(); });
 bindPhoneLifecycle({connection,onSuspend:closeVoice});
 if (supported && connection.restore(handoff.room)) $('code').value = connection.room;
