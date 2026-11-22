@@ -10,12 +10,12 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://i.ytimg.com; connect-src 'self' https://world-karaoke-connect.almondjoy11.chatgpt.site https://raw.githubusercontent.com/cyberkjh36/neutinamu-song-search/main/data/favorites/all.json; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>세계가라오케 · Android · iPhone 음성검색</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=3.19">
+  <link rel="stylesheet" href="style.css?v=3.22">
   <link rel="stylesheet" href="keyboard/keyboard.css?v=3.4.1">
 </head>
 <body>
 <main>
-  <header><div class="brand-row"><div class="brand-names"><span class="brand">WORLD KARAOKE</span><span class="brand-separator" aria-hidden="true">·</span><span class="venue-name" lang="ko">느티나무 노래방</span></div><span class="version">WEB 3.21</span></div><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
+  <header><div class="brand-row"><div class="brand-names"><span class="brand">WORLD KARAOKE</span><span class="brand-separator" aria-hidden="true">·</span><span class="venue-name" lang="ko">느티나무 노래방</span></div><span class="version">WEB 3.22</span></div><h1 id="title">말해서 노래 찾기</h1><p id="subtitle">앱 설치 없이 · Android · iPhone</p></header>
   <noscript>브라우저에서 JavaScript를 허용해 주세요. Enable JavaScript in your browser.</noscript>
   <div id="compatibility" class="notice" role="alert" hidden></div>
   <section id="chrome-handoff" class="card chrome-card" aria-labelledby="chrome-title" hidden>
@@ -59,6 +59,14 @@
       <button id="remote-pause" type="button" disabled><span class="remote-icon" aria-hidden="true">Ⅱ</span><span id="remote-pause-label">일시정지</span></button>
       <button id="remote-next" type="button" disabled><span class="remote-icon" aria-hidden="true">▶▶</span><span id="remote-next-label">다음곡</span></button>
       <button id="remote-tv" type="button" disabled aria-describedby="tv-availability" aria-controls="tv-menu" aria-expanded="false"><span class="remote-icon" aria-hidden="true">📺</span><span id="remote-tv-label">TV연결</span></button>
+    </div>
+    <div class="youtube-volume" role="group" aria-labelledby="volume-title">
+      <strong id="volume-title">유튜브 음량</strong>
+      <div class="volume-buttons">
+        <button id="remote-volumeDown" type="button" class="secondary" aria-label="유튜브 음량 줄이기 10%" disabled>−10%</button>
+        <button id="remote-volumeUp" type="button" class="secondary" aria-label="유튜브 음량 높이기 10%" disabled>+10%</button>
+      </div>
+      <p id="volume-availability" hidden></p>
     </div>
     <button id="remote-window" class="secondary window-toggle" type="button" disabled aria-describedby="window-availability"><svg viewBox="0 0 28 24" aria-hidden="true"><rect x="2" y="2" width="24" height="17" rx="2"/><path d="M9 22h10m-5-3v3m-9-8 5-5m-5 1v4h4m13-9-5 5m1-5h4v4"/></svg><span id="remote-window-label">PC 화면 접기 / 펼치기</span></button>
     <p id="window-availability" hidden></p>
@@ -173,7 +181,7 @@
   </div>
   <div class="country-keyboard-footer"><button id="country-keyboard-native" type="button">휴대폰 키보드</button><button id="country-keyboard-search" type="button" disabled>검색</button></div>
 </section>
-<script type="module" src="app.mjs?v=3.21"></script>
+<script type="module" src="app.mjs?v=3.22"></script>
 </body>
 </html>
 

@@ -154,3 +154,24 @@ test('window icon negotiates PC support and preserves a toggle identity through 
  await c.control('window','b'.repeat(32),'th-TH');assert.notEqual(sent[1],sent[2]);
  await assert.rejects(c.control('window','wrong','ko-KR'),e=>e.code==='invalid');
 });
+
+test('YouTube volume is sent only to an updated paired PC and respects PC acknowledgements',async()=>{
+ const supported='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 YV1 nulti-05',old=supported.replace('YV1 ','');
+ let server=old,ack=true;
+ const sent=[];
+ const c=new KaraokeConnection(null,()=>{},{fetch:async(_,opts)=>{
+  const b=JSON.parse(opts.body);sent.push(b);
+  if(b.op==='join')return Response.json({ok:true,server,timing:{sendIntervalMs:130,fastControls:1}});
+  return Response.json({ok:true,pending:false,result:ack,...(b.op==='search'?{id:b.id,ack:{pending:false,result:ack}}:{})});
+ }});
+ try{
+  await c.connect('23456789','Phone');await assert.rejects(c.control('volumeUp',nonce,'ko-KR'),e=>e.code==='upgrade');
+  assert.equal(sent.filter(b=>b.op==='search').length,0);
+  await c.disconnect();server=supported;await c.connect('23456789','Phone');
+  assert.equal(c.serverName,'nulti-05');assert.equal(c.windowSupported,true);
+  assert.equal((await c.control('volumeDown',nonce,'ko-KR')).ok,true);
+  ack=false;assert.equal((await c.control('volumeUp','a'.repeat(32),'th-TH')).ok,false);
+  assert.deepEqual(sent.filter(b=>b.op==='search').map(b=>b.text),['WKC1:'+nonce+':volumeDown','WKC1:'+'a'.repeat(32)+':volumeUp']);
+ }finally{await c.disconnect();}
+ assert.equal(c.youtubeVolumeSupported,false);
+});

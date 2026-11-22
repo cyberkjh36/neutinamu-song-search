@@ -26,7 +26,7 @@ const api=createServer(async(req,res)=>{
   if(req.method==='POST'&&req.url==='/api/relay'){
     let raw='';for await(const chunk of req)raw+=chunk;
     const b=JSON.parse(raw);assert.equal(b.room,room);requests.push(b);
-    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 NULTI-05';reply.pcName='NULTI-05';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
+    if(b.op==='join'){reply.server='WKQ1 WKS1 WKT1 WKC1 WKV1 WKL1 M1 YV1 NULTI-05';reply.pcName='NULTI-05';reply.videoSearch=1;reply.timing={sendIntervalMs:130,fastControls:1};ready=true;expired=false;}
     if(b.op==='ping'&&ready)reply=expired?{ok:false,code:'disconnected'}:{ok:true,capabilities:{p2TvMenu:1}};
     if(b.op==='search')reply.id=b.id;
     if(b.op==='result'){
@@ -160,6 +160,13 @@ try{
       }
       assert.equal(await page.locator('#help-list li').last().textContent(),windowWords(lang.code).idle);
       assert.match(windowWords(lang.code).idle.split('\n')[0],/25/);
+      for(const action of ['volumeDown','volumeUp']){
+        const button=page.locator('#remote-'+action);
+        assert.match(await button.getAttribute('aria-label'),/10%/);
+        await button.tap();
+        await page.waitForFunction(()=>!document.getElementById('remote-volumeUp').disabled);
+        assert(requests.some(b=>b.op==='search'&&b.language===lang.code&&new RegExp('^WKC1:[a-f0-9]{32}:'+action+'$').test(b.text)));
+      }
       const windowButton=page.locator('#remote-window');
       assert.equal(await page.locator('#remote-window-label').textContent(),windowWords(lang.code).label);
       for(let click=0;click<2;click++){

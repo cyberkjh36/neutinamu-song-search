@@ -2,7 +2,7 @@ import {LANGUAGES} from './labels.mjs?v=2.1';
 const invalid=()=>Object.assign(new Error('invalid'),{code:'invalid'});
 const validRequest=value=>typeof value==='string'&&/^[a-f0-9]{32}$/.test(value);
 export function controlCommand(action,request){
- if(!['play','pause','next'].includes(action)||!validRequest(request))throw invalid();
+ if(!['play','pause','next','volumeUp','volumeDown'].includes(action)||!validRequest(request))throw invalid();
  return `WKC1:${request}:${action}`;
 }
 export function favoritesCommand(query,page,request,language){

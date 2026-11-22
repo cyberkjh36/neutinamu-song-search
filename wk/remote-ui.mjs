@@ -1,3 +1,4 @@
+import {volumeWords} from './volume-text.mjs?v=3.22';
 import {windowWords} from './window-text.mjs?v=3.20';
 import {REMOTE_TEXT} from './ui-text.mjs?v=3.13';
 import {requestId} from './queue-protocol.mjs?v=3.1';
@@ -20,6 +21,15 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   status.hidden=!status.textContent;
   $('remote-title').textContent=w.title;$('remote-help').textContent=w.help;
   for(const action of ['play','pause','next']){$('remote-'+action+'-label').textContent=w[action];$('remote-'+action).disabled=off||!connection.controlSupported;}
+  const [volumeTitle,lower,raise,upgradeVolume,noVideo]=volumeWords(getLanguage());
+  $('volume-title').textContent=volumeTitle;
+  for(const [action,label] of [['volumeDown',lower],['volumeUp',raise]]){
+   const button=$('remote-'+action);
+   button.disabled=off||!connection.youtubeVolumeSupported;
+   button.setAttribute('aria-label',volumeTitle+' · '+label+' 10%');
+  }
+  $('volume-availability').textContent=upgradeVolume;
+  $('volume-availability').hidden=!connected()||Boolean(connection.youtubeVolumeSupported);
   const windowText=windowWords(getLanguage());
   $('remote-window').disabled=off||!connection.windowSupported;
   $('remote-window-label').textContent=windowText.label;
@@ -38,8 +48,8 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   $('tv-select').textContent=w.tvSelect;
   for(const id of ['tv-left','tv-right','tv-select'])$(id).disabled=!menuOpen||off;
   tv.setAttribute('aria-expanded',String(menuOpen));
-  $('remote-feedback').textContent=!connected()?w.connect:controlStatus?w[controlStatus]:!connection.controlSupported?w.upgrade:'';
-  $('remote-feedback').classList.toggle('error',['failed','uncertain','tvUnknown'].includes(controlStatus));
+  $('remote-feedback').textContent=!connected()?w.connect:controlStatus==='volumeFailed'?noVideo:controlStatus?w[controlStatus]:!connection.controlSupported?w.upgrade:'';
+  $('remote-feedback').classList.toggle('error',['failed','uncertain','tvUnknown','volumeFailed'].includes(controlStatus));
   $('favorites-open').textContent=w.favorites;$('favorites-open').disabled=browseOff;
   $('favorites-open').setAttribute('aria-expanded',String(!$('favorites-panel').hidden));
   $('favorites-hint').textContent=!connected()?w.connect:!connection.favoritesSupported?w.upgrade:w.hint;
@@ -52,10 +62,10 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   for(const row of rows){row.button.disabled=off||connection.queueSupported===false||row.state==='added';row.badge.textContent=w[row.state];row.button.setAttribute('aria-label',row.title+' · '+w[row.state]);row.meta.textContent=row.count+' '+w.plays;row.button.classList.toggle('reserved',row.state==='added');}
   onRender();
  }
- for(const action of ['play','pause','next','window'])$('remote-'+action).addEventListener('click',async()=>{
+ for(const action of ['play','pause','next','window','volumeDown','volumeUp'])$('remote-'+action).addEventListener('click',async()=>{
   if($('remote-'+action).disabled||pending)return;
   const g=connection.generation;pending=true;controlStatus='working';if(!retries.has(action))retries.set(action,requestId());render();
-  try{const result=await connection.control(action,retries.get(action),getLanguage());if(g!==connection.generation)return;retries.delete(action);controlStatus=result.ok?'done':'failed';}
+  try{const result=await connection.control(action,retries.get(action),getLanguage());if(g!==connection.generation)return;retries.delete(action);controlStatus=result.ok?'done':action.startsWith('volume')?'volumeFailed':'failed';}
   catch(e){if(g===connection.generation)controlStatus=e.code==='upgrade'?'upgrade':'uncertain';}
   finally{if(g===connection.generation)pending=false;render();}
  });

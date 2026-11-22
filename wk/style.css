@@ -99,3 +99,9 @@ button,p,label,h1,h2,summary,.help li,.connection-line,.video-action,.playlist-s
 .window-toggle{width:100%;margin-top:.65rem;min-height:52px;display:flex;align-items:center;justify-content:center;gap:.65rem}
 .window-toggle svg{width:29px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #remote-window-label{white-space:pre-line}#window-availability{margin:.3rem 0;font-size:.88rem}
+
+.youtube-volume{margin-top:.8rem;padding:.75rem;border:1px solid #506b73;border-radius:12px}
+.youtube-volume strong{display:block;margin-bottom:.5rem;overflow-wrap:anywhere}
+.volume-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.volume-buttons button{min-height:48px;font-size:1.15rem;font-weight:700}
+.youtube-volume p{margin:.5rem 0 0}
