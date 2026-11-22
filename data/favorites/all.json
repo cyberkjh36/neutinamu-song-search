@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-21T14:39:44.864Z",
+  "updatedAt": "2026-11-22T14:58:35.637Z",
   "countries": [
     "ko",
     "th",
@@ -22,8 +22,16 @@
       "id": "mYtLhe3yGHY",
       "title": "미련이 춤을 춰 / Dancing in Regret / 未練が踊る Emotional Korean Ballad · Sad Love Story",
       "url": "https://www.youtube.com/watch?v=mYtLhe3yGHY",
-      "count": 22,
-      "lastPlayed": "2026-11-20T07:44:28.5682839Z"
+      "count": 24,
+      "lastPlayed": "2026-11-22T14:55:20.0534259Z"
+    },
+    {
+      "country": "ko",
+      "id": "rZ4ztl-HcMM",
+      "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
+      "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
+      "count": 16,
+      "lastPlayed": "2026-11-22T13:54:25.7756494Z"
     },
     {
       "country": "ko",
@@ -35,19 +43,19 @@
     },
     {
       "country": "ko",
-      "id": "rZ4ztl-HcMM",
-      "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
-      "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 15,
-      "lastPlayed": "2026-11-21T14:19:44.0495647Z"
-    },
-    {
-      "country": "ko",
       "id": "biXhgq7zrSg",
       "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
       "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
-      "count": 11,
-      "lastPlayed": "2026-11-19T04:41:01.8631924Z"
+      "count": 12,
+      "lastPlayed": "2026-11-22T13:58:30.4587793Z"
+    },
+    {
+      "country": "ko",
+      "id": "fwucDkRlb3M",
+      "title": "조덕배 - 나의 옛날 이야기",
+      "url": "https://www.youtube.com/watch?v=fwucDkRlb3M",
+      "count": 10,
+      "lastPlayed": "2026-11-22T14:35:36.5110952Z"
     },
     {
       "country": "ko",
@@ -59,14 +67,6 @@
     },
     {
       "country": "ko",
-      "id": "fwucDkRlb3M",
-      "title": "조덕배 - 나의 옛날 이야기",
-      "url": "https://www.youtube.com/watch?v=fwucDkRlb3M",
-      "count": 9,
-      "lastPlayed": "2026-11-04T06:30:04.9358960Z"
-    },
-    {
-      "country": "ko",
       "id": "uqfF_qv477k",
       "title": "BTS (방탄소년단) 'Body to Body' (Color Coded Lyrics)",
       "url": "https://www.youtube.com/watch?v=uqfF_qv477k",
@@ -75,11 +75,35 @@
     },
     {
       "country": "ko",
+      "id": "CKrybgx_l3E",
+      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
+      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
+      "count": 7,
+      "lastPlayed": "2026-11-22T14:39:48.5918177Z"
+    },
+    {
+      "country": "ko",
       "id": "tkgXCFQRyO8",
       "title": "전유진(チョンユジン) - 모란동백(牡丹椿)｜한일톱텐쇼 45회",
       "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
       "count": 7,
       "lastPlayed": "2026-11-13T09:59:51.3174674Z"
+    },
+    {
+      "country": "ko",
+      "id": "5oFnMWvEPsY",
+      "title": "김범수 지나간다",
+      "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
+      "count": 6,
+      "lastPlayed": "2026-11-22T14:47:57.3505551Z"
+    },
+    {
+      "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 6,
+      "lastPlayed": "2026-11-22T14:43:14.2667900Z"
     },
     {
       "country": "ko",
@@ -99,14 +123,6 @@
     },
     {
       "country": "ko",
-      "id": "CKrybgx_l3E",
-      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
-      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
-      "count": 6,
-      "lastPlayed": "2026-11-13T10:03:29.1537727Z"
-    },
-    {
-      "country": "ko",
       "id": "fIZ4Yy1QBw0",
       "title": "세월이 지나도 절대 잊지 못할 인연... 남진 - 상사화(락발라드.ver)",
       "url": "https://www.youtube.com/watch?v=fIZ4Yy1QBw0",
@@ -115,11 +131,11 @@
     },
     {
       "country": "ko",
-      "id": "j7IuU3wJ2pk",
-      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
-      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "id": "rsnm_qSPivg",
+      "title": "[ROCK] 김수철 - 별리",
+      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
       "count": 5,
-      "lastPlayed": "2026-11-21T13:10:15.8580573Z"
+      "lastPlayed": "2026-11-22T14:48:01.6461819Z"
     },
     {
       "country": "ko",
@@ -131,11 +147,11 @@
     },
     {
       "country": "ko",
-      "id": "5oFnMWvEPsY",
-      "title": "김범수 지나간다",
-      "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
-      "count": 5,
-      "lastPlayed": "2026-11-04T06:46:19.6948191Z"
+      "id": "q_gwN9xgw-0",
+      "title": "[죽기 전에 한번은 들어야 할 노래] 가을 우체국 앞에서 - 윤도현 (1994, 가사포함) In front of the post office in autumn",
+      "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
+      "count": 4,
+      "lastPlayed": "2026-11-22T14:51:06.5885349Z"
     },
     {
       "country": "ko",
@@ -144,14 +160,6 @@
       "url": "https://www.youtube.com/watch?v=sp3gSwWEsbI",
       "count": 4,
       "lastPlayed": "2026-11-21T14:23:51.1327507Z"
-    },
-    {
-      "country": "ko",
-      "id": "rsnm_qSPivg",
-      "title": "[ROCK] 김수철 - 별리",
-      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
-      "count": 4,
-      "lastPlayed": "2026-11-19T14:58:04.0183638Z"
     },
     {
       "country": "ko",
@@ -216,14 +224,6 @@
       "url": "https://www.youtube.com/watch?v=aJZlG3F0tVM",
       "count": 3,
       "lastPlayed": "2026-11-18T13:29:30.6884144Z"
-    },
-    {
-      "country": "ko",
-      "id": "q_gwN9xgw-0",
-      "title": "[죽기 전에 한번은 들어야 할 노래] 가을 우체국 앞에서 - 윤도현 (1994, 가사포함) In front of the post office in autumn",
-      "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
-      "count": 3,
-      "lastPlayed": "2026-11-04T07:05:36.8264880Z"
     },
     {
       "country": "ko",
@@ -312,6 +312,30 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "S1ZmJFZH2NE",
+      "title": "아즈마아키(東亜樹) - 상사화(相似化)｜한일톱텐쇼 9회",
+      "url": "https://www.youtube.com/watch?v=S1ZmJFZH2NE",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:58:18.0197523Z"
+    },
+    {
+      "country": "ko",
+      "id": "ahGVKXHRI-0",
+      "title": "임영웅 사랑의콜센타 [상사화] (ENG, JPN, CHI, VET)",
+      "url": "https://www.youtube.com/watch?v=ahGVKXHRI-0",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:57:49.4867868Z"
+    },
+    {
+      "country": "ko",
+      "id": "hCUC7vMvoxk",
+      "title": "[#불후의명곡] 싸이(PSY) - 젠틀맨(GENTLEMAN) + 강남스타일 | KBS 231125 방송",
+      "url": "https://www.youtube.com/watch?v=hCUC7vMvoxk",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:26:52.9238799Z"
     },
     {
       "country": "ko",
@@ -963,6 +987,14 @@
     },
     {
       "country": "th",
+      "id": "jhLgfWfdwq4",
+      "title": "รักสลายดอกฝ้ายบาน - จินตหรา พูนลาภ【OFFICIAL AUDIO】",
+      "url": "https://www.youtube.com/watch?v=jhLgfWfdwq4",
+      "count": 3,
+      "lastPlayed": "2026-11-22T11:29:15.1118118Z"
+    },
+    {
+      "country": "th",
       "id": "FLSqdHgLw18",
       "title": "สาวแหลบ้านนา - สะหง่า ft. เชียงเหมอ(เนื้อเพลง)",
       "url": "https://www.youtube.com/watch?v=FLSqdHgLw18",
@@ -1251,6 +1283,14 @@
     },
     {
       "country": "th",
+      "id": "eW0JA1fTjNg",
+      "title": "เคยรักฉันบ้างไหม - LOSO【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=eW0JA1fTjNg",
+      "count": 2,
+      "lastPlayed": "2026-11-22T10:13:27.0535112Z"
+    },
+    {
+      "country": "th",
       "id": "6pgmmmUR8r4",
       "title": "หลงฮักเมียเขา คาราโอเกะ   โจ ศักรินทร์",
       "url": "https://www.youtube.com/watch?v=6pgmmmUR8r4",
@@ -1336,14 +1376,6 @@
       "url": "https://www.youtube.com/watch?v=WJNn3oqGE7k",
       "count": 2,
       "lastPlayed": "2026-11-19T12:49:04.0374572Z"
-    },
-    {
-      "country": "th",
-      "id": "jhLgfWfdwq4",
-      "title": "รักสลายดอกฝ้ายบาน - จินตหรา พูนลาภ【OFFICIAL AUDIO】",
-      "url": "https://www.youtube.com/watch?v=jhLgfWfdwq4",
-      "count": 2,
-      "lastPlayed": "2026-11-19T12:44:49.1871415Z"
     },
     {
       "country": "th",
@@ -2064,6 +2096,126 @@
       "url": "https://www.youtube.com/watch?v=U7QjtwAajps",
       "count": 2,
       "lastPlayed": "2026-10-24T09:18:02.9289957Z"
+    },
+    {
+      "country": "th",
+      "id": "KEMxkBwHyeQ",
+      "title": "ยินดีที่เธอสุขเสมอ - Full (Lyric Video)",
+      "url": "https://www.youtube.com/watch?v=KEMxkBwHyeQ",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:25:30.3832061Z"
+    },
+    {
+      "country": "th",
+      "id": "yrA1DUcKud0",
+      "title": "คืนที่ดาวเต็มฟ้า ปราโมทย์ วิเลปะนะ",
+      "url": "https://www.youtube.com/watch?v=yrA1DUcKud0",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:21:45.1388513Z"
+    },
+    {
+      "country": "th",
+      "id": "K2a4UJ4ANmw",
+      "title": "ฝุ่น - Big Ass (เนื้อเพลง)",
+      "url": "https://www.youtube.com/watch?v=K2a4UJ4ANmw",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:17:11.3655960Z"
+    },
+    {
+      "country": "th",
+      "id": "Nw-3UqwQ3lQ",
+      "title": "ไปถอนคำสาบาน - ศร สินชัย, ดอกอ้อ ทุ่งทอง, ก้านตอง ทุ่งเงิน【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=Nw-3UqwQ3lQ",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:09:52.3859989Z"
+    },
+    {
+      "country": "th",
+      "id": "heRCAbBJksA",
+      "title": "ความเจ็บปวด - Palmy【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=heRCAbBJksA",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:05:06.0134615Z"
+    },
+    {
+      "country": "th",
+      "id": "zCLZL-RV1tY",
+      "title": "เธอมีฉัน ฉันมีใคร - DA ENDORPHINE【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=zCLZL-RV1tY",
+      "count": 1,
+      "lastPlayed": "2026-11-22T11:00:17.5682436Z"
+    },
+    {
+      "country": "th",
+      "id": "5xwLNPtFLj8",
+      "title": "ได้ยินไหม",
+      "url": "https://www.youtube.com/watch?v=5xwLNPtFLj8",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:56:31.5152930Z"
+    },
+    {
+      "country": "th",
+      "id": "K2cIv5zPs4c",
+      "title": "ตัวละครลับ - กระต่าย พรรณนิภา 【 OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=K2cIv5zPs4c",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:50:00.4372390Z"
+    },
+    {
+      "country": "th",
+      "id": "lFD2eid8Ugw",
+      "title": "Bedroom Audio - ไม่บอกเธอ Ost.Hormones (Official MV)",
+      "url": "https://www.youtube.com/watch?v=lFD2eid8Ugw",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:44:44.6707265Z"
+    },
+    {
+      "country": "th",
+      "id": "MwzbQT0CA1Y",
+      "title": "25hours : ทำได้เพียง (Official Music Video)",
+      "url": "https://www.youtube.com/watch?v=MwzbQT0CA1Y",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:40:14.5470606Z"
+    },
+    {
+      "country": "th",
+      "id": "xRiK5HLCITQ",
+      "title": "บอกรัก (2016 Remastered)",
+      "url": "https://www.youtube.com/watch?v=xRiK5HLCITQ",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:35:24.8838246Z"
+    },
+    {
+      "country": "th",
+      "id": "SXy-v1KbF4k",
+      "title": "ฝนตกที่หน้าต่าง - LOSO 【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=SXy-v1KbF4k",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:31:48.0764060Z"
+    },
+    {
+      "country": "th",
+      "id": "ZmTXdbUDitk",
+      "title": "เพลงสาวเชียงใหม่: จรัล มโพเพ็ชร- สุนทรี เวชานนท์ และ คณะ",
+      "url": "https://www.youtube.com/watch?v=ZmTXdbUDitk",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:28:36.7104431Z"
+    },
+    {
+      "country": "th",
+      "id": "5qnVNSnDYCw",
+      "title": "ขอให้โชคดี - พลพล【OFFICIAL MV】",
+      "url": "https://www.youtube.com/watch?v=5qnVNSnDYCw",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:23:40.9531306Z"
+    },
+    {
+      "country": "th",
+      "id": "KbQwTIRTAV8",
+      "title": "ช่วงที่ดีที่สุด / The Sweetest Moment",
+      "url": "https://www.youtube.com/watch?v=KbQwTIRTAV8",
+      "count": 1,
+      "lastPlayed": "2026-11-22T10:18:19.9265418Z"
     },
     {
       "country": "th",
@@ -3976,14 +4128,6 @@
       "url": "https://www.youtube.com/watch?v=326fjNKaoD4",
       "count": 1,
       "lastPlayed": "2026-11-10T12:24:26.5027391Z"
-    },
-    {
-      "country": "th",
-      "id": "eW0JA1fTjNg",
-      "title": "เคยรักฉันบ้างไหม - LOSO【OFFICIAL MV】",
-      "url": "https://www.youtube.com/watch?v=eW0JA1fTjNg",
-      "count": 1,
-      "lastPlayed": "2026-11-10T12:11:54.0536192Z"
     },
     {
       "country": "th",

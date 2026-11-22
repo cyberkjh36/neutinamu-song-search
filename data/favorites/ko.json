@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-21T14:39:44.864Z",
+  "updatedAt": "2026-11-22T14:58:35.637Z",
   "countries": [
     "ko"
   ],
@@ -11,8 +11,16 @@
       "id": "mYtLhe3yGHY",
       "title": "미련이 춤을 춰 / Dancing in Regret / 未練が踊る Emotional Korean Ballad · Sad Love Story",
       "url": "https://www.youtube.com/watch?v=mYtLhe3yGHY",
-      "count": 22,
-      "lastPlayed": "2026-11-20T07:44:28.5682839Z"
+      "count": 24,
+      "lastPlayed": "2026-11-22T14:55:20.0534259Z"
+    },
+    {
+      "country": "ko",
+      "id": "rZ4ztl-HcMM",
+      "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
+      "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
+      "count": 16,
+      "lastPlayed": "2026-11-22T13:54:25.7756494Z"
     },
     {
       "country": "ko",
@@ -24,19 +32,19 @@
     },
     {
       "country": "ko",
-      "id": "rZ4ztl-HcMM",
-      "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
-      "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 15,
-      "lastPlayed": "2026-11-21T14:19:44.0495647Z"
-    },
-    {
-      "country": "ko",
       "id": "biXhgq7zrSg",
       "title": "싸이 X 성시경 - 뜨거운 안녕 [성시경 with friends 2023]",
       "url": "https://www.youtube.com/watch?v=biXhgq7zrSg",
-      "count": 11,
-      "lastPlayed": "2026-11-19T04:41:01.8631924Z"
+      "count": 12,
+      "lastPlayed": "2026-11-22T13:58:30.4587793Z"
+    },
+    {
+      "country": "ko",
+      "id": "fwucDkRlb3M",
+      "title": "조덕배 - 나의 옛날 이야기",
+      "url": "https://www.youtube.com/watch?v=fwucDkRlb3M",
+      "count": 10,
+      "lastPlayed": "2026-11-22T14:35:36.5110952Z"
     },
     {
       "country": "ko",
@@ -48,14 +56,6 @@
     },
     {
       "country": "ko",
-      "id": "fwucDkRlb3M",
-      "title": "조덕배 - 나의 옛날 이야기",
-      "url": "https://www.youtube.com/watch?v=fwucDkRlb3M",
-      "count": 9,
-      "lastPlayed": "2026-11-04T06:30:04.9358960Z"
-    },
-    {
-      "country": "ko",
       "id": "uqfF_qv477k",
       "title": "BTS (방탄소년단) 'Body to Body' (Color Coded Lyrics)",
       "url": "https://www.youtube.com/watch?v=uqfF_qv477k",
@@ -64,11 +64,35 @@
     },
     {
       "country": "ko",
+      "id": "CKrybgx_l3E",
+      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
+      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
+      "count": 7,
+      "lastPlayed": "2026-11-22T14:39:48.5918177Z"
+    },
+    {
+      "country": "ko",
       "id": "tkgXCFQRyO8",
       "title": "전유진(チョンユジン) - 모란동백(牡丹椿)｜한일톱텐쇼 45회",
       "url": "https://www.youtube.com/watch?v=tkgXCFQRyO8",
       "count": 7,
       "lastPlayed": "2026-11-13T09:59:51.3174674Z"
+    },
+    {
+      "country": "ko",
+      "id": "5oFnMWvEPsY",
+      "title": "김범수 지나간다",
+      "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
+      "count": 6,
+      "lastPlayed": "2026-11-22T14:47:57.3505551Z"
+    },
+    {
+      "country": "ko",
+      "id": "j7IuU3wJ2pk",
+      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
+      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "count": 6,
+      "lastPlayed": "2026-11-22T14:43:14.2667900Z"
     },
     {
       "country": "ko",
@@ -88,14 +112,6 @@
     },
     {
       "country": "ko",
-      "id": "CKrybgx_l3E",
-      "title": "열린음악회 - 최백호 - 낭만에 대하여.20170723",
-      "url": "https://www.youtube.com/watch?v=CKrybgx_l3E",
-      "count": 6,
-      "lastPlayed": "2026-11-13T10:03:29.1537727Z"
-    },
-    {
-      "country": "ko",
       "id": "fIZ4Yy1QBw0",
       "title": "세월이 지나도 절대 잊지 못할 인연... 남진 - 상사화(락발라드.ver)",
       "url": "https://www.youtube.com/watch?v=fIZ4Yy1QBw0",
@@ -104,11 +120,11 @@
     },
     {
       "country": "ko",
-      "id": "j7IuU3wJ2pk",
-      "title": "조장혁 - 별리 [불후의 명곡2 전설을 노래하다/Immortal Songs 2] | KBS 230902 방송",
-      "url": "https://www.youtube.com/watch?v=j7IuU3wJ2pk",
+      "id": "rsnm_qSPivg",
+      "title": "[ROCK] 김수철 - 별리",
+      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
       "count": 5,
-      "lastPlayed": "2026-11-21T13:10:15.8580573Z"
+      "lastPlayed": "2026-11-22T14:48:01.6461819Z"
     },
     {
       "country": "ko",
@@ -120,11 +136,11 @@
     },
     {
       "country": "ko",
-      "id": "5oFnMWvEPsY",
-      "title": "김범수 지나간다",
-      "url": "https://www.youtube.com/watch?v=5oFnMWvEPsY",
-      "count": 5,
-      "lastPlayed": "2026-11-04T06:46:19.6948191Z"
+      "id": "q_gwN9xgw-0",
+      "title": "[죽기 전에 한번은 들어야 할 노래] 가을 우체국 앞에서 - 윤도현 (1994, 가사포함) In front of the post office in autumn",
+      "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
+      "count": 4,
+      "lastPlayed": "2026-11-22T14:51:06.5885349Z"
     },
     {
       "country": "ko",
@@ -133,14 +149,6 @@
       "url": "https://www.youtube.com/watch?v=sp3gSwWEsbI",
       "count": 4,
       "lastPlayed": "2026-11-21T14:23:51.1327507Z"
-    },
-    {
-      "country": "ko",
-      "id": "rsnm_qSPivg",
-      "title": "[ROCK] 김수철 - 별리",
-      "url": "https://www.youtube.com/watch?v=rsnm_qSPivg",
-      "count": 4,
-      "lastPlayed": "2026-11-19T14:58:04.0183638Z"
     },
     {
       "country": "ko",
@@ -205,14 +213,6 @@
       "url": "https://www.youtube.com/watch?v=aJZlG3F0tVM",
       "count": 3,
       "lastPlayed": "2026-11-18T13:29:30.6884144Z"
-    },
-    {
-      "country": "ko",
-      "id": "q_gwN9xgw-0",
-      "title": "[죽기 전에 한번은 들어야 할 노래] 가을 우체국 앞에서 - 윤도현 (1994, 가사포함) In front of the post office in autumn",
-      "url": "https://www.youtube.com/watch?v=q_gwN9xgw-0",
-      "count": 3,
-      "lastPlayed": "2026-11-04T07:05:36.8264880Z"
     },
     {
       "country": "ko",
@@ -301,6 +301,30 @@
       "url": "https://www.youtube.com/watch?v=je0qTh93fR8",
       "count": 2,
       "lastPlayed": "2026-10-30T13:28:56.1268071Z"
+    },
+    {
+      "country": "ko",
+      "id": "S1ZmJFZH2NE",
+      "title": "아즈마아키(東亜樹) - 상사화(相似化)｜한일톱텐쇼 9회",
+      "url": "https://www.youtube.com/watch?v=S1ZmJFZH2NE",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:58:18.0197523Z"
+    },
+    {
+      "country": "ko",
+      "id": "ahGVKXHRI-0",
+      "title": "임영웅 사랑의콜센타 [상사화] (ENG, JPN, CHI, VET)",
+      "url": "https://www.youtube.com/watch?v=ahGVKXHRI-0",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:57:49.4867868Z"
+    },
+    {
+      "country": "ko",
+      "id": "hCUC7vMvoxk",
+      "title": "[#불후의명곡] 싸이(PSY) - 젠틀맨(GENTLEMAN) + 강남스타일 | KBS 231125 방송",
+      "url": "https://www.youtube.com/watch?v=hCUC7vMvoxk",
+      "count": 1,
+      "lastPlayed": "2026-11-22T14:26:52.9238799Z"
     },
     {
       "country": "ko",
