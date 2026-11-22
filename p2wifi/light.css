@@ -151,9 +151,6 @@ input::placeholder { color: #54695d; opacity: 1; }
 .p2-native .result-actions button, .native-controls #nativeReserve {
   color: #593700; background: #ffe6a7; border: 1px solid #d9b96a;
 }
-.p2-native .result-actions .result-play, .native-controls #nativePlay {
-  color: #144d38; background: #d6efdc; border: 1px solid #a7cdb1;
-}
 .native-controls #nativeQueue, .native-controls #nativeSaveFavorite { background: #eef5ef; color: #234a3a; border-color: #b8ccbd; }
 #nativePlayback > button {
   border: 3px solid #b62840;

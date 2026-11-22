@@ -80,7 +80,7 @@
     .native-connection{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}
     .native-connection p{grid-column:1/-1;margin:0}.native-connection #nativeStop{grid-column:1/-1}
     .native-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.native-controls button{flex:1;min-height:58px;font-size:19px}
-    .native-controls p{width:100%;text-align:left}.native-controls #nativePlay{background:var(--green);color:var(--bg)}
+    .native-controls p{width:100%;text-align:left}
     button:disabled{opacity:.5}.p2-native .searchrow{display:flex;flex-wrap:wrap}.p2-native .searchrow input{flex:1 1 100%}
     /* Type sizes share a rem floor so larger browser text settings remain effective. */
     :root{
@@ -112,7 +112,7 @@
     .p2-native .native-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
     .p2-native .native-controls button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:60px;padding:12px 6px;font-size:17px;border-radius:14px}
     .native-controls svg,#nativeStop svg{width:23px;height:23px;flex-shrink:0}.native-controls #nativeReserve{background:#ffd677;color:#33260a;border-color:#ffd677}
-    .native-controls #nativeQueue,.native-controls #nativeSaveFavorite,.native-controls #favoriteSaveStatus{grid-column:1/-1}#favoriteSaveStatus:empty{display:none}.native-controls small{display:block;font-size:10px;font-weight:500;margin-top:3px}.native-controls #nativeQueue{background:#1d4053}
+    .native-controls #nativeReserve,.native-controls #nativeQueue,.native-controls #nativeSaveFavorite,.native-controls #favoriteSaveStatus{grid-column:1/-1}#favoriteSaveStatus:empty{display:none}.native-controls small{display:block;font-size:10px;font-weight:500;margin-top:3px}.native-controls #nativeQueue{background:#1d4053}
     .p2-native .native-controls p{grid-column:1/-1;margin:5px 0 0;font-size:13px;overflow-wrap:anywhere}
     .p2-native .results,.p2-native .result{grid-template-columns:minmax(0,1fr)}
     .p2-native .result{display:grid;gap:8px;min-width:0;padding:15px 14px}
@@ -148,19 +148,18 @@
     .p2-native .result-row .result{grid-template-columns:minmax(0,1fr)}
     .p2-native .result-actions{display:flex;flex-direction:column;justify-content:center;gap:5px}
     .p2-native .result-actions button{min-width:54px;min-height:46px;padding:6px;font-size:18px;color:#18251a;background:#ffd677}
-    .p2-native .result-actions .result-play{background:#a9efc3}
     .result-feedback{grid-column:1/-1;margin:0}.result-feedback:empty{display:none}
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.4.9"></script>
+  <script src="wifi-bridge.js?v=1.4.10"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
   <script src="../catalog-sync.js" defer></script>
   <script src="../chosung.js"></script>
-  <script src="native-search.js?v=1.4.9" defer></script>
+  <script src="native-search.js?v=1.4.10" defer></script>
   <link rel="stylesheet" href="favorites.css?v=1.3.5">
-  <link rel="stylesheet" href="light.css?v=1.4.8">
+  <link rel="stylesheet" href="light.css?v=1.4.10">
   <script src="favorites-data.js" defer></script>
   <script src="favorites-ui.js?v=1.4.7" defer></script>
 
@@ -193,7 +192,7 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>2026년 11월 20일까지 TJ미디어에서 발표한 신곡 128곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.9<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
+  <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.10<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
 </main>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogStatus">
   <h2 id="voiceDialogTitle">음성검색</h2>

@@ -49,6 +49,10 @@ module.exports = async function verifyVoice(page, base) {
     window.testRecognition.onresult({results:[part]});
   });
   await page.waitForFunction(() => document.getElementById('query').value === '조용필 꿈' && document.querySelector('.result'));
+  const actions=page.locator('#results .result-actions');
+  assert(await actions.count()>0);
+  assert(await actions.evaluateAll(groups=>groups.every(group=>group.querySelectorAll('button').length===1 && group.textContent==='예약')));
+  assert.equal(await page.locator('#hero').getByRole('button',{name:'실행',exact:true}).count(),0);
   assert(!(await dialog.isVisible()));
   await mic.click();
   await page.evaluate(() => { window.lateResult = window.testRecognition.onresult; });

@@ -13,7 +13,7 @@ function send(command,number,feedback){
 }
 function icon(name){var paths={remove:'<path d="m6 6 12 12M18 6 6 18"/>',list:'<path d="M9 5h12M9 12h12M9 19h12M3 5h1M3 12h1M3 19h1"/>',next:'<path d="m2 5 10 7-10 7Zm11 0 10 7-10 7Z" fill="currentColor" stroke="none"/>',plus:'<path d="M12 5v14M5 12h14"/>',play:'<path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none"/>',pause:'<path d="M8 5v14M16 5v14" stroke-width="4"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'};return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+paths[name]+'</svg>';}
 function friendly(message){if(/^\[A01\]/.test(message))return '[A01] 반주기가 연결을 승인하지 않았습니다. 연결 설정에서 확인해 주세요.';if(/^\[C00\]/.test(message))return '먼저 P2에 연결해 주세요. 곡 시작·예약 명령은 보내지 않았습니다.';return message||'';}
-function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);['nativePlay','nativeReserve'].forEach(id=>{if($(id))$(id).disabled=!connected||!selected||busy;});['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel,.wifi-order button').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
+function buttons(){document.querySelectorAll('.result-actions button').forEach(b=>b.disabled=busy||!connected);if($('nativeReserve'))$('nativeReserve').disabled=!connected||!selected||busy;['nativeStart','nativeStop','nativeNext','nativeQueueNext'].forEach(id=>{if($(id))$(id).disabled=busy||!connected;});document.querySelectorAll('.queue-play,.queue-cancel,.wifi-order button').forEach(el=>el.disabled=busy||!connected||!queueData.valid);if($('nativePlayback'))$('nativePlayback').hidden=!selected&&!connected;if($('nativeQueueRefresh'))$('nativeQueueRefresh').disabled=busy;if($('nativeConnect')){$('nativeConnect').disabled=busy;$('nativeConnect').textContent=reconnecting?'다시 연결 취소':connected?'연결 해제':busy?'연결 중…':'P2 연결';}if($('nativeFind'))$('nativeFind').disabled=busy||connected;}
 function playbackCommand(command,feedback){
  if(busy||!connected)return;
  if(feedback)activeFeedback=feedback;
@@ -80,14 +80,14 @@ async function renderPlayback(){
 }
 document.documentElement.classList.add('p2-native');
 document.addEventListener('DOMContentLoaded',()=>{
- var appName='느티나무노래방 전용 리모컨';document.title=appName;document.querySelector('h1').textContent=appName;document.querySelectorAll('meta[name="application-name"],meta[name="apple-mobile-web-app-title"]').forEach(meta=>meta.content=appName);document.querySelector('.brand').textContent='내 손안의 P2 리모컨';document.querySelector('.lead').textContent='노래를 찾고, 시작하거나 예약하세요.';
+ var appName='느티나무노래방 전용 리모컨';document.title=appName;document.querySelector('h1').textContent=appName;document.querySelectorAll('meta[name="application-name"],meta[name="apple-mobile-web-app-title"]').forEach(meta=>meta.content=appName);document.querySelector('.brand').textContent='내 손안의 P2 리모컨';document.querySelector('.lead').textContent='부르고 싶은 노래를 찾아 예약하세요.';
  var searchPanel=$('query').closest('section');searchPanel.id='nativeSearchPanel';var dataPanel=$('fileInput').closest('section');
  var tools=document.createElement('details');tools.id='nativeTools';tools.className='panel native-tools';var summary=document.createElement('summary');summary.textContent='더보기 · 연결 도움말 / 곡 데이터';tools.append(summary);
  var setting=document.createElement('button');setting.type='button';setting.id='nativeSettings';setting.textContent='연결 도움말 · 진단';setting.onclick=()=>send('connection');tools.append(setting);var find=document.createElement('button');find.id='nativeFind';find.type='button';find.textContent='주변 P2 찾기 · 방 선택';find.onclick=()=>{if(!busy&&!connected){busy=true;buttons();send('find');}};tools.append(find);
  var help=document.createElement('p');help.className='hint';help.textContent='방 QR을 스캔하면 해당 방의 연결을 시작합니다. 연결이 안 되면 직원에게 문의해 주세요.';tools.append(help,$('dbCount'));while(dataPanel.firstChild)tools.append(dataPanel.firstChild);dataPanel.replaceWith(tools);
  var panel=document.createElement('section');panel.className='panel native-connection';panel.innerHTML='<div><span class="connection-caption">내 방 연결</span><strong id="nativeState" role="status">○ P2 연결 전</strong></div><button id="nativeConnect" type="button">P2 연결</button><p id="nativeStatus" class="hint" role="status">방 QR을 스캔하면 자동으로 연결합니다. QR 없이 이용하려면 P2 연결을 누르세요.</p>';searchPanel.before(panel);$('nativeConnect').onclick=()=>{if(!busy){busy=true;buttons();send('connect');}};
  var title=document.createElement('h2');title.className='native-section-title';title.textContent='어떤 노래를 부를까요?';searchPanel.prepend(title);searchPanel.insertBefore($('voiceBtn'),searchPanel.querySelector('.searchrow'));$('query').setAttribute('aria-label','노래 제목, 가수, 초성 또는 곡번호');$('query').placeholder='제목 · 가수 · 초성 · 곡번호';
- var controls=document.createElement('div');controls.className='native-controls';controls.innerHTML='<button id="nativePlay" type="button" disabled>'+icon('play')+'실행</button><button id="nativeReserve" type="button" disabled>'+icon('plus')+'예약</button><button id="nativeQueue" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 목록</button><p id="nativeOrderHelp" class="hint">실행을 누르면 선택한 곡을 재생합니다.<br>예약: 선택한 곡을 목록 맨 뒤에 추가합니다.</p><p id="nativeAction" class="hint" role="status"></p>';$('hero').append(controls);$('hero').querySelector('.matchlabel').textContent='선택한 곡 · 가수를 확인하세요';
+ var controls=document.createElement('div');controls.className='native-controls';controls.innerHTML='<button id="nativeReserve" type="button" disabled>'+icon('plus')+'예약</button><button id="nativeQueue" type="button" aria-expanded="false" aria-controls="nativeQueuePanel">'+icon('list')+'예약곡 목록</button><p id="nativeOrderHelp" class="hint">예약을 누르면 선택한 곡이 예약 목록 맨 뒤에 추가됩니다.</p><p id="nativeAction" class="hint" role="status"></p>';$('hero').append(controls);$('hero').querySelector('.matchlabel').textContent='선택한 곡 · 가수를 확인하세요';
  var saveFavorite=document.createElement('button');saveFavorite.type='button';saveFavorite.id='nativeSaveFavorite';saveFavorite.textContent='내 애창곡에 저장';
  var savedNote=document.createElement('p');savedNote.id='favoriteSaveStatus';savedNote.className='hint';savedNote.setAttribute('role','status');
  controls.append(saveFavorite,savedNote);
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const saved=await native.command(JSON.stringify({command:'personalAdd',number:song.code}));
   if(selected===song)savedNote.textContent=saved===true?song.title+' · 내 애창곡에 저장했습니다.':'저장하지 못했습니다. 브라우저의 저장 공간을 확인해 주세요.';
  };
- ['Play','Reserve'].forEach(kind=>{$('native'+kind).onclick=()=>{if(selected&&!busy){busy=true;buttons();send(kind==='Play'?'playExact':'reserve',selected.code);}};});$('nativeQueue').onclick=()=>toggleQueue();
+ $('nativeReserve').onclick=()=>{if(connected&&selected&&!busy){busy=true;buttons();send('reserve',selected.code);}};$('nativeQueue').onclick=()=>toggleQueue();
  var pause=document.createElement('button');
  pause.type='button';pause.id='nativeStop';pause.innerHTML=icon('pause')+'일시정지';
  pause.setAttribute('aria-describedby','nativePauseHint');
@@ -121,17 +121,15 @@ function resultRow(select,song){
  var row=document.createElement('div');row.className='result-row';
  var actions=document.createElement('div');actions.className='result-actions';
  var feedback=document.createElement('p');feedback.className='hint result-feedback';feedback.setAttribute('role','status');
- for(const [command,label] of [['reserve','예약'],['playExact','실행']]){
-  const button=document.createElement('button');button.type='button';button.textContent=label;
-  button.className=command==='reserve'?'result-reserve':'result-play';
-  button.setAttribute('aria-label',song.title+' '+song.code+'번 '+label);button.disabled=!connected||busy;
-  button.onclick=()=>{
-   if(!connected||busy)return;
-   activeFeedback=feedback;feedback.textContent=song.title+' · '+label+' 요청 중…';
-   busy=true;buttons();send(command,song.code,feedback);
-  };
-  actions.append(button);
- }
+ const reserve=document.createElement('button');reserve.type='button';reserve.textContent='예약';
+ reserve.className='result-reserve';reserve.disabled=!connected||busy;
+ reserve.setAttribute('aria-label',song.title+' '+song.code+'번 예약');
+ reserve.onclick=()=>{
+  if(!connected||busy)return;
+  activeFeedback=feedback;feedback.textContent=song.title+' · 예약 요청 중…';
+  busy=true;buttons();send('reserve',song.code,feedback);
+ };
+ actions.append(reserve);
  row.append(select,actions,feedback);return row;
 }
 window.P2Remote={resultRow,setSong(song){if($('favoriteSaveStatus'))$('favoriteSaveStatus').textContent='';selected=song&&/^[1-9][0-9]{0,7}$/.test(String(song.code))?song:null;buttons();},reserveSelected(code){

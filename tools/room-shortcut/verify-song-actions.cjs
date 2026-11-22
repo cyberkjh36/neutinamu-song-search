@@ -35,7 +35,16 @@ module.exports=async function verifySongActions(page,base){
   const n1=Number(await first.locator('.num').textContent()),n2=Number(await second.locator('.num').textContent());
   assert.notEqual(n1,n2);
   await first.locator('.result-reserve').click();await ready();
-  await second.locator('.result-play').click();await ready();
+  assert(await rows.evaluateAll(all=>all.every(row=>{
+   const actions=row.querySelectorAll('.result-actions button');
+   return actions.length===1 && actions[0].textContent==='예약';
+  })));
+  assert.equal(await page.locator('#hero').getByRole('button',{name:'실행',exact:true}).count(),0);
+  await second.locator('.result-reserve').click();await ready();
+  assert.equal(playing,693);assert.deepEqual(queue,[n1,n2]);assert.deepEqual(calls.map(c=>c.action),['next','reserve','reserve']);
+  await page.locator('#nativeQueueNav').click();
+  await page.locator('#nativeQueueList .queue-play').nth(1).click();await ready();
+  await page.locator('#nativeQueueClose').click();
   assert.equal(playing,n2);assert.deepEqual(queue,[n1]);assert.deepEqual(calls.map(c=>c.action),['next','reserve','reserve','queuePlay']);
   await page.waitForFunction(number=>document.querySelector('#nativeNowNumber')?.textContent===String(number),n2);
   await page.locator('#nativeStart').click();await ready();assert.equal(playing,n1);
@@ -58,6 +67,6 @@ module.exports=async function verifySongActions(page,base){
   assert.equal(await entries.first().locator('.queue-song > span').textContent().then(s=>s.split(' · ')[0]),String(n1));
   assert.deepEqual(calls.slice(startCalls).map(c=>c.action),['queueMove','queueCancel']);assert.deepEqual(queue,[n1]);
   console.log('Verified immediate row feedback, real queue revisions, and single cancellation.');
-  console.log('Verified reserved start without search and independent per-song controls on a narrow phone.');
+  console.log('Verified reserve-only search results, manual playback from the queue, and narrow-screen controls.');
  }finally{await page.unroute('**/api/p2wifi',route);}
 };
