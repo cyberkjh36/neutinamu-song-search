@@ -26,11 +26,25 @@ module.exports=async function verifySongActions(page,base){
   await page.goto(base+'p2wifi/index.html#room=10000007');
   await page.waitForFunction(()=>!document.getElementById('nativeStart')?.disabled&&document.getElementById('nativeState')?.textContent.includes('곡별 버튼 시험 연결됨'));
   assert.deepEqual(await page.locator('#nativePlayback button').allTextContents(),['실행','일시정지','다음곡']);
+  async function checkPlaybackPosition(){
+   const layout=await page.evaluate(()=>{
+    const shortcuts=document.getElementById('favoriteShortcuts'),bar=document.getElementById('nativePlayback');
+    const first=bar.querySelector('button'),voice=document.getElementById('voiceBtn');
+    const buttons=[...bar.querySelectorAll('button')].map(b=>b.getBoundingClientRect());
+    return shortcuts.nextElementSibling===bar && bar.nextElementSibling===voice &&
+     first.getBoundingClientRect().top>=shortcuts.getBoundingClientRect().bottom-1 &&
+     bar.getBoundingClientRect().bottom<=voice.getBoundingClientRect().top+1 &&
+     buttons.every(b=>b.height>=44 && b.left>=0 && b.right<=innerWidth+1 && Math.abs(b.top-buttons[0].top)<1);
+   });
+   assert(layout,'playback controls stay together between favorites and voice search');
+  }
+  await checkPlaybackPosition();
   const ready=()=>page.waitForFunction(()=>!document.getElementById('nativeStart').disabled);
   await page.locator('#nativeStart').click();await ready();assert.equal(playing,693);
   await page.waitForFunction(()=>!document.getElementById('searchBtn').disabled);
   await page.locator('#query').fill('조용필');await page.locator('#searchBtn').click();
   const rows=page.locator('.result-row');await rows.nth(2).waitFor();
+  await checkPlaybackPosition();
   const first=rows.nth(1),second=rows.nth(2);
   const n1=Number(await first.locator('.num').textContent()),n2=Number(await second.locator('.num').textContent());
   assert.notEqual(n1,n2);
@@ -53,6 +67,7 @@ module.exports=async function verifySongActions(page,base){
   await page.waitForFunction(()=>document.getElementById('nativePlaybackStatus').textContent.includes('다음 예약곡이 없습니다'));
   assert.equal(calls.length,6);
   await page.setViewportSize({width:320,height:700});
+  await checkPlaybackPosition();
   assert(await second.evaluate(el=>{const b=el.getBoundingClientRect();return b.right<=innerWidth&&b.left>=0&&[...el.querySelectorAll('.result-actions button')].every(x=>x.offsetHeight>=44);}));
   await first.locator('.result-reserve').click();await ready();
   await second.locator('.result-reserve').click();await ready();

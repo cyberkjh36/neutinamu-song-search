@@ -17,6 +17,8 @@
     home.setAttribute('aria-label', '추천 애창곡 바로 찾기');
     var voice = document.getElementById('voiceBtn');
     voice.before(home);
+    var playback = document.getElementById('nativePlayback');
+    if (playback) home.after(playback);
     var panel = document.createElement('section');
     panel.id = 'favoritesPanel'; panel.hidden = true;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true'); panel.setAttribute('aria-labelledby', 'favoritesTitle');

@@ -92,31 +92,32 @@ button:disabled { cursor: default; }
 #nativeConnect { color: #254c3c; background: #f3f7f0; border-color: #a8bdac; font-size: .9rem; }
 #nativeStatus { font-size: .9rem; color: var(--muted); }
 .native-section-title { color: #163a30; font-size: 1.45rem; letter-spacing: -.035em; margin: 0 0 15px; }
-.p2-native #favoriteShortcuts { gap: 8px; margin-bottom: 15px; }
+.p2-native #favoriteShortcuts { gap: 8px; margin-bottom: 10px; }
 #favoriteShortcuts button {
-  min-height: 88px; padding: 10px 3px; gap: 2px; border-radius: 14px;
-  color: #164940; background: #d7f0e3; border-color: #badfce;
+  min-height: 88px; padding: 8px 3px; gap: 2px; border-radius: 14px;
+  background: #14604f; color: #fff; border: 2px solid #0c4c3d;
 }
-#favoriteShortcuts button:nth-child(2) { background: #e8e1fa; color: #4f3a78; border-color: #d6caef; }
-#favoriteShortcuts button:nth-child(3) { background: #ffe4ce; color: #78391f; border-color: #f3cfb1; }
+#favoriteShortcuts button:nth-child(2) { background: #604584; color: #fff; border-color: #4e356f; }
+#favoriteShortcuts button:nth-child(3) { background: #934629; color: #fff; border-color: #78371f; }
 #favoriteShortcuts svg { width: 25px; height: 25px; margin: 0 0 3px; }
 #favoriteShortcuts button:not([data-category=mine]) svg {
-  box-sizing: content-box; padding: 5px; width: 22px; height: 22px;
-  border-radius: 50%; background: #ffffff91;
+  box-sizing: content-box; padding: 4px; width: 22px; height: 22px;
+  border-radius: 50%; background: #ffffff1f;
 }
-#favoriteShortcuts strong { white-space: normal; overflow-wrap: anywhere; }
-#favoriteShortcuts span { font-weight: 600; }
+#favoriteShortcuts strong { font-size: clamp(1.125rem, 4.8vw, 1.375rem); font-weight: 800; white-space: normal; overflow-wrap: anywhere; }
+#favoriteShortcuts span { font-weight: 700; }
 #favoriteShortcuts button[data-category=mine] {
-  justify-content: flex-start; min-height: 54px; padding: 10px 15px; gap: 9px;
-  background: #fffaf1; color: #594117; border-color: #dfcda2;
+  justify-content: flex-start; min-height: 58px; padding: 8px 12px; gap: 8px;
+  background: #ffdc76; color: #452b08; border: 2px solid #956313;
 }
-#favoriteShortcuts button[data-category=mine] svg { margin: 0; color: #845816; fill: #ffe3a2; }
-#favoriteShortcuts button[data-category=mine] strong { font-size: 1.25rem; }
+#favoriteShortcuts button[data-category=mine] svg { flex: none; width: 27px; height: 27px; margin: 0; fill: #915310; color: #74400a; }
+#favoriteShortcuts button[data-category=mine] strong { font-size: clamp(1.25rem, 5vw, 1.5rem); }
 #favoriteShortcuts button[data-category=mine] span { margin-left: auto; }
 #favoriteShortcuts button[data-category=mine]::after {
   content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 1.5px 1.5px 0 0;
   transform: rotate(45deg); flex: none;
 }
+#favoriteShortcuts + #nativePlayback { margin: 0 0 16px; }
 .p2-native .voice {
   min-height: 54px; margin-bottom: 12px; padding: 12px; border-radius: 14px;
   background: linear-gradient(115deg, #00775c, #045b4c); color: white;
