@@ -152,14 +152,14 @@
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.4.12"></script>
+  <script src="wifi-bridge.js?v=1.4.13"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
   <script src="../catalog-sync.js" defer></script>
   <script src="../chosung.js"></script>
   <script src="native-search.js?v=1.4.10" defer></script>
   <link rel="stylesheet" href="favorites.css?v=1.4.12">
-  <link rel="stylesheet" href="light.css?v=1.4.11">
+  <link rel="stylesheet" href="light.css?v=1.4.13">
   <script src="favorites-data.js" defer></script>
   <script src="favorites-ui.js?v=1.4.12" defer></script>
 
@@ -194,6 +194,11 @@
   </section>
   <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.12<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
 </main>
+<dialog id="soundPanel" aria-labelledby="soundTitle">
+  <div class="sound-heading"><h2 id="soundTitle">음향 조절</h2><button id="closeSound" type="button" autofocus>닫기</button></div>
+  <div id="soundRows"></div>
+  <p id="soundStatus" role="status"></p>
+</dialog>
 <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle" aria-describedby="voiceDialogStatus">
   <h2 id="voiceDialogTitle">음성검색</h2>
   <div class="voice-orb" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><rect x="23" y="5" width="18" height="34" rx="9" fill="currentColor" stroke="none"/><path d="M15 29v3a17 17 0 0 0 34 0v-3M32 49v10M23 59h18"/></svg></div>
