@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {RoomConnection} from '../../p2wifi/room-connection.mjs';
-import {WifiClient} from '../../p2wifi/wifi-client.mjs';
+import {WifiClient,mergePersonal,savePersonalSong,rankPersonal} from '../../p2wifi/wifi-client.mjs';
 
 const room='10000005', qr={label:'5',ticket:'a'.repeat(64)};
 const success=(online=true,connected=true)=>({ok:true,online,name:'모의 P2',session:'b'.repeat(32),state:{connected}});
@@ -217,4 +217,26 @@ test('an older status in flight cannot undo a confirmed pause or resume',async()
   release();await pending;
   assert.deepEqual(client.data.state.playback,{known:true,number:4985,paused});
  }
+});
+
+
+test('rank confirmed personal plays, migrate saved rows, and reconcile receipts/observations on replay',()=>{
+ const id=n=>n.toString(16).padStart(32,'0');
+ const play=(n,number,created,aliases=[])=>({id:id(n),number,created,aliases:aliases.map(id)});
+ let r=mergePersonal({songs:{5:{number:5,lastPlayed:50}},seen:{[id(1)]:50}});
+ assert.deepEqual(r.songs[5],{number:5,lastPlayed:0,playCount:0,savedAt:50});
+ savePersonalSong(r,10,100);savePersonalSong(r,10,120);assert.equal(r.songs[10].playCount,0);
+ r=mergePersonal(r,[play(1,5,50),play(2,5,60),play(3,5,65),play(4,10,80)]);
+ assert.equal(r.songs[5].playCount,3);
+ r=mergePersonal(r,[play(3,5,65,[2]),play(4,10,80)]);
+ assert.equal(r.songs[5].playCount,2);
+ r=mergePersonal(JSON.parse(JSON.stringify(r)),[play(3,5,65,[2]),play(2,5,60)]);
+ assert.equal(r.songs[5].playCount,2);
+ assert.deepEqual(Object.values(r.songs).sort(rankPersonal).map(s=>s.number),[5,10]);
+ r=mergePersonal(r,[play(5,10,90)]);
+ assert.deepEqual(Object.values(r.songs).sort(rankPersonal).map(s=>s.number),[10,5]);
+ r.removed[5]=100;delete r.songs[5];
+ r=mergePersonal(r,[play(3,5,65,[2]),play(1,5,50)]);assert.equal(r.songs[5],undefined);
+ savePersonalSong(r,5,110);r=mergePersonal(r,[play(3,5,65,[2]),play(7,5,130)]);
+ assert.equal(r.songs[5].playCount,1);
 });

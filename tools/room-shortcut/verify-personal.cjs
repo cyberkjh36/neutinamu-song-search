@@ -6,7 +6,7 @@ module.exports=async function verifyPersonal(page,base){
  const handle=async route=>{
   const req=route.request().postDataJSON();ops.push(req.op);
   let json={ok:true,online,name:'애창곡 시험',session:'e'.repeat(32),events:[],state:{connected:online,busy:false,queue:{valid:false,songs:[]},playback:{known:false,number:0}}};
-  if(req.op==='personalHistory')json={ok:true,events:events.slice(),serverTime:Date.now()};
+  if(req.op==='personalHistory')json={ok:true,rankedEvents:events.slice(),serverTime:Date.now()};
   if(req.op==='result')json={ok:true,status:'confirmed',message:'3번 재생 확인 · 남은 예약곡은 원래 순서대로 진행합니다.'};
   await route.fulfill({json,headers:{'Access-Control-Allow-Origin':'*'}});
  };
@@ -18,9 +18,18 @@ module.exports=async function verifyPersonal(page,base){
   const row=n=>page.locator('#favoritesList .favorite-song[data-code="'+n+'"]');
   await mine.click();await row(693).waitFor();
   assert.match(await row(693).textContent(),/조용필/);
-  page.once('dialog',d=>d.accept());await page.locator('#favoritesList .personal-remove').click();
+  assert.match(await row(693).textContent(),/1위 · 1회/);
+  events.push({id:'a'.repeat(32),number:693,created:at+50},{id:'b'.repeat(32),number:3,created:at+100});
+  await page.evaluate(()=>window.NeutiP2.command(JSON.stringify({command:'personalSongs'})));
+  await page.waitForFunction(()=>document.querySelector('#favoritesList .favorite-play-count')?.textContent==='1위 · 2회');
+  assert.equal(await row(3).locator('.favorite-play-count').textContent(),'2위 · 1회');
+  const entry=await row(3).locator('.favorite-song-title').textContent();
+  await page.locator('#favoritesFilter').fill(entry);
+  assert.equal(await row(3).locator('.favorite-play-count').textContent(),'2위 · 1회');
+  await page.locator('#favoritesClear').click();
+  page.once('dialog',d=>d.accept());await row(693).locator('..').locator('.personal-remove').click();
   events.push({id:'2'.repeat(32),number:693,created:at+200});
-  await close.click();await mine.click();await page.waitForFunction(()=>document.getElementById('favoritesEmpty')?.hidden===false);
+  await close.click();await mine.click();await row(3).waitFor();assert.equal(await row(693).count(),0);
   await close.click();
   await page.locator('#query').fill('71541');await page.locator('#searchBtn').click();
   await page.waitForFunction(()=>document.getElementById('heroNumber').textContent==='71541');
@@ -30,6 +39,8 @@ module.exports=async function verifyPersonal(page,base){
   await page.locator('#nativeSaveFavorite').click();await page.waitForFunction(()=>document.getElementById('favoriteSaveStatus').textContent.includes('저장했습니다'));
   online=false;await page.reload();await mine.click();
   await row(71541).waitFor();await row(3).waitFor();
+  assert.match(await row(71541).textContent(),/2위 · 0회/);
+  assert.match(await row(3).textContent(),/1위 · 2회/);
   assert.equal(await row(693).count(),0);assert.equal(ops.filter(x=>x==='command').length,commands);
   console.log('Verified recent private history recovery, actual played number, deletion replay protection and offline manual favorites.');
  }finally{await page.unroute('**/api/p2wifi',handle);}

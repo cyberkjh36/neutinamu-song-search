@@ -3,7 +3,7 @@
   if (!window.NeutiP2 || !window.NeutiFavorites) return;
   document.addEventListener('DOMContentLoaded', function () {
     var data = window.NeutiFavorites, active = null, trigger = null, reserving = false, actionRevision = 0;
-    var mine = {id:'mine',label:'내 애창곡',description:'이 휴대폰으로 부른 곡 · 최근 부른 순서',songs:[]};
+    var mine = {id:'mine',label:'내 애창곡',description:'많이 부른 순서 · 횟수가 같으면 최근에 부른 곡이 먼저 나옵니다.',songs:[]};
     var groups = data.groups.concat([mine]), personalLoading = false, personalError = '', personalRevision = 0, visibleCount = 50;
     var paths = {
       mine: '<path d="m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/>',
@@ -56,6 +56,7 @@
       var matches = query ? findSongs(active.songs.map(s => Object.assign({}, s, {
         titleN: normalize(s.title), artistN: normalize(s.artist), hay: normalize(s.title + ' ' + s.artist)
       })), query).map(item => item.s) : active.songs;
+      if(query && active.id==='mine')matches.sort((a,b)=>a.rank-b.rank);
       $('favoritesCount').textContent = active.id === 'mine' && personalError ? personalError : active.id === 'mine' && personalLoading ? '내 애창곡을 불러오는 중…' : query ? matches.length + '곡 찾음 · 전체 ' + active.songs.length + '곡' : (active.id === 'mine' ? '내 애창곡 ' : '추천 ') + active.songs.length + '곡';
       $('favoritesEmpty').hidden = matches.length > 0 || (active.id === 'mine' && (personalLoading || !!personalError));
       $('favoritesEmpty').textContent = active.id === 'mine' && !query ? '아직 저장된 곡이 없습니다. 이 휴대폰으로 노래를 실행하거나 예약하고 부르면 여기에 모입니다.' : '찾는 곡이 없습니다. 검색어를 바꾸거나 다른 목록을 눌러 주세요.';
@@ -67,7 +68,13 @@
         button.querySelector('.favorite-song-title').textContent = song.title;
         button.querySelector('.favorite-song-artist').textContent = song.artist;
         button.querySelector('.favorite-song-code').textContent = song.code;
-        button.setAttribute('aria-label', song.title + ', ' + song.artist + ', 곡번호 ' + song.code + ', 예약');
+        var ranking='';
+        if(active.id==='mine'){
+          ranking=song.rank+'위 · '+song.playCount+'회';
+          var count=document.createElement('span');count.className='favorite-play-count';count.textContent=ranking;
+          button.prepend(count);
+        }
+        button.setAttribute('aria-label', (ranking ? ranking+', ' : '') + song.title + ', ' + song.artist + ', 곡번호 ' + song.code + ', 예약');
         button.onclick = async function () {
           if (reserving) return;
           reserving = true;
@@ -124,14 +131,14 @@
       var revision = ++personalRevision, previousSongs = mine.songs, previousError = personalError;
       try{
         if(!payload || payload.error)throw new Error(payload && payload.error || '내 애창곡을 읽지 못했습니다.');
-        if(!Array.isArray(payload.songs) || payload.songs.length > 5000 || !payload.songs.every(s=>Number.isInteger(s.number)&&s.number>0&&s.number<=99999999&&Number.isSafeInteger(s.lastPlayed)&&s.lastPlayed>0))throw new Error('내 애창곡 정보를 확인하지 못했습니다.');
+        if(!Array.isArray(payload.songs) || payload.songs.length > 5000 || !payload.songs.every(s=>Number.isInteger(s.number)&&s.number>0&&s.number<=99999999&&Number.isSafeInteger(s.lastPlayed)&&s.lastPlayed>=0 && Number.isSafeInteger(s.playCount) && s.playCount>=0))throw new Error('내 애창곡 정보를 확인하지 못했습니다.');
         let catalog;try{catalog=await songIndex();}catch{catalog=new Map();}
         if(revision !== personalRevision)return;
-        mine.songs = payload.songs.map(row=>{var song=catalog.get(String(row.number));return {code:String(row.number),title:song?song.title:'곡번호 '+row.number,artist:song?song.artist:'가수 정보 없음'};});
+        mine.songs = payload.songs.map((row,i)=>{var song=catalog.get(String(row.number));return {code:String(row.number),rank:i+1,playCount:row.playCount,title:song?song.title:'곡번호 '+row.number,artist:song?song.artist:'가수 정보 없음'};});
         personalError = '';
       }catch(e){if(revision !== personalRevision)return;personalError = e.message || '내 애창곡을 읽지 못했습니다.';}
       var changed = personalLoading || previousError !== personalError || previousSongs.length !== mine.songs.length ||
-        mine.songs.some((song,i) => song.code !== previousSongs[i].code || song.title !== previousSongs[i].title || song.artist !== previousSongs[i].artist);
+        mine.songs.some((song,i) => song.code !== previousSongs[i].code || song.title !== previousSongs[i].title || song.artist !== previousSongs[i].artist || song.playCount !== previousSongs[i].playCount);
       personalLoading = false;
       if(changed && active && active.id === 'mine' && !panel.hidden)render();
     };

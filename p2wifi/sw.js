@@ -1,4 +1,4 @@
-const CACHE = 'neutinamu-webremote-1.4.11-favorites-layout';
+const CACHE = 'neutinamu-webremote-1.4.12-personal-rank';
 const FILES = ['index.html','light.css','voice-search.js','native-search.js','favorites-ui.js','favorites-data.js','favorites.css',
   'vendor/qrcode.js','wifi-client.mjs','room-connection.mjs','wifi-bridge.js','wifi.css','manifest.webmanifest','../catalog-sync.js','../chosung.js','../p2.css','../icon.svg',
   '../icon-192.png','../icon-512.png'];

@@ -89,7 +89,11 @@ export class WifiClient {
   if (!this.data?.online || !this.data.state?.connected) throw new Error(ERRORS.not_ready);
   this.busy = this.sending = true;
   this.changed();
-  const request = {id:token(16),room:this.room,key:this.key,session:this.data.session};
+  // Reserve IDs stay recognizable in temporary relay history after the job expires.
+  // Version 8 is distinct from the room PC's version-4 playback IDs.
+  let id=token(16);
+  if(command.action==='reserve')id='faca'+id.slice(4,12)+'8'+id.slice(13);
+  const request = {id,room:this.room,key:this.key,session:this.data.session};
   const deadline = Date.now() + 55000;
   try {
    try { await this.call('command',{...request,command}); }
@@ -197,9 +201,63 @@ export async function playSearchResult(client,number){
  return client.send({action:'queuePlay',number,index,version:queue.version});
 }
 
-export function mergePersonal(record,events){
- const saved=record&&typeof record==='object'?record:{},songs={...(saved.songs||{})},seen={...(saved.seen||{})};
- const removed={...(saved.removed||{})};
- for(const e of events||[]){if(!/^[a-f0-9]{32}$/.test(e.id)||!Number.isInteger(e.number)||e.number<1||e.number>99999999||!Number.isSafeInteger(e.created)||seen[e.id])continue;seen[e.id]=e.created;if(e.created<=(removed[e.number]||0))continue;songs[e.number]={number:e.number,lastPlayed:Math.max(songs[e.number]?.lastPlayed||0,e.created)};}
- const keep=Object.values(songs).sort((a,b)=>b.lastPlayed-a.lastPlayed).slice(0,5000);return {removed:Object.fromEntries(Object.entries(removed).sort((a,b)=>b[1]-a[1]).slice(0,10000)),songs:Object.fromEntries(keep.map(x=>[x.number,x])),seen:Object.fromEntries(Object.entries(seen).sort((a,b)=>b[1]-a[1]).slice(0,10000))};
+export function rankPersonal(a,b){
+ return b.playCount-a.playCount || b.lastPlayed-a.lastPlayed || b.savedAt-a.savedAt || a.number-b.number;
+}
+
+export function savePersonalSong(record,number,now){
+ if(!record.songs[number])record.songs[number]={number,playCount:0,lastPlayed:0,savedAt:now};
+}
+
+export function mergePersonal(record,events=[]){
+ const songs={...record?.songs},removed={...record?.removed},recent={...record?.recent};
+ let through=record?.through||0;
+ if(record?.version!==2){
+  // Old rows had only one date, including for a manually saved favorite.
+  for(const song of Object.values(songs)){
+   songs[song.number]={number:song.number,savedAt:song.lastPlayed,lastPlayed:0,playCount:0};
+  }
+ }
+ const byId=new Map();
+ for(const [root,play] of Object.entries(recent)){
+  for(const id of play.ids)byId.set(id,root);
+ }
+ const validId=id=>typeof id==='string' && /^[a-f0-9]{32}$/.test(id);
+ for(const event of events){
+  if(!event || !validId(event.id) || !Number.isSafeInteger(event.created) || event.created<=through ||
+      !Number.isInteger(event.number) || event.number<1 || event.number>99999999)continue;
+  const {number,created}=event;
+  const ids=new Set([event.id,...(Array.isArray(event.aliases)?event.aliases.filter(validId):[])]);
+  if([...ids].some(id=>byId.has(id) && recent[byId.get(id)].number!==number))continue;
+  const matches=new Set();
+  for(const id of ids){const root=byId.get(id);if(root && recent[root].number===number)matches.add(root);}
+  const cutoff=removed[number]||0;
+  let first=created,credited=0;
+  for(const root of matches){
+   const prev=recent[root];
+   first=Math.min(first,prev.first);
+   if(prev.first>cutoff)credited++;
+   for(const id of prev.ids)ids.add(id);
+   delete recent[root];
+  }
+  const root=event.id;
+  recent[root]={number,first,ids:[...ids].sort()};
+  for(const id of ids)byId.set(id,root);
+  const delta=Number(first>cutoff)-credited;
+  if(!songs[number] && delta<=0)continue;
+  const old=songs[number]||{number,playCount:0,lastPlayed:0,savedAt:created};
+  songs[number]={...old,playCount:Math.max(0,old.playCount+delta),
+   lastPlayed:first>cutoff?Math.max(old.lastPlayed,created):old.lastPlayed};
+ }
+ // Keep lifetime totals when retiring deduplication IDs. The watermark stops
+ // old, repeated responses from adding another play after their IDs are retired.
+ const history=Object.entries(recent);
+ if(history.length>10000){
+  history.sort((a,b)=>b[1].first-a[1].first);
+  through=Math.max(through,history[10000][1].first);
+  for(const [id,play] of history)if(play.first<=through)delete recent[id];
+ }
+ const keep=Object.values(songs).sort(rankPersonal).slice(0,5000);
+ return {version:2,songs:Object.fromEntries(keep.map(song=>[song.number,song])),recent,through,
+  removed:Object.fromEntries(Object.entries(removed).sort((a,b)=>b[1]-a[1]).slice(0,10000))};
 }

@@ -46,3 +46,5 @@
 
 #favoritesFeedback{position:absolute;z-index:2;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:min(90%,540px);box-sizing:border-box;margin:0;padding:10px 18px;border:1px solid #92c5a7;border-radius:12px;background:#142e28;color:#fff;font-size:19px;font-weight:650;line-height:1.45;text-align:center;overflow-wrap:anywhere;pointer-events:none}
 #favoritesFeedback:empty{opacity:0}
+
+.favorite-play-count{display:block;font-size:16px;font-weight:700;margin-bottom:4px}
