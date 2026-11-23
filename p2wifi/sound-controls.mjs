@@ -24,7 +24,7 @@ function icon(name) {
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths[name]+'</svg>';
 }
 
-export function mountSoundControls(send) {
+export function mountSoundControls(send, warm = () => {}) {
   const panel = document.getElementById('soundPanel');
   const rows = document.getElementById('soundRows');
   const status = document.getElementById('soundStatus');
@@ -99,7 +99,11 @@ export function mountSoundControls(send) {
     return section;
   }
   rows.replaceChildren(group('volume','볼륨',volume),group('effects','음정 · 효과',effects));
-  open.onclick = () => { if (!pending) feedback = ''; paint(); panel.showModal(); };
+  open.onclick = () => {
+    if (!pending) feedback = '';
+    paint(); panel.showModal();
+    if (ready && supported) warm();
+  };
   document.getElementById('closeSound').onclick = () => panel.close();
   panel.addEventListener('close', () => open.focus({preventScroll: true}));
   paint();

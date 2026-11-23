@@ -1,5 +1,6 @@
 export const ENDPOINT='https://world-karaoke-connect.almondjoy11.chatgpt.site/api/p2wifi';
 export const token=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),v=>v.toString(16).padStart(2,'0')).join('');
+const soundActions = new Set(['mic','music','pitch','tempo','melody','echo'].flatMap(key=>[key+'Up',key+'Down']));
 export const ERRORS={sound_update:'이 방 PC에 음향 조절 업데이트를 설치해 주세요.',unknown_label:'등록된 방 QR을 다시 찍어 주세요.',bad_ticket:'이 방의 QR을 다시 찍어 주세요.',room_conflict:'같은 방에 두 PC가 연결되어 있습니다. 직원에게 알려 주세요.',venue_wifi:'매장 와이파이에 연결하면 자동으로 연결됩니다.',room_setup:'방 PC에서 ‘느티나무 노래방 리모컨’을 열면 연결됩니다.',room_offline:'방 PC와 반주기의 연결을 기다리고 있습니다.',room_wait:'매장 와이파이와 방 PC의 P2 연결을 확인해 주세요.',pairing:'PC에 표시된 P2 전용 연결번호 8자리를 확인해 주세요.',offline:'P2 연결 PC가 꺼져 있거나 인터넷 연결이 끊겼습니다.',full:'휴대폰 5대가 연결되어 있습니다. 사용하지 않는 휴대폰을 연결 해제해 주세요.',not_ready:'PC에서 P2 반주기 연결을 먼저 완료해 주세요.',disconnected:'연결 상태가 바뀌었습니다. 다시 연결해 주세요.',busy:'이전 요청을 처리하고 있습니다. 잠시 후 다시 눌러 주세요.',permission:'이 방의 연결 정보를 확인하지 못했습니다.',invalid:'곡번호 또는 예약 순서를 다시 확인해 주세요.',slow:'연결 요청이 많습니다. 잠시 후 다시 시도해 주세요.'};
 const queueActions=new Set(['queue','reserve','queueMove','queueCancel','queuePlay','play','next']);
 function validQueue(q){return q?.valid===true && /^[a-f0-9]{64}$/.test(q.version) && Array.isArray(q.songs)
@@ -96,7 +97,13 @@ export class WifiClient {
   const request = {id,room:this.room,key:this.key,session:this.data.session};
   const deadline = Date.now() + 55000;
   try {
-   try { await this.call('command',{...request,command}); }
+   const sound=soundActions.has(command.action);
+   try {
+    const receipt=await this.call('command',{...request,command,...(sound?{soundReceipt:true}:{})});
+    if(sound && receipt.id===id && receipt.session===request.session && ['sent','confirmed','failed','unknown','expired'].includes(receipt.soundResult?.status)){
+     return {status:receipt.soundResult.status,message:receipt.soundResult.message,requestId:id};
+    }
+   }
    catch (error) {
     if (['offline','not_ready','disconnected','permission'].includes(error.code) || !error.code) this.invalidate();
     if (error.code) throw error;
@@ -107,10 +114,10 @@ export class WifiClient {
    let confirmed=null, queueChecks=0;
    let reportedStart = false;
    let fastUntil = Date.now() + 3000;
-   let pollDelay = 80;
+   let pollDelay = sound ? 0 : 80;
    while (Date.now() < deadline) {
-    await this.delay(pollDelay);
-    pollDelay = Math.min(Date.now() < fastUntil ? 280 : 1000, pollDelay * 2);
+    if(pollDelay)await this.delay(pollDelay);
+    pollDelay = Math.min(Date.now() < fastUntil ? 280 : 1000, Math.max(80,pollDelay * 2));
     if (Date.now() >= deadline) break;
     try {
      const result = await this.call('result',resultRequest);
