@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-22T14:58:35.637Z",
+  "updatedAt": "2026-11-23T11:09:46.607Z",
   "countries": [
     "ko",
     "th",
@@ -651,6 +651,14 @@
     },
     {
       "country": "th",
+      "id": "tq078son2LA",
+      "title": "อะไรก็ยอม - เสก โลโซ | Live From Kimleng Audio",
+      "url": "https://www.youtube.com/watch?v=tq078son2LA",
+      "count": 8,
+      "lastPlayed": "2026-11-23T09:26:46.8248515Z"
+    },
+    {
+      "country": "th",
       "id": "Up_W7ro-eY8",
       "title": "รอเมียพี่เผลอ - เฉลิมพล มาลาคำ [KARAOKE Version] เสียงมาสเตอร์",
       "url": "https://www.youtube.com/watch?v=Up_W7ro-eY8",
@@ -691,14 +699,6 @@
     },
     {
       "country": "th",
-      "id": "tq078son2LA",
-      "title": "อะไรก็ยอม - เสก โลโซ | Live From Kimleng Audio",
-      "url": "https://www.youtube.com/watch?v=tq078son2LA",
-      "count": 7,
-      "lastPlayed": "2026-11-19T13:57:07.3327961Z"
-    },
-    {
-      "country": "th",
       "id": "niukZCvB67I",
       "title": "คาราโอเกะ ใจสั่งมา (Jai-Sung-Mah) - LOSO [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=niukZCvB67I",
@@ -712,6 +712,14 @@
       "url": "https://www.youtube.com/watch?v=4U05DcQvaQo",
       "count": 7,
       "lastPlayed": "2026-11-13T13:54:22.2227446Z"
+    },
+    {
+      "country": "th",
+      "id": "3rFRwMeaf_w",
+      "title": "โบว์รักสีดำ คาราโอเกะ_ศิริพร อำไพพงษ์",
+      "url": "https://www.youtube.com/watch?v=3rFRwMeaf_w",
+      "count": 6,
+      "lastPlayed": "2026-11-23T10:10:22.6094458Z"
     },
     {
       "country": "th",
@@ -752,14 +760,6 @@
       "url": "https://www.youtube.com/watch?v=TSsfTJ5OxTo",
       "count": 5,
       "lastPlayed": "2026-11-17T14:34:24.0929580Z"
-    },
-    {
-      "country": "th",
-      "id": "3rFRwMeaf_w",
-      "title": "โบว์รักสีดำ คาราโอเกะ_ศิริพร อำไพพงษ์",
-      "url": "https://www.youtube.com/watch?v=3rFRwMeaf_w",
-      "count": 5,
-      "lastPlayed": "2026-11-17T13:18:35.1451711Z"
     },
     {
       "country": "th",
@@ -984,6 +984,38 @@
       "url": "https://www.youtube.com/watch?v=5wuMypdRRjI",
       "count": 4,
       "lastPlayed": "2026-10-25T10:24:09.2580529Z"
+    },
+    {
+      "country": "th",
+      "id": "rZaMKpMQHWc",
+      "title": "หนุ่มนาข้าว สาวนาเกลือ - คาราโอเกะ Midi Karaoke Cover |120/Eb",
+      "url": "https://www.youtube.com/watch?v=rZaMKpMQHWc",
+      "count": 3,
+      "lastPlayed": "2026-11-23T10:32:04.4997315Z"
+    },
+    {
+      "country": "th",
+      "id": "QbL4NzXg3jM",
+      "title": "คาราโอเกะ นานเท่าไรก็รอ (Naan-Tow-Rai-Gaw-Raw) - เสก โลโซ, เบิร์ด ธงไชย [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=QbL4NzXg3jM",
+      "count": 3,
+      "lastPlayed": "2026-11-23T09:48:40.7425448Z"
+    },
+    {
+      "country": "th",
+      "id": "EUHGjKyiry4",
+      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา [OFFICIAL Audio]",
+      "url": "https://www.youtube.com/watch?v=EUHGjKyiry4",
+      "count": 3,
+      "lastPlayed": "2026-11-23T09:21:32.2900533Z"
+    },
+    {
+      "country": "th",
+      "id": "ebxzxo_q89Y",
+      "title": "F.HERO Ft. ก้านตอง ทุ่งเงิน x SARAN - กุหลาบ (KULARB) [OFFICIAL VISUALIZER]",
+      "url": "https://www.youtube.com/watch?v=ebxzxo_q89Y",
+      "count": 3,
+      "lastPlayed": "2026-11-23T09:20:18.3424638Z"
     },
     {
       "country": "th",
@@ -1283,6 +1315,30 @@
     },
     {
       "country": "th",
+      "id": "pGeXlkcpWv8",
+      "title": "ความรักสีดำ - คาราโอแกะ",
+      "url": "https://www.youtube.com/watch?v=pGeXlkcpWv8",
+      "count": 2,
+      "lastPlayed": "2026-11-23T10:06:29.0809391Z"
+    },
+    {
+      "country": "th",
+      "id": "eTzyzNue9G8",
+      "title": "กรุณาฟังให้จบ - แช่ม แช่มรัมย์ | คาราโอเกะ โฟล์ค ดนตรีสด | popnice |",
+      "url": "https://www.youtube.com/watch?v=eTzyzNue9G8",
+      "count": 2,
+      "lastPlayed": "2026-11-23T10:02:49.1935227Z"
+    },
+    {
+      "country": "th",
+      "id": "xBZ1_Pafv1I",
+      "title": "น้ําตาบักเตี้ย คาราโอเกะ - คู่แฝดโอเอ",
+      "url": "https://www.youtube.com/watch?v=xBZ1_Pafv1I",
+      "count": 2,
+      "lastPlayed": "2026-11-23T09:40:57.0040627Z"
+    },
+    {
+      "country": "th",
       "id": "eW0JA1fTjNg",
       "title": "เคยรักฉันบ้างไหม - LOSO【OFFICIAL MV】",
       "url": "https://www.youtube.com/watch?v=eW0JA1fTjNg",
@@ -1379,14 +1435,6 @@
     },
     {
       "country": "th",
-      "id": "rZaMKpMQHWc",
-      "title": "หนุ่มนาข้าว สาวนาเกลือ - คาราโอเกะ Midi Karaoke Cover |120/Eb",
-      "url": "https://www.youtube.com/watch?v=rZaMKpMQHWc",
-      "count": 2,
-      "lastPlayed": "2026-11-17T16:00:13.3844712Z"
-    },
-    {
-      "country": "th",
       "id": "qvpUIQemXv4",
       "title": "เลี้ยงส่ง | โจ๊ก โซคูล X SING WITH ME ร้อง​กับซี",
       "url": "https://www.youtube.com/watch?v=qvpUIQemXv4",
@@ -1440,14 +1488,6 @@
       "url": "https://www.youtube.com/watch?v=anltxqgP19I",
       "count": 2,
       "lastPlayed": "2026-11-17T12:38:05.2539941Z"
-    },
-    {
-      "country": "th",
-      "id": "EUHGjKyiry4",
-      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา [OFFICIAL Audio]",
-      "url": "https://www.youtube.com/watch?v=EUHGjKyiry4",
-      "count": 2,
-      "lastPlayed": "2026-11-17T12:30:19.5637989Z"
     },
     {
       "country": "th",
@@ -1787,14 +1827,6 @@
     },
     {
       "country": "th",
-      "id": "ebxzxo_q89Y",
-      "title": "F.HERO Ft. ก้านตอง ทุ่งเงิน x SARAN - กุหลาบ (KULARB) [OFFICIAL VISUALIZER]",
-      "url": "https://www.youtube.com/watch?v=ebxzxo_q89Y",
-      "count": 2,
-      "lastPlayed": "2026-11-05T14:07:30.0441654Z"
-    },
-    {
-      "country": "th",
       "id": "gqF-NDwSqYw",
       "title": "สรุปข่าวเชลซี | “มาร์ติเนซ” ลงซ้อมลุ้นลง-เฮนโด้คัมเเบ็ค,หลายสื่อยันเอสเตวัลไม่ย้าย,ข่าวสนามใหม่",
       "url": "https://www.youtube.com/watch?v=gqF-NDwSqYw",
@@ -2019,14 +2051,6 @@
     },
     {
       "country": "th",
-      "id": "QbL4NzXg3jM",
-      "title": "คาราโอเกะ นานเท่าไรก็รอ (Naan-Tow-Rai-Gaw-Raw) - เสก โลโซ, เบิร์ด ธงไชย [ Original Karaoke ]",
-      "url": "https://www.youtube.com/watch?v=QbL4NzXg3jM",
-      "count": 2,
-      "lastPlayed": "2026-10-25T12:09:30.0224747Z"
-    },
-    {
-      "country": "th",
       "id": "10LhhygC_SA",
       "title": "YOUNGOHM - ธาตุทองซาวด์ ft. SONOFO (Official Lyric Video)",
       "url": "https://www.youtube.com/watch?v=10LhhygC_SA",
@@ -2096,6 +2120,86 @@
       "url": "https://www.youtube.com/watch?v=U7QjtwAajps",
       "count": 2,
       "lastPlayed": "2026-10-24T09:18:02.9289957Z"
+    },
+    {
+      "country": "th",
+      "id": "hg8PFc_fNyE",
+      "title": "♫ • พอได้เสียว • น้ำทิพย์ กุสุมา「คาราโอเกะ」",
+      "url": "https://www.youtube.com/watch?v=hg8PFc_fNyE",
+      "count": 1,
+      "lastPlayed": "2026-11-23T10:27:20.8588303Z"
+    },
+    {
+      "country": "th",
+      "id": "18P-nLTmuls",
+      "title": "วิ่งว่าว คาราโอเกะ - กิ่งแก้วโคราช",
+      "url": "https://www.youtube.com/watch?v=18P-nLTmuls",
+      "count": 1,
+      "lastPlayed": "2026-11-23T10:22:45.6606812Z"
+    },
+    {
+      "country": "th",
+      "id": "TOxJXkIv1xo",
+      "title": "เธอลำเอียง คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=TOxJXkIv1xo",
+      "count": 1,
+      "lastPlayed": "2026-11-23T10:18:49.8860058Z"
+    },
+    {
+      "country": "th",
+      "id": "u-dQY5HXTr4",
+      "title": "โบว์แดงแสลงใจ - พาเมล่า เบาว์เด้น คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=u-dQY5HXTr4",
+      "count": 1,
+      "lastPlayed": "2026-11-23T10:14:36.5693005Z"
+    },
+    {
+      "country": "th",
+      "id": "-RqkL6_nZ44",
+      "title": "18 ฝน คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=-RqkL6_nZ44",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:58:37.6011458Z"
+    },
+    {
+      "country": "th",
+      "id": "UaYA_l4oqk4",
+      "title": "ขอใจเธอแลกเบอร์โทร BY KK200",
+      "url": "https://www.youtube.com/watch?v=UaYA_l4oqk4",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:54:00.7723021Z"
+    },
+    {
+      "country": "th",
+      "id": "2-qBLsaeNMU",
+      "title": "หลอยฮักหลอยซึ้ง คาราโอเกะ - ศักดิ์ ภูเวียง (ซาวด์แสดงสด)",
+      "url": "https://www.youtube.com/watch?v=2-qBLsaeNMU",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:44:58.5515069Z"
+    },
+    {
+      "country": "th",
+      "id": "CrYMOEXS_kM",
+      "title": "รักคนมีเจ้าของ Karaoke - จินตหรา พูนลาภ อาร์สยาม",
+      "url": "https://www.youtube.com/watch?v=CrYMOEXS_kM",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:36:26.1242510Z"
+    },
+    {
+      "country": "th",
+      "id": "CEE_XW7I99M",
+      "title": "คาราโอเกะ ฝนตกที่หน้าต่าง (Fon-Tok-Tee-Nah-Taang) - LOSO [ Original Karaoke ]",
+      "url": "https://www.youtube.com/watch?v=CEE_XW7I99M",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:32:24.3377687Z"
+    },
+    {
+      "country": "th",
+      "id": "CwCWvnb9XpY",
+      "title": "มักบ่าวรุ่นน้อง - ดอกรัก ดวงมาลา [MUSIC VIDEO]",
+      "url": "https://www.youtube.com/watch?v=CwCWvnb9XpY",
+      "count": 1,
+      "lastPlayed": "2026-11-23T09:22:41.0558704Z"
     },
     {
       "country": "th",
@@ -2456,14 +2560,6 @@
       "url": "https://www.youtube.com/watch?v=BNw26kVGsis",
       "count": 1,
       "lastPlayed": "2026-11-19T13:32:16.4538687Z"
-    },
-    {
-      "country": "th",
-      "id": "eTzyzNue9G8",
-      "title": "กรุณาฟังให้จบ - แช่ม แช่มรัมย์ | คาราโอเกะ โฟล์ค ดนตรีสด | popnice |",
-      "url": "https://www.youtube.com/watch?v=eTzyzNue9G8",
-      "count": 1,
-      "lastPlayed": "2026-11-19T13:31:07.4155531Z"
     },
     {
       "country": "th",
@@ -2928,14 +3024,6 @@
       "url": "https://www.youtube.com/watch?v=VEV1E9v1WGc",
       "count": 1,
       "lastPlayed": "2026-11-15T12:24:37.9520467Z"
-    },
-    {
-      "country": "th",
-      "id": "xBZ1_Pafv1I",
-      "title": "น้ําตาบักเตี้ย คาราโอเกะ - คู่แฝดโอเอ",
-      "url": "https://www.youtube.com/watch?v=xBZ1_Pafv1I",
-      "count": 1,
-      "lastPlayed": "2026-11-15T12:08:12.8721893Z"
     },
     {
       "country": "th",
@@ -3784,14 +3872,6 @@
       "url": "https://www.youtube.com/watch?v=oYXL4p0i2pY",
       "count": 1,
       "lastPlayed": "2026-11-12T14:30:43.7597951Z"
-    },
-    {
-      "country": "th",
-      "id": "pGeXlkcpWv8",
-      "title": "ความรักสีดำ - คาราโอแกะ",
-      "url": "https://www.youtube.com/watch?v=pGeXlkcpWv8",
-      "count": 1,
-      "lastPlayed": "2026-11-12T14:22:20.9657017Z"
     },
     {
       "country": "th",
