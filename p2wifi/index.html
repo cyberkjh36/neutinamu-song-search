@@ -152,14 +152,14 @@
 </style>
   <link rel="stylesheet" href="../p2.css">
   <script defer src="vendor/qrcode.js"></script>
-  <script src="wifi-bridge.js?v=1.4.13"></script>
+  <script src="wifi-bridge.js?v=1.4.14"></script>
   <link rel="stylesheet" href="wifi.css">
   <script defer src="voice-search.js?v=1.3.2-voice"></script>
   <script src="../catalog-sync.js" defer></script>
   <script src="../chosung.js"></script>
   <script src="native-search.js?v=1.4.10" defer></script>
   <link rel="stylesheet" href="favorites.css?v=1.4.12">
-  <link rel="stylesheet" href="light.css?v=1.4.13">
+  <link rel="stylesheet" href="light.css?v=1.4.14">
   <script src="favorites-data.js" defer></script>
   <script src="favorites-ui.js?v=1.4.12" defer></script>
 
@@ -192,10 +192,17 @@
     </div>
     <p class="hint">파일 첫 줄 예시: <b>곡번호,곡제목,가수</b><br>2026년 11월 20일까지 TJ미디어에서 발표한 신곡 128곡을 추가했습니다. 매장 P2의 신곡 업데이트 상태에 따라 재생 가능한 곡은 다를 수 있습니다. 가요·팝·일본곡 중심이며, 모든 국가의 외국곡과 삭제곡까지 완전하게 포함되었는지는 확인되지 않았습니다.</p>
   </section>
-  <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.12<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
+  <footer class="footer">made by cyberkjh · P2 웹 리모컨 1.4.14<br>이 리모컨은 느티나무 노래방에서 직접 제작했습니다.<br>저작권은 제작자에게 있으며, 무단 복제·배포·도용을 금합니다.</footer>
 </main>
 <dialog id="soundPanel" aria-labelledby="soundTitle">
-  <div class="sound-heading"><h2 id="soundTitle">음향 조절</h2><button id="closeSound" type="button" autofocus>닫기</button></div>
+  <header class="sound-heading">
+    <div class="sound-title-block">
+      <h2 id="soundTitle">음향 조절</h2>
+      <span id="soundConnection" data-online="false">P2 연결 대기</span>
+    </div>
+    <svg class="sound-wave" viewBox="0 0 118 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M2 20v4m6-9v14m6-20v26m6-17v8m6-11v14m6-23v32m6-27v22m6-15v8m6-6v4m6-13v22m6-31v40m6-30v20m6-15v10m6-12v14m6-20v26m6-18v10m6-8v6m6-10v14m6-10v6m6-4v2"/></svg>
+    <button id="closeSound" type="button" aria-label="닫기" autofocus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+  </header>
   <div id="soundRows"></div>
   <p id="soundStatus" role="status"></p>
 </dialog>

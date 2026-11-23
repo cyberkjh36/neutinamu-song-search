@@ -226,23 +226,100 @@ input::placeholder { color: #54695d; opacity: 1; }
 .queue-row-feedback:empty { display: none; }
 
 #favoriteShortcuts #soundShortcut {
-  grid-column: 1 / -1; display: flex; flex-direction: row; justify-content: flex-start;
-  gap: 10px; min-height: 54px; padding: 8px 14px; color: #174a3d; background: #e2efe8; border-color: #82a295;
+  grid-column: 1 / -1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start;
+  min-height: 54px; padding: 7px 14px 7px 9px; gap: 10px;
+  background: #282b48; color: #fff; border: 1px solid #313451; border-radius: 15px;
 }
-#favoriteShortcuts #soundShortcut svg { width: 26px; height: 26px; margin: 0; padding: 0; background: none; }
+#favoriteShortcuts #soundShortcut strong { font-size: 1.16rem; font-weight: 740; letter-spacing: -.035em; }
+#favoriteShortcuts #soundShortcut .sound-shortcut-mark {
+  display: grid; place-items: center; flex: none; width: 35px; height: 35px;
+  border-radius: 10px; color: #dfdfff; background: #424466;
+}
+#favoriteShortcuts #soundShortcut svg { width: 21px; height: 21px; margin: 0; padding: 0; background: none; }
+#favoriteShortcuts #soundShortcut > svg { margin-left: auto; width: 16px; color: #c6c8de; }
 #soundPanel {
-  box-sizing: border-box; margin: auto; width: min(94vw, 480px); max-height: 92vh; max-height: 92dvh;
-  overflow-y: auto; padding: 18px; border: 1px solid #8fa799; border-radius: 18px; color: #17382c; background: #fafbf6;
+  box-sizing: border-box; width: min(434px, calc(100% - 28px)); max-width: none;
+  max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+  margin: auto; padding: 0; border: 0; border-radius: 24px; overflow: auto; overscroll-behavior: contain;
+  background: #f5f5fa; color: #23253a; box-shadow: 0 18px 75px #14172d45;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  text-align: left; word-break: keep-all;
 }
-#soundPanel::backdrop { background: rgb(16 37 29 / 65%); }
-#soundPanel .sound-heading, #soundPanel .sound-row { display: flex; align-items: center; gap: 8px; }
-#soundPanel h2 { flex: 1; margin: 0; font-size: 1.55rem; }
-#soundPanel button { min-width: 52px; min-height: 48px; border-radius: 10px; touch-action: manipulation; color: #163d31; border: 1px solid #96b1a3; background: #e6efe7; }
-#soundPanel #closeSound { font-size: 1.05rem; padding: 6px 14px; }
-#soundRows { margin-block: 12px; }
-#soundPanel .sound-row { padding-block: 7px; border-bottom: 1px solid #d1dbd2; }
-#soundPanel .sound-row strong { flex: 1; font-size: 1.2rem; }
-#soundPanel .sound-row button { font-size: 1.65rem; line-height: 1; font-weight: 750; }
-#soundPanel .sound-row button:last-child { background: #1d5744; color: white; }
-#soundPanel button:disabled { opacity: .45; }
-#soundStatus { margin: 12px 0 0; min-height: 1.5em; color: #354f43; font-size: 1rem; }
+#soundPanel::backdrop { background: rgb(14 18 29 / 52%); }
+#soundPanel .sound-heading {
+  display: flex; align-items: center; gap: 14px; padding: 19px 20px;
+  background: linear-gradient(108deg, #24273e 12%, #353654 100%); color: #fff;
+}
+#soundPanel .sound-title-block { flex: 1 0 auto; }
+#soundPanel h2 { margin: 0; font-size: 1.55rem; line-height: 1.25; font-weight: 760; letter-spacing: -.055em; color: inherit; }
+#soundConnection { display: flex; align-items: center; gap: 6px; margin-top: 5px; color: #d0d1df; font-size: .875rem; line-height: 1.3; }
+#soundConnection::before { content: ''; width: 7px; height: 7px; border-radius: 50%; border: 1px solid #abadc2; }
+#soundConnection[data-online=true]::before { background: #a7e6c9; border-color: #a7e6c9; }
+#soundPanel .sound-wave { flex: 0 1 96px; width: 0; min-width: 0; height: 38px; color: #9694ce; opacity: .7; }
+#soundPanel button {
+  display: inline-flex; align-items: center; justify-content: center; touch-action: manipulation;
+  min-width: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; box-shadow: none; font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+#soundPanel #closeSound { flex: none; border-radius: 50%; color: #f1f1ff; background: #ffffff13; }
+#closeSound svg { width: 21px; height: 21px; }
+#soundPanel :is(button:focus-visible, #closeSound:focus-visible) { outline: 3px solid #8481e7; outline-offset: 1px; z-index: 1; }
+#soundRows { padding: 16px 18px 0; }
+#soundPanel .sound-group { margin: 0; padding: 0; }
+#soundPanel .sound-group + .sound-group { margin-top: 17px; }
+#soundPanel .sound-group h3 { margin: 0 0 8px 2px; font-size: .94rem; font-weight: 750; line-height: 1.35; letter-spacing: -.025em; color: #595c73; }
+#soundPanel .sound-list { display: grid; }
+#soundPanel .sound-control { min-width: 0; background: #fff; }
+#soundPanel .sound-name { display: flex; align-items: center; min-width: 0; gap: 9px; }
+#soundPanel .sound-name strong { font-size: 1.12rem; line-height: 1.3; font-weight: 740; letter-spacing: -.045em; overflow-wrap: anywhere; }
+#soundPanel .sound-symbol { display: inline-grid; place-items: center; flex: none; color: #6356aa; }
+#soundPanel .sound-symbol svg { width: 21px; height: 21px; }
+#soundPanel .sound-volume .sound-list { border: 1px solid #dddde9; border-radius: 15px; background: #fff; padding: 0 12px; }
+#soundPanel .sound-volume .sound-control { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; }
+#soundPanel .sound-volume .sound-control + .sound-control { border-top: 1px solid #e9e9f0; }
+#soundPanel .sound-volume .sound-symbol { width: 36px; height: 36px; border-radius: 11px; background: #eeebff; }
+#soundPanel .sound-volume .sound-control + .sound-control .sound-symbol { background: #e9efff; color: #425f97; }
+#soundPanel .sound-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px; }
+#soundPanel .sound-volume .sound-pair { flex: none; width: 100px; }
+#soundPanel .sound-step { gap: 4px; border-radius: 9px; color: #37394d; background: #f0f0f6; font-size: .9rem; font-weight: 700; }
+#soundPanel .sound-step + .sound-step { color: #524296; background: #eae6fa; }
+#soundPanel .sound-step svg { flex: none; width: 15px; height: 15px; stroke-width: 2.2; }
+#soundPanel .sound-volume .sound-step svg { width: 22px; height: 22px; }
+#soundPanel .sound-effects .sound-list { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+#soundPanel .sound-effects .sound-control { display: grid; align-content: start; gap: 11px; border: 1px solid #dddde9; border-radius: 14px; padding: 11px 9px 8px; }
+#soundPanel .sound-effects .sound-name { margin-left: 3px; gap: 7px; }
+#soundPanel .sound-effects .sound-symbol svg { width: 20px; height: 20px; }
+#soundPanel .sound-effects .sound-step { white-space: nowrap; }
+#soundPanel button:disabled { opacity: 1; color: #767789; background: #f2f2f6; }
+#soundPanel .sound-step:enabled:active { color: #fff; background: #584e93; transform: scale(.96); }
+#soundPanel #closeSound:active { background: #ffffff30; }
+#soundStatus { margin: 0; padding: 13px 20px 16px; color: #585a70; font-size: .9rem; line-height: 1.45; min-height: 1.45em; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  #soundPanel { width: calc(100% - 16px); margin: auto auto max(8px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 355px) {
+  #soundRows { padding: 13px 10px 0; }
+  #soundPanel .sound-heading { padding: 15px; }
+  #soundPanel .sound-volume .sound-list { padding: 0 8px; }
+  #soundPanel .sound-volume .sound-pair { width: 91px; }
+  #soundPanel .sound-volume .sound-symbol { width: 29px; height: 33px; }
+  #soundPanel .sound-name { gap: 5px; }
+  #soundPanel .sound-effects .sound-control { padding-inline: 5px; }
+  #soundPanel .sound-effects .sound-step { font-size: .875rem; gap: 1px; }
+  #soundPanel .sound-effects .sound-step svg { width: 12px; }
+}
+@media (max-height: 620px) and (max-width: 520px) {
+  #soundPanel .sound-heading { padding-block: 12px; }
+  #soundRows { padding-top: 9px; }
+  #soundPanel .sound-group + .sound-group { margin-top: 10px; }
+  #soundPanel .sound-volume .sound-control { padding-block: 6px; }
+  #soundPanel .sound-effects .sound-control { gap: 6px; }
+  #soundStatus { padding-block: 9px; }
+}
+@media (max-height: 560px) {
+  #soundPanel .sound-heading { position: sticky; top: 0; z-index: 2; padding-block: 8px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #soundPanel[open] { animation: sound-appear .16s ease-out; }
+  @keyframes sound-appear { from { opacity: .3; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+}
