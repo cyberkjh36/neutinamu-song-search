@@ -1,0 +1,46 @@
+느티나무 P2 독립 리모컨 장치 — 시험판 기록 안내
+
+이 파일은 ESP32-WROOM-32 개발 보드용입니다.
+P2 본체, 휴대폰, 일반 USB 블루투스 동글에 설치하는 파일이 아닙니다.
+반주기 내부에 연결하거나 P2의 업데이트 USB로 넣지 마세요.
+회로를 조립하고 프로그램을 기록할 수 있는 사람을 위한 안내입니다.
+실물 P2 / TIR-1090 호환 시험 전에는 손님용으로 사용하지 마세요.
+
+1. 준비
+ESP32 DevKit 보드를 데이터 USB 케이블로 PC에 연결합니다.
+Python이 있는 PC에서 아래 명령으로 기록 도구를 설치합니다.
+
+  python -m pip install esptool==4.5.1 pyserial==3.5
+
+Windows 장치 관리자에서 해당 보드의 COM 번호를 확인합니다.
+아래 COM3는 예시이며, 확인한 번호로 바꿔야 합니다.
+
+2. 처음 기록
+bootloader.bin, partitions.bin, boot_app0.bin, firmware.bin이 있는
+폴더에서 다음 명령을 한 줄로 실행합니다.
+
+  python -m esptool --chip esp32 --port COM3 --baud 460800 write_flash --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin
+
+이는 PlatformIO esp32dev / Arduino ESP32 2.0.17의 기본 배치를 기준으로 합니다.
+ESP32-C3/S3나 다른 메모리 배치의 보드에는 사용하지 마세요.
+보드에 따라 BOOT 버튼을 사용해야 할 수 있으므로 보드 안내를 따르세요.
+
+3. 최초 설정 암호 확인
+
+  python -m serial.tools.miniterm COM3 115200
+
+시리얼 창을 연 상태에서 보드의 EN(리셋) 버튼을 한 번 누릅니다.
+처음 부팅할 때 표시되는 P2-Setup 와이파이 이름, 설정 암호,
+http://192.168.4.1 주소를 확인합니다. 이후 단계는 README_KO.md에 있습니다.
+시리얼 창 종료는 Ctrl+] 입니다.
+
+4. 나중에 프로그램만 갱신
+같은 보드와 같은 파티션 배치를 유지하는 경우 아래처럼 앱 영역만 기록합니다.
+
+  python -m esptool --chip esp32 --port COM3 --baud 460800 write_flash 0x10000 firmware.bin
+
+erase_flash로 전체 메모리를 지우면 리모컨 학습 정보, 와이파이 설정,
+연결번호를 유지하는 비밀키가 삭제됩니다. 일반 갱신에는 사용하지 마세요.
+
+SHA256SUMS.txt는 다운로드된 바이너리의 무결성 확인용입니다.
+컴파일 성공은 실물 반주기 호환 시험을 대신하지 않습니다.

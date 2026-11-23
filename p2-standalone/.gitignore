@@ -1,0 +1,4 @@
+.pio/
+include/ca_bundle.generated.h
+__pycache__/
+test-core
