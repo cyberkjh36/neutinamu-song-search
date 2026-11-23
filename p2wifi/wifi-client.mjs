@@ -206,7 +206,11 @@ export function rankPersonal(a,b){
 }
 
 export function savePersonalSong(record,number,now){
- if(!record.songs[number])record.songs[number]={number,playCount:0,lastPlayed:0,savedAt:now};
+ if(record.songs[number])return true;
+ record.songs[number]={number,playCount:0,lastPlayed:0,savedAt:now};
+ const songs=Object.values(record.songs);
+ if(songs.length>5000)delete record.songs[songs.sort(rankPersonal).pop().number];
+ return Boolean(record.songs[number]);
 }
 
 export function mergePersonal(record,events=[]){

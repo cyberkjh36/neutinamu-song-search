@@ -21,7 +21,8 @@ module.exports=async function verifyPersonal(page,base){
   assert.match(await row(693).textContent(),/1위 · 1회/);
   events.push({id:'a'.repeat(32),number:693,created:at+50},{id:'b'.repeat(32),number:3,created:at+100});
   await page.evaluate(()=>window.NeutiP2.command(JSON.stringify({command:'personalSongs'})));
-  await page.waitForFunction(()=>document.querySelector('#favoritesList .favorite-play-count')?.textContent==='1위 · 2회');
+  const counts=await page.locator('#favoritesList .favorite-play-count').allTextContents();
+  assert.equal(counts[0],'1위 · 2회',JSON.stringify({counts,ops:ops.slice(-15),saved:await page.evaluate(()=>JSON.parse(localStorage.getItem('p2wifi-personal-v2')).songs)}));
   assert.equal(await row(3).locator('.favorite-play-count').textContent(),'2위 · 1회');
   const entry=await row(3).locator('.favorite-song-title').textContent();
   await page.locator('#favoritesFilter').fill(entry);

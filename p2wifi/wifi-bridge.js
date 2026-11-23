@@ -12,7 +12,7 @@ Promise.all([import('./wifi-client.mjs?v=1.4.12'),import('./room-connection.mjs?
     const stored=storage.getItem(personalKey);
     const old=JSON.parse(stored||storage.getItem('p2wifi-personal-v1')||'{}');
     const next=mergePersonal(old,events);
-    if(edit)edit(next);
+    if(edit && edit(next)===false)return false;
     const data=JSON.stringify(next);
     if(stored!==data)storage.setItem(personalKey,data);
     window.onP2NativePersonalSongs?.({songs:Object.values(next.songs).sort(rankPersonal)});
@@ -32,27 +32,33 @@ Promise.all([import('./wifi-client.mjs?v=1.4.12'),import('./room-connection.mjs?
    key=room===client.room && client.key || storage.getItem('p2wifi-key-'+room);
   }catch{return;}
   if(!/^\d{8}$/.test(room)||!key)return;
-  if(loadingHistory.has(room)){if(recheck)loadingHistory.set(room,true);return;}
-  loadingHistory.set(room,false);
-  return client.call('personalHistory',{room,key,ranked:true}).then(reply=>{
-   if(Number.isSafeInteger(reply.serverTime))serverOffset=reply.serverTime-Date.now();
-   if(reply.rankedEvents?.length)return personal(reply.rankedEvents);
-  }).catch(()=>{}).finally(()=>{
-   const repeat=loadingHistory.get(room);loadingHistory.delete(room);
-   if(repeat)return syncHistory(room);
-  });
+  const running=loadingHistory.get(room);
+  if(running){if(recheck)running.again=true;return running.promise;}
+  const request={again:false};
+  loadingHistory.set(room,request);
+  request.promise=(async()=>{
+   try{
+    do{
+     request.again=false;
+     const reply=await client.call('personalHistory',{room,key,ranked:true});
+     if(Number.isSafeInteger(reply.serverTime))serverOffset=reply.serverTime-Date.now();
+     if(reply.rankedEvents?.length)await personal(reply.rankedEvents);
+    }while(request.again);
+   }catch{}finally{loadingHistory.delete(room);}
+  })();
+  return request.promise;
  }
  async function syncPersonalRooms(){
   const rooms=new Set();
-  const current=syncHistory();
   try{
+   const current=client.room||storage.getItem('p2wifi-last-room');
+   if(current)rooms.add(current);
    for(let i=0;i<storage.length;i++){
     const match=/^p2wifi-key-(\d{8})$/.exec(storage.key(i));
     if(match)rooms.add(match[1]);
    }
   }catch{}
-  // A room key already stored on this phone can read its history without opening a control session.
-  await Promise.all([current,...Array.from(rooms,room=>syncHistory(room))]);
+  await Promise.all(Array.from(rooms,room=>syncHistory(room,true)));
  }
  let closeAfterJoin=false;
  function paint(){
@@ -105,12 +111,12 @@ Promise.all([import('./wifi-client.mjs?v=1.4.12'),import('./room-connection.mjs?
    }else showHelp();paint();return;}
   if(c.command==='queueView'){connection.wake();return;}
   if(c.command==='status'){paint();return;}
-  if(c.command==='personalSongs'){personal();return syncPersonalRooms();}
+  if(c.command==='personalSongs'){await personal();return syncPersonalRooms();}
   if(c.command==='personalAdd'){
    const number=Number(c.number);
    if(!Number.isInteger(number)||number<1||number>99999999)return false;
    return personal([],record=>{
-    savePersonalSong(record,number,Date.now()+serverOffset);
+    return savePersonalSong(record,number,Date.now()+serverOffset);
    });
   }
   if(c.command==='personalRemove'){
