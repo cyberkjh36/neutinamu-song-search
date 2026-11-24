@@ -5,6 +5,7 @@ const {chromium,webkit,devices}=require('playwright'),assert=require('node:asser
   const browser=await ({chromium,webkit}[type]).launch(type==='chromium'?{args:['--no-sandbox']}:{});
   try{
    const cx=await browser.newContext({...devices[type==='webkit'?'iPhone 13':'Pixel 7'],serviceWorkers:'block'});
+   await require('./verify-manager-lock.cjs')(cx,base);
    const tab=await cx.newPage(),errors=[],ops=[];
    const labels=['1','2','3','5','6','7','8'],codes=Object.fromEntries(labels.map(n=>[n,'1000000'+n]));
    let off=false,showSong=false;
