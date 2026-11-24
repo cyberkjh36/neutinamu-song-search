@@ -6,8 +6,25 @@ const queueActions=new Set(['queue','reserve','queueMove','queueCancel','queuePl
 function validQueue(q){return q?.valid===true && /^[a-f0-9]{64}$/.test(q.version) && Array.isArray(q.songs)
  && q.songs.length<=255 && q.songs.every(n=>Number.isInteger(n)&&n>0&&n<=99999999);}
 export class WifiClient {
- constructor({fetcher=(input, options) => globalThis.fetch(input, options),storage=globalThis.localStorage,changed=()=>{},delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){Object.assign(this,{fetcher,storage,changed,delay});this.room='';this.key='';this.data=null;this.busy=false;this.refreshing=false;this.queueEpoch=0;this.playbackEpoch=0;this.revision=0;this.sending=false;}
- async call(op,extra={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);try{const response=await this.fetcher(ENDPOINT,{method:'POST',cache:'no-store',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({op,room:this.room,key:this.key,session:this.data?.session,...extra}),signal:controller.signal});const b=await response.json();if(!response.ok||!b.ok)throw Object.assign(new Error(ERRORS[b.code]||'통신 결과를 확인하지 못했습니다.'),{code:b.code});return b;}finally{clearTimeout(timer);}}
+ constructor({fetcher=(input, options) => globalThis.fetch(input, options),storage=globalThis.localStorage,expectedName='',changed=()=>{},delay=ms=>new Promise(r=>setTimeout(r,ms))}={}){Object.assign(this,{fetcher,storage,expectedName,changed,delay});this.room='';this.key='';this.data=null;this.busy=false;this.refreshing=false;this.queueEpoch=0;this.playbackEpoch=0;this.revision=0;this.sending=false;}
+ async call(op,extra={}) {
+  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),7000);
+  try {
+   const response=await this.fetcher(ENDPOINT,{method:'POST',cache:'no-store',
+    headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    body:JSON.stringify({op,room:this.room,key:this.key,session:this.data?.session,...extra}),signal:controller.signal});
+   const reply=await response.json();
+   if(!response.ok || !reply.ok){
+    const roomMessage=this.expectedName && ['pairing','bad_ticket','unknown_label'].includes(reply.code)
+     ? '이 방 PC의 반주기 등록 상태를 확인해 주세요.' : '';
+    throw Object.assign(new Error(roomMessage || ERRORS[reply.code] || '통신 결과를 확인하지 못했습니다.'),{code:reply.code});
+   }
+   if(this.expectedName && (op==='join'||op==='status') && reply.name!==this.expectedName)
+    throw Object.assign(new Error('선택한 방과 반주기 등록 정보가 다릅니다. 방 PC를 확인해 주세요.'),{code:'room_conflict'});
+   return reply;
+  } finally {clearTimeout(timer);}
+ }
+
  invalidate() {
   this.revision++;
   if (this.data) this.data = {...this.data, online:false, state:{connected:false}};

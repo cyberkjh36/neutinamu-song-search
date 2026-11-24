@@ -12,8 +12,8 @@ import zipfile
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 EDITION = {
-    'p2wifi': ('kr.neutinamu.manager.p2', 'P2 매니저', 'p2-icon.xml', 'Neutinamu_P2_Manager_Android_1.0.0.apk'),
-    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.0.apk')
+    'p2wifi': ('kr.neutinamu.manager.p2', 'P2 매니저', 'p2-icon.xml', 'Neutinamu_P2_Manager_Android_1.0.1.apk'),
+    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.1.apk')
 }
 
 def run(*args):

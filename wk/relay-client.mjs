@@ -22,17 +22,19 @@ export class KaraokeConnection {
     try{
       const response=await this.fetch(this.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({op,room:this.room,key:this.key,...data}),credentials:'omit',cache:'no-store',signal:controller.signal});
       let b;try{b=await response.json();}catch{throw failure('response');}if(generation!==this.generation)throw failure('disconnected');
-      if(!response.ok||!b.ok)throw failure(b.code||'response');return b;
+      if(!response.ok||!b.ok)throw failure(b.code||'response');
+      if(this.expectedPc && (op==='join'||op==='ping') && b.pcName!==this.expectedPc)throw failure('room_mismatch');
+      return b;
     }catch(e){throw generation!==this.generation?failure('disconnected'):timedOut?failure('networkTimeout'):typeof e.code==='string'?e:failure('connect');}finally{clearTimeout(timer);this.controllers.delete(controller);}
   }
-  async connect(code,name){
+  async connect(code,name,expectedPc=''){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
     const leaving=this.disconnect(), generation=this.generation;
     await leaving;if(generation!==this.generation)throw failure('disconnected');
-    this.key=random(32);this.room=code;this.name=name;this.last=null;this.set('connecting');
+    this.expectedPc=expectedPc;this.key=random(32);this.room=code;this.name=name;this.last=null;this.set('connecting');
     try{const reply=await this.call('join',{name,fastControls:true},generation);
       this.acceptJoin(reply);this.accepted=true;this.confirmedAt=Date.now();this.remember();this.set(this.paused?'reconnecting':'ready',this.serverName);this.heartbeat(generation);}
-    catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}
+    catch(e){if(generation===this.generation){if(e.code==='room_mismatch')void this.disconnect();this.set('error',e.code);}throw e;}
   }
   acceptJoin(reply){
       // Negotiate the server's admission interval; older relays keep their safe delay.
@@ -85,7 +87,7 @@ export class KaraokeConnection {
         this.set(this.paused?'reconnecting':this.foreground?'sending':'ready',this.serverName);this.heartbeat(generation);return true;
       }catch(e){
         if(generation!==this.generation)return false;
-        if(['pairing','permission','invalid'].includes(e.code)){await this.disconnect();this.set('error',e.code);return false;}
+        if(['pairing','permission','invalid','room_mismatch'].includes(e.code)){await this.disconnect();this.set('error',e.code);return false;}
         this.scheduleRecovery(e.code);return false;
       }finally{if(this.recovery===task)this.recovery=null;}
     })();
@@ -123,6 +125,7 @@ export class KaraokeConnection {
       try{await this.refreshTvStatus(generation);if(generation===this.generation)this.heartbeat(generation);}
       catch(e){
         if(generation!==this.generation)return;
+        if(e.code==='room_mismatch'){void this.disconnect();this.set('error',e.code);return;}
         if(['connect','networkTimeout','response'].includes(e.code)&&misses<2){this.heartbeat(generation,misses+1);return;}
         this.scheduleRecovery(e.code);
       }
@@ -267,7 +270,7 @@ export class KaraokeConnection {
   }
   async disconnect(){
     const old=this.key&&this.room?{op:'leave',room:this.room,key:this.key}:null;
-    this.generation++;this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.windowSupported=false;this.youtubeVolumeSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.relayVideoSearch=false;this.nextSend=0;this.quick=false;this.set('idle');
+    this.generation++;this.expectedPc='';this.forget();this.accepted=false;this.needsJoin=false;this.recovery=null;this.paused=false;this.foreground=0;this.retryCount=0;this.confirmedAt=0;this.tvStatusRead=null;clearTimeout(this.timer);for(const c of this.controllers)c.abort();this.controllers.clear();this.backgroundRead?.wake?.();this.backgroundRead=null;this.key=null;this.room=null;this.last=null;this.tvInputSupported=false;this.tvMenuSupported=false;this.queueSupported=false;this.browseSupported=false;this.titleSupported=false;this.controlSupported=false;this.windowSupported=false;this.youtubeVolumeSupported=false;this.favoritesSupported=false;this.playlistSupported=false;this.playlistPending=null;this.browseDraft=null;this.relayVideoSearch=false;this.nextSend=0;this.quick=false;this.set('idle');
     if(old)void Promise.resolve().then(()=>this.fetch(this.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(old),credentials:'omit',keepalive:true})).catch(()=>{});
   }
 }

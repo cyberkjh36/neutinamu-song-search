@@ -1,4 +1,4 @@
-const CACHE = 'neutinamu-webremote-1.4.16-manager-device';
+const CACHE = 'neutinamu-webremote-1.4.17-manager-auto';
 const FILES = ['index.html','light.css','voice-search.js','native-search.js','favorites-ui.js','favorites-data.js','favorites.css',
   'manager.html','manager.sealed.json','manager.webmanifest','../manager/unlock.mjs','../manager/crypto.mjs','../manager/device.mjs','../manager/rooms.css','vendor/qrcode.js','wifi-client.mjs','room-connection.mjs','wifi-bridge.js','sound-controls.mjs','wifi.css','manifest.webmanifest','../catalog-sync.js','../chosung.js','../p2.css','../icon.svg',
   '../icon-192.png','../icon-512.png'];

@@ -61,7 +61,10 @@ with tempfile.TemporaryDirectory() as tmp:
     run('keytool','-genkeypair','-keystore',work/'qa.p12','-storepass','test-only-fixture','-alias','fixture','-keyalg','RSA','-dname','CN=Android Automation','-validity','10')
     os.environ['ANDROID_FIXTURE_KEY']=secrets.token_hex(12)
     for product,pkg,glob in [('p2wifi','kr.neutinamu.manager.p2','Neutinamu_P2_Manager_Android_*.apk'),('wk','kr.neutinamu.manager.world','WorldKaraoke_Manager_Android_*.apk')]:
-        apk=sorted((repo/'downloads').glob(glob))[-1]
+        releases=sorted((repo/'downloads').glob(glob))
+        apk=releases[-1]
+        if len(releases)>1:
+            adb('install','-r',releases[-2])
         adb('install','-r',apk);launch(pkg)
         enter('invalid-test-value');wait_node(has('비밀번호를 확인'))
         print(pkg,'release installed, opened in its own Activity and rejected an incorrect enrollment key',flush=True)

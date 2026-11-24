@@ -6,7 +6,7 @@ import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.22';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
 import { createBrowseUi } from './browse-ui.mjs?v=3.18';
-import { KaraokeConnection } from './relay-client.mjs?v=3.24';
+import { KaraokeConnection } from './relay-client.mjs?v=3.25';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
@@ -147,7 +147,7 @@ const favoriteCache = createFavoritesCache({onChange:()=>remoteUi?.render()});
 let phoneSessionStorage;try{phoneSessionStorage=globalThis.sessionStorage;}catch{}
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
-  managerUi?.render();
+  managerUi?.render(state,detail);
   renderConnection();
   if (feedbackState.key === 'connected') renderFeedback();
   if (state === 'error') showError(detail);
