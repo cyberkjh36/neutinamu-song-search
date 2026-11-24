@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko" data-product="p2wifi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f8f8f2">
+  <meta name="referrer" content="no-referrer">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="P2 매니저">
+  <title>P2 매니저 리모컨</title>
+  <link rel="manifest" href="./manager.webmanifest">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <link rel="stylesheet" href="../manager/rooms.css">
+  <link rel="preload" href="./manager.sealed.json" as="fetch" crossorigin="anonymous">
+  <script type="module" src="../manager/unlock.mjs"></script>
+</head>
+<body class="manager-lock">
+  <main><header><p>느티나무 노래방</p><h1>P2 매니저</h1></header>
+    <form id="unlock"><label for="password">매니저 비밀번호</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <button type="submit">리모컨 열기</button>
+      <p id="unlock-status" role="status" aria-live="polite"></p>
+    </form>
+    <noscript>리모컨을 열려면 브라우저에서 자바스크립트를 허용해 주세요.</noscript>
+  </main>
+</body></html>

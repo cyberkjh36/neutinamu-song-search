@@ -6,7 +6,7 @@ import {bindTypedSearch, normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 import {createRemoteUi} from './remote-ui.mjs?v=3.22';
 import {createFavoritesCache} from './favorites-cache.mjs?v=3.17';
 import { createBrowseUi } from './browse-ui.mjs?v=3.18';
-import { KaraokeConnection } from './relay-client.mjs?v=3.22';
+import { KaraokeConnection } from './relay-client.mjs?v=3.24';
 import {bindPhoneLifecycle} from './phone-lifecycle.mjs?v=3.15';
 import { createQueueUi } from './queue-ui.mjs?v=3.8';
 import { needsChrome, readHandoff, chromeLinks, roomDigits } from './chrome-handoff.mjs?v=3.13';
@@ -14,6 +14,8 @@ import { VoiceInput, isAppleMobile, openVoiceDialog, closeVoiceDialog } from './
 import { safariLinks, safariArrival } from './safari-handoff.mjs?v=2.6';
 
 const $ = id => document.getElementById(id);
+const managerMode = Boolean(window.NeutiManager);
+let managerUi;
 const handoff = readHandoff(location.hash), showChromeHandoff = needsChrome(navigator);
 let currentLanguage = LANGUAGES[0], voice = null, busy = false, connectionError = null, connectionAttempt = 0;
 let feedbackState = { key:'queryHint', error:false };
@@ -145,6 +147,7 @@ const favoriteCache = createFavoritesCache({onChange:()=>remoteUi?.render()});
 let phoneSessionStorage;try{phoneSessionStorage=globalThis.sessionStorage;}catch{}
 const connection = new KaraokeConnection(undefined, (state, detail) => {
   connectionError = state === 'error' ? detail : null;
+  managerUi?.render();
   renderConnection();
   if (feedbackState.key === 'connected') renderFeedback();
   if (state === 'error') showError(detail);
@@ -152,7 +155,7 @@ const connection = new KaraokeConnection(undefined, (state, detail) => {
   if (state === 'reconnecting') feedback('connecting');
   if (state === 'idle') {searchComplete=false; feedback('disconnected');}
   refreshControls();
-},{storage:phoneSessionStorage,isOnline:()=>navigator.onLine!==false});
+},{storage:managerMode ? undefined : phoneSessionStorage,isOnline:()=>navigator.onLine!==false});
 const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const supported = secure && window.isSecureContext && Boolean(window.fetch && window.crypto?.getRandomValues);
 queueUi=createQueueUi({connection,getLanguage:()=>currentLanguage.code,blocked:()=>!supported||Boolean(voice?.active)||connection.state==='sending'});
@@ -395,7 +398,10 @@ window.addEventListener('online', refreshFavorites);
 window.addEventListener('pagehide', () => favoriteCache.cancelRefresh());
 window.addEventListener('pageshow', event => { if (event.persisted) refreshFavorites(); });
 bindPhoneLifecycle({connection,onSuspend:closeVoice});
-if (supported && connection.restore(handoff.room)) $('code').value = connection.room;
+if (managerMode) {
+  const {mountWorldManager, vault:browserStorage} = window.NeutiManager;
+  managerUi=mountWorldManager({connection,storage:browserStorage,supported,language:()=>currentLanguage.name,closeVoice});
+} else if (supported && connection.restore(handoff.room)) $('code').value = connection.room;
 refreshControls();
 
 // A scoped worker keeps this app separate from the repository's existing root app cache.

@@ -27,7 +27,9 @@ export class KaraokeConnection {
   }
   async connect(code,name){
     if(!/^\d{8}$/.test(code))throw failure('pairing');
-    await this.disconnect();const generation=this.generation;this.key=random(32);this.room=code;this.name=name;this.last=null;this.set('connecting');
+    const leaving=this.disconnect(), generation=this.generation;
+    await leaving;if(generation!==this.generation)throw failure('disconnected');
+    this.key=random(32);this.room=code;this.name=name;this.last=null;this.set('connecting');
     try{const reply=await this.call('join',{name,fastControls:true},generation);
       this.acceptJoin(reply);this.accepted=true;this.confirmedAt=Date.now();this.remember();this.set(this.paused?'reconnecting':'ready',this.serverName);this.heartbeat(generation);}
     catch(e){if(generation===this.generation)this.set('error',e.code);throw e;}

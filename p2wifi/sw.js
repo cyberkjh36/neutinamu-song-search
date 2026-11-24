@@ -1,6 +1,6 @@
-const CACHE = 'neutinamu-webremote-1.4.15-sound-response';
+const CACHE = 'neutinamu-webremote-1.4.16-manager';
 const FILES = ['index.html','light.css','voice-search.js','native-search.js','favorites-ui.js','favorites-data.js','favorites.css',
-  'vendor/qrcode.js','wifi-client.mjs','room-connection.mjs','wifi-bridge.js','sound-controls.mjs','wifi.css','manifest.webmanifest','../catalog-sync.js','../chosung.js','../p2.css','../icon.svg',
+  'manager.html','manager.sealed.json','manager.webmanifest','../manager/unlock.mjs','../manager/crypto.mjs','../manager/rooms.css','vendor/qrcode.js','wifi-client.mjs','room-connection.mjs','wifi-bridge.js','sound-controls.mjs','wifi.css','manifest.webmanifest','../catalog-sync.js','../chosung.js','../p2.css','../icon.svg',
   '../icon-192.png','../icon-512.png'];
 const catalogUrls = new Set(['../catalog-20261018.csv','../catalog-update-20261104.csv','../catalog-update-20261120.csv'].map(file => new URL(file,self.registration.scope).href));
 const urls = new Set(FILES.map(file => new URL(file, self.registration.scope).href));
