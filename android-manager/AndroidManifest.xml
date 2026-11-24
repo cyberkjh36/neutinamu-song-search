@@ -1,0 +1,18 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="APP_PACKAGE" android:versionCode="1" android:versionName="1.0.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <queries><intent><action android:name="android.speech.RecognitionService" /></intent></queries>
+    <application android:label="APP_LABEL" android:icon="@drawable/manager_icon"
+        android:enableOnBackInvokedCallback="false" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@style/ManagerTheme">
+        <activity android:name="kr.neutinamu.manager.ManagerActivity" android:exported="true"
+            android:configChanges="orientation|keyboardHidden|screenSize|screenLayout"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
