@@ -25,7 +25,7 @@ internal static class PhoneWindow {
                 }
                 foreach(AutomationElement window in windows) {
                     if(!mode && Named(window,"YouTube 사용 방식 / Choose how to use YouTube")!=null) {
-                        mode=Click(Named(window,"게스트 사용\r\nGuest")??Named(window,"게스트 사용\nGuest")??Named(window,"게스트 사용 Guest"));
+                        mode=Click(Named(window,"로그인 사용\r\nSign in")??Named(window,"로그인 사용\nSign in")??Named(window,"로그인 사용 Sign in"));
                         continue;
                     }
                     var phone=Named(window,"휴대폰 마이크 연결 / Phone microphone");

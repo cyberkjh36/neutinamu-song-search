@@ -26,6 +26,8 @@ internal sealed class Reply {
     [DataMember] public string request;
 }
 internal static class Watcher {
+    internal const string InstanceName=@"Local\WorldKaraoke.ManagerLaunch.Watcher";
+    internal const string StopName=@"Local\WorldKaraoke.ManagerLaunch.Stop";
     internal const string Product="WorldKaraokeManagerLaunch";
     internal const string RunKey=@"Software\Microsoft\Windows\CurrentVersion\Run";
     internal const string UninstallKey=@"Software\Microsoft\Windows\CurrentVersion\Uninstall\WorldKaraokeManagerLaunch";
@@ -76,15 +78,15 @@ internal static class Watcher {
             using(var key=Registry.CurrentUser.CreateSubKey(RunKey))key.DeleteValue(Product,false);
             Registry.CurrentUser.DeleteSubKeyTree(UninstallKey,false);
             File.Delete(Path.Combine(Folder,"room.dat"));
-            try{using(var e=EventWaitHandle.OpenExisting(@"Local\WorldKaraoke.ManagerLaunch.Stop"))e.Set();}catch(WaitHandleCannotBeOpenedException){}
+            try{using(var e=EventWaitHandle.OpenExisting(StopName))e.Set();}catch(WaitHandleCannotBeOpenedException){}
             return 0;
         }
         if(args.Length!=0)return 1;
         string room=RoomLaunch.RoomOf(Environment.MachineName);if(room==null)return 2;
         ServicePointManager.SecurityProtocol=SecurityProtocolType.Tls12;
         bool first;
-        using(var mutex=new Mutex(false,@"Local\WorldKaraoke.ManagerLaunch.Watcher",out first))
-        using(var stop=new EventWaitHandle(false,EventResetMode.AutoReset,@"Local\WorldKaraoke.ManagerLaunch.Stop")){
+        using(var mutex=new Mutex(false,InstanceName,out first))
+        using(var stop=new EventWaitHandle(false,EventResetMode.AutoReset,StopName)){
             if(!first)return 0;
             try {
                 var clear=ProtectedData.Unprotect(File.ReadAllBytes(Path.Combine(Folder,"room.dat")),Entropy,DataProtectionScope.CurrentUser);

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -12,6 +13,22 @@ internal static class Setup {
         string temp=path+"."+Guid.NewGuid().ToString("N");
         try{File.WriteAllBytes(temp,value);if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);}
         finally{if(File.Exists(temp))File.Delete(temp);}
+    }
+    // Older receivers use the existence of this named mutex as their singleton.
+    // Wait until they close it before starting the newly installed receiver.
+    internal static bool StopPreviousWatcher() {
+        var elapsed=Stopwatch.StartNew();
+        while(elapsed.ElapsedMilliseconds<60000) {
+            Mutex existing;
+            if(!Mutex.TryOpenExisting(Watcher.InstanceName,out existing))return true;
+            existing.Dispose();
+            EventWaitHandle stop;
+            if(EventWaitHandle.TryOpenExisting(Watcher.StopName,out stop)){
+                using(stop)stop.Set();
+            }
+            Thread.Sleep(150);
+        }
+        return false;
     }
     [STAThread]
     static int Main() {
@@ -41,8 +58,12 @@ internal static class Setup {
                 finally{Array.Clear(clear,0,clear.Length);}
                 using(var run=Registry.CurrentUser.CreateSubKey(Watcher.RunKey))run.SetValue(Watcher.Product,"\""+path+"\"");
                 using(var reg=Registry.CurrentUser.CreateSubKey(Watcher.UninstallKey)){
-                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion","1.0.0");
+                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion","1.0.1");
                     reg.SetValue("UninstallString","\""+path+"\" --remove");
+                }
+                if(!StopPreviousWatcher()){
+                    MessageBox.Show("업데이트를 설치했습니다. 자동실행 도우미를 교체하려면 Windows에서 로그아웃한 뒤 다시 로그인해 주세요.",title);
+                    return 0;
                 }
                 using(var p=Process.Start(new ProcessStartInfo(path){WorkingDirectory=folder,UseShellExecute=false})){}
             }
