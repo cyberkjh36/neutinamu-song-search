@@ -12,15 +12,18 @@ import zipfile
 repo=Path(__file__).resolve().parents[2]
 tools=Path(os.environ['ANDROID_HOME'])/'build-tools/35.0.0'
 
-def run(*args,check=True):
-    return subprocess.run([str(v) for v in args],check=check,capture_output=True,text=True).stdout.strip()
+def run(*args,check=True,timeout=60):
+    return subprocess.run([str(v) for v in args],check=check,capture_output=True,text=True,timeout=timeout,stdin=subprocess.DEVNULL).stdout.strip()
 
 def adb(*args):return run('adb',*args)
 
 def wait_node(look, seconds=65):
     deadline=time.monotonic()+seconds
     while time.monotonic()<deadline:
-        raw=run('adb','exec-out','uiautomator','dump','/dev/tty',check=False)
+        try:
+            raw=run('adb','exec-out','uiautomator','dump','/dev/tty',check=False,timeout=12)
+        except subprocess.TimeoutExpired:
+            continue
         if '<hierarchy' in raw and '</hierarchy>' in raw:
             nodes=ET.fromstring(raw[raw.index('<hierarchy'):raw.index('</hierarchy>')+12])
             for n in nodes.iter('node'):
@@ -64,8 +67,12 @@ with tempfile.TemporaryDirectory() as tmp:
         releases=sorted((repo/'downloads').glob(glob))
         apk=releases[-1]
         if len(releases)>1:
-            adb('install','-r',releases[-2])
-        adb('install','-r',apk);launch(pkg)
+            print('Installing previous release:',releases[-2].name,flush=True)
+            adb('install','--no-streaming','-r',releases[-2])
+        print('Testing update:',apk.name,flush=True)
+        adb('install','--no-streaming','-r',apk)
+        print('Opening updated app:',pkg,flush=True)
+        launch(pkg)
         enter('invalid-test-value');wait_node(has('비밀번호를 확인'))
         print(pkg,'release installed, opened in its own Activity and rejected an incorrect enrollment key',flush=True)
         adb('uninstall',pkg);adb('install',make_fixture(apk,product,work));launch(pkg)
