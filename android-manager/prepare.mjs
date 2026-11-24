@@ -33,7 +33,8 @@ else if(mode==='seal'){
   const password=Buffer.concat(chunks).toString('utf8').replace(/[\r\n]+$/,'');
   if(!password)throw Error('Missing manager enrollment password');
   const native=path.join(root,'sealed');await mkdir(native,{recursive:true});
-  for(const product of ['p2wifi','wk']){
+  if(folder && !['p2wifi','wk'].includes(folder))throw Error('Unknown manager edition');
+  for(const product of folder?[folder]:['p2wifi','wk']){
     const original=await readFile(path.join(root,'..',product,'manager.sealed.json'));
     const src=JSON.parse(original), salt=Buffer.from(src.salt,'base64'), aad=Buffer.from('neuti-manager/'+product+'/app-v1');
     const master=pbkdf2Sync(password,salt,src.iterations,32,'sha256');

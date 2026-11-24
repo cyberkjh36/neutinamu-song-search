@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 EDITION = {
     'p2wifi': ('kr.neutinamu.manager.p2', 'P2 매니저', 'p2-icon.xml', 'Neutinamu_P2_Manager_Android_1.0.1.apk'),
-    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.1.apk')
+    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.2.apk')
 }
 
 def run(*args):
@@ -53,6 +53,7 @@ def main():
     parser=argparse.ArgumentParser()
     for name in ['tools','platform','keystore','password-file','output']:
         parser.add_argument('--'+name, required=True, type=Path)
+    parser.add_argument('--edition', choices=EDITION)
     options=parser.parse_args()
     tools, platform = options.tools.resolve(), options.platform.resolve()
     output=options.output.resolve()
@@ -65,11 +66,16 @@ def main():
         dex=build/'dex';dex.mkdir()
         run(tools/'d8','--release','--min-api','26','--lib',platform,'--output',dex,*sorted(classes.rglob('*.class')))
         for edition,(package,label,icon,name) in EDITION.items():
+            if options.edition and edition!=options.edition:
+                continue
             work=build/edition;work.mkdir()
             res=work/'res';shutil.copytree(HERE/'res',res)
             (res/'drawable').mkdir();shutil.copy2(HERE/icon,res/'drawable/manager_icon.xml')
             manifest=work/'AndroidManifest.xml'
-            manifest.write_text((HERE/'AndroidManifest.xml').read_text().replace('APP_PACKAGE',package).replace('APP_LABEL',label))
+            version_code,version_name = (3,'1.0.2') if edition=='wk' else (2,'1.0.1')
+            manifest.write_text((HERE/'AndroidManifest.xml').read_text().replace('APP_PACKAGE',package)
+                                .replace('APP_LABEL',label).replace('VERSION_CODE',str(version_code))
+                                .replace('VERSION_NAME',version_name))
             assets(edition,work/'assets/site')
             compiled=work/'resources.zip'
             run(tools/'aapt2','compile','--dir',res,'-o',compiled)

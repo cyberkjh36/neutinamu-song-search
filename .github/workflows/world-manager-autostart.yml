@@ -1,0 +1,22 @@
+name: Verify World manager PC launch
+on:
+  push:
+    paths: ['tools/world-manager-launch/**', 'downloads/WorldKaraoke_Manager_PC_Autostart_Setup.exe', '.github/workflows/world-manager-autostart.yml']
+permissions:
+  contents: read
+jobs:
+  launcher:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise the room launch controls on Windows
+        shell: pwsh
+        run: |
+          $framework = "$env:WINDIR/Microsoft.NET/Framework64/v4.0.30319"
+          $refs = "${env:ProgramFiles(x86)}/Reference Assemblies/Microsoft/Framework/.NETFramework/v4.8"
+          $src = "tools/world-manager-launch"
+          & "$framework/csc.exe" /nologo /target:exe /main:WindowTest /codepage:65001 /out:room-check.exe "/r:$refs/UIAutomationClient.dll" "/r:$refs/UIAutomationTypes.dll" "/r:$refs/WindowsBase.dll" /r:System.Windows.Forms.dll "$src/RoomLaunch.cs" "$src/PhoneWindow.cs" "$src/verify/WindowTest.cs"
+          if ($LASTEXITCODE) {exit $LASTEXITCODE}
+          & ./room-check.exe
+          exit $LASTEXITCODE

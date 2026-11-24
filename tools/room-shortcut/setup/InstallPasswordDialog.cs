@@ -6,17 +6,17 @@ using System.Windows.Forms;
 
 internal static class InstallPasswordDialog
 {
-    internal static byte[] Ask()
+    internal static byte[] Ask(string title = "느티나무 P2 리모컨 · 설치 암호", string instruction = "이 방 PC에 QR 바로가기를 설치하려면 설치 암호를 입력하세요.")
     {
         using (var form = new Form
         {
-            Text = "느티나무 P2 리모컨 · 설치 암호", Font = new Font("맑은 고딕", 10),
+            Text = title, Font = new Font("맑은 고딕", 10),
             ClientSize = new Size(410,205), AutoScaleMode = AutoScaleMode.Dpi,
             FormBorderStyle = FormBorderStyle.FixedDialog, StartPosition = FormStartPosition.CenterScreen,
             MaximizeBox = false, MinimizeBox = false
         })
         {
-            var label = new Label {Text="이 방 PC에 QR 바로가기를 설치하려면 설치 암호를 입력하세요.", AutoSize=true, Location=new Point(22,19)};
+            var label = new Label {Text=instruction, AutoSize=true, Location=new Point(22,19)};
             var input = new TextBox {AccessibleName="설치 암호", UseSystemPasswordChar=true, Location=new Point(22,54), Width=365};
             var status = new Label {Location=new Point(22,95), Size=new Size(365,39)};
             var confirm = new Button {Text="확인", Location=new Point(206,146),Size=new Size(85,35)};
