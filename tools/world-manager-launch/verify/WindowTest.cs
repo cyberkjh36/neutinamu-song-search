@@ -28,7 +28,6 @@ internal static class WindowTest {
         string marker=Path.GetTempFileName();File.Delete(marker);
         using(var child=Process.Start(Process.GetCurrentProcess().MainModule.FileName,"--window \""+marker+"\"")){
             try{
-                child.WaitForInputIdle(5000);
                 bool linked=false;
                 var thread=new Thread(()=>{linked=PhoneWindow.Enable(child.Id);});
                 thread.SetApartmentState(ApartmentState.MTA);thread.Start();
