@@ -31,6 +31,4 @@ html[translate=no].manager-mode #manager-rooms {--manager-ink:#f2faf7; --manager
 [data-product=wk] .manager-lock button {background:#b8dc77; color:#192725}
 .manager-lock button:disabled {opacity:.65}
 .manager-lock [role=status] {min-height:1.5em; margin:3px 0}
-#manager-rooms {position:relative}
-#manager-rooms h2 {padding-right:64px}
-#manager-rooms .manager-lock-button {position:absolute; right:12px; top:5px; padding:5px 8px; border:0; background:transparent; color:inherit; font-size:.88rem; text-decoration:underline}
+.manager-lock [hidden] {display:none !important}

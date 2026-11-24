@@ -29,22 +29,31 @@ module.exports=async function verifyManagerLock(cx,base) {
     const tab=await cx.newPage(), password=randomBytes(18).toString('hex'), joins=[];
     try {
       const sealed=fixture(product,password);
-      await tab.route('**/manager.sealed.json',route=>route.fulfill({json:sealed}));
+      await tab.route('**/manager.sealed.json*',route=>route.fulfill({json:sealed}));
       await tab.route('**/api/**',route=>{
         const req=route.request();
         if(req.method()==='POST' && ['join','command','resolvePrintRoom'].includes(req.postDataJSON()?.op))joins.push(req.url());
         return route.fulfill({json:{ok:false},headers:{'Access-Control-Allow-Origin':'*'}});
       });
       await tab.goto(base+product+'/manager.html');
-      const field=tab.getByLabel('매니저 비밀번호'), open=tab.getByRole('button',{name:'리모컨 열기'});
+      const field=tab.getByLabel('매니저 비밀번호'), open=tab.getByRole('button',{name:'이 휴대폰 등록'});
       await field.fill('test-invalid');await open.click();
       await tab.getByText('비밀번호를 확인하고 다시 입력해 주세요.').waitFor();
       await field.fill(password);await open.click();
       await tab.locator('#fixture-ready').waitFor();
       assert.equal(await tab.locator('#password').count(),0);
       assert.deepEqual(joins,[]);
-      await tab.reload();await field.waitFor();assert.equal(await tab.locator('#fixture-ready').count(),0);
+      await tab.reload();await tab.locator('#fixture-ready').waitFor();
+      assert.equal(await field.count(),0);
+      const reopened=await cx.newPage();
+      try {
+        await reopened.route('**/manager.sealed.json*',r=>r.fulfill({json:sealed}));
+        await reopened.route('**/api/**',r=>r.fulfill({json:{ok:false},headers:{'Access-Control-Allow-Origin':'*'}}));
+        await reopened.goto(base+product+'/manager.html');
+        await reopened.locator('#fixture-ready').waitFor();
+        assert.equal(await reopened.getByLabel('매니저 비밀번호').count(),0);
+      } finally {await reopened.close();}
     } finally {await tab.close();}
   }
-  console.log('Verified encrypted manager startup and relock for both mobile remotes.');
+  console.log('Verified one-time manager enrollment, reload and reopening without a password for both mobile remotes.');
 };

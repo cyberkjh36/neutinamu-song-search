@@ -13,9 +13,15 @@ export async function openEnvelope(envelope, password, product) {
   const root=await subtle.importKey('raw',master,'HKDF',false,['deriveKey']);
   const derive=(purpose, usages, type={name:'AES-GCM',length:256})=>subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt,info:utf8.encode(product+'/'+purpose)},root,type,false,usages);
   const appKey=await derive('app-v1',['decrypt']);
+  const vaultKey={cipher:await derive('device-v1',['encrypt','decrypt']),index:await derive('index-v1',['sign'],{name:'HMAC',hash:'SHA-256'})};
+  const keys={appKey,vaultKey};
+  return {source:await openRegisteredEnvelope(envelope,keys,product),keys,vaultKey};
+}
+
+export async function openRegisteredEnvelope(envelope,keys,product) {
+  if(envelope.v!==1 || envelope.product!==product)throw Error('잘못된 앱 파일입니다.');
   const aad=utf8.encode('neuti-manager/'+product+'/app-v1');
-  const source=decode(await subtle.decrypt({name:'AES-GCM',iv:bytes(envelope.iv),additionalData:aad},appKey,bytes(envelope.data)));
-  return {source, vaultKey:{cipher:await derive('device-v1',['encrypt','decrypt']),index:await derive('index-v1',['sign'],{name:'HMAC',hash:'SHA-256'})}};
+  return decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(envelope.iv),additionalData:aad},keys.appKey,bytes(envelope.data)));
 }
 
 export async function openVault(product, key, storage) {

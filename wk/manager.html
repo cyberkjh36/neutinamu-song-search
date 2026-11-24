@@ -11,14 +11,15 @@
   <link rel="manifest" href="./manager.webmanifest">
   <link rel="apple-touch-icon" href="../icon-192.png">
   <link rel="stylesheet" href="../manager/rooms.css">
-  <link rel="preload" href="./manager.sealed.json" as="fetch" crossorigin="anonymous">
-  <script type="module" src="../manager/unlock.mjs"></script>
+  <link rel="preload" href="./manager.sealed.json?v=2" as="fetch" crossorigin="anonymous">
+  <script type="module" src="../manager/unlock.mjs?v=2"></script>
 </head>
 <body class="manager-lock">
   <main><header><p>느티나무 노래방</p><h1>월드가라오케 매니저</h1></header>
-    <form id="unlock"><label for="password">매니저 비밀번호</label>
+    <p id="device-status" role="status">등록한 휴대폰을 확인하고 있습니다…</p>
+    <form id="unlock" hidden><label for="password">매니저 비밀번호</label>
       <input type="password" id="password" autocomplete="current-password" required>
-      <button type="submit">리모컨 열기</button>
+      <button type="submit">이 휴대폰 등록</button>
       <p id="unlock-status" role="status" aria-live="polite"></p>
     </form>
     <noscript>리모컨을 열려면 브라우저에서 자바스크립트를 허용해 주세요.</noscript>
