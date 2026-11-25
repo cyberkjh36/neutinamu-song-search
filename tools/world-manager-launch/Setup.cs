@@ -38,9 +38,9 @@ internal static class Setup {
         }
         return false;
     }
-    static string LastError() {
+    static string LastError(bool stopped) {
         try {return File.ReadAllText(Watcher.StatusPath).Trim();}
-        catch(IOException){return "현재 방 PC에서 연결 서버의 응답을 기다리고 있습니다.";}
+        catch(IOException){return stopped ? "도우미가 연결 상태를 기록하기 전에 종료되었습니다." : "도우미의 첫 연결 기록을 기다리고 있습니다.";}
         catch(UnauthorizedAccessException){return "상태 파일을 읽을 수 없습니다."; }
     }
     internal static void LoadUpdateTools() {
@@ -89,7 +89,7 @@ internal static class Setup {
                 finally{Array.Clear(clear,0,clear.Length);}
                 using(var run=Registry.CurrentUser.CreateSubKey(Watcher.RunKey))run.SetValue(Watcher.Product,"\""+path+"\"");
                 using(var reg=Registry.CurrentUser.CreateSubKey(Watcher.UninstallKey)){
-                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion","1.1.0");
+                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion",Watcher.Version);
                     reg.SetValue("UninstallString","\""+path+"\" --remove");
                 }
                 if(!StopPreviousWatcher()){
@@ -102,10 +102,10 @@ internal static class Setup {
                     using(var watcher=Process.Start(new ProcessStartInfo(path){WorkingDirectory=folder,UseShellExecute=false})){
                         while(!WaitForRegistration(ready,watcher,12000)){
                             if(watcher.HasExited){
-                                MessageBox.Show("도우미가 시작되지 않았습니다. "+LastError()+" (종료 코드 "+watcher.ExitCode+")",title);
+                                MessageBox.Show("도우미가 종료되었습니다. "+LastError(true)+" (종료 코드 "+watcher.ExitCode+")",title);
                                 return 1;
                             }
-                            var retry=MessageBox.Show(room+"번방 도우미가 설치되었지만 서버 연결이 아직 확인되지 않았습니다.\r\n"+LastError()+"\r\n\r\n다시 시도하면 연결을 다시 확인합니다. 닫아도 도우미는 계속 연결을 시도합니다.",title,MessageBoxButtons.RetryCancel);
+                            var retry=MessageBox.Show(room+"번방 도우미가 설치되었지만 서버 연결이 아직 확인되지 않았습니다.\r\n"+LastError(false)+"\r\n\r\n다시 시도하면 연결을 다시 확인합니다. 닫아도 도우미는 계속 연결을 시도합니다.",title,MessageBoxButtons.RetryCancel);
                             if(retry!=DialogResult.Retry)return 1;
                         }
                     }

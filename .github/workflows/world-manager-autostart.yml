@@ -17,7 +17,7 @@ jobs:
           $refs = "${env:ProgramFiles(x86)}/Reference Assemblies/Microsoft/Framework/.NETFramework/v4.8"
           $src = (Resolve-Path 'tools/world-manager-launch').Path
           $sources = @('RoomLaunch.cs','PhoneWindow.cs','verify\WindowTest.cs') | ForEach-Object { Join-Path $src $_ }
-          & "$framework/csc.exe" /nologo /target:exe /main:WindowTest /codepage:65001 /out:room-check.exe "/r:$refs/UIAutomationClient.dll" "/r:$refs/UIAutomationTypes.dll" "/r:$refs/WindowsBase.dll" /r:System.Windows.Forms.dll @sources
+          & "$framework/csc.exe" /nologo /target:exe /main:WindowTest /codepage:65001 /out:room-check.exe "/r:$refs/UIAutomationClient.dll" "/r:$refs/UIAutomationTypes.dll" "/r:$refs/WindowsBase.dll" /r:System.Windows.Forms.dll /r:System.Security.dll @sources
           if ($LASTEXITCODE) {exit $LASTEXITCODE}
           & ./room-check.exe
           exit $LASTEXITCODE

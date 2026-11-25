@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -162,6 +163,7 @@ internal static class ReceiverTest {
 
     public static void Run() {
         var setup = Assembly.LoadFile(Path.GetFullPath("downloads/WorldKaraoke_Manager_PC_Autostart_Setup.exe"));
+        CheckRoomSettings(setup);
         var wait = setup.GetType("Setup", true).GetMethod("WaitForRegistration", InternalStatic);
         using (var ready = new EventWaitHandle(false, EventResetMode.ManualReset))
         using (var self = Process.GetCurrentProcess()) {
@@ -172,6 +174,32 @@ internal static class ReceiverTest {
         Exchange(setup, "managerPoll", 200);
         Exchange(setup, "managerAck", 200);
         Exchange(setup, "managerPoll", 403);
+    }
+
+    // Run the packaged startup code under Windows Framework. Recompiling it
+    // here would hide calls emitted for a different runtime by the release compiler.
+    static void CheckRoomSettings(Assembly setup) {
+        var watcher = setup.GetType("Watcher", true);
+        foreach (string name in new[]{"Main","Run","ReadRoomToken","Listen"}) {
+            var method = watcher.GetMethod(name, InternalStatic);
+            System.Runtime.CompilerServices.RuntimeHelpers.PrepareMethod(method.MethodHandle);
+        }
+        var read = watcher.GetMethod("ReadRoomToken", InternalStatic);
+        var entropy = (byte[])watcher.GetField("Entropy", InternalStatic).GetValue(null);
+        string path = Path.GetTempFileName(), token = new string('a',64);
+        try {
+            foreach (string room in new[]{"5","6","7","8"}) {
+                var protectedRoom = ProtectedData.Protect(Encoding.UTF8.GetBytes(room+"|"+token), entropy, DataProtectionScope.CurrentUser);
+                File.WriteAllBytes(path, protectedRoom);
+                Check((string)read.Invoke(null,new object[]{path,room})==token, "Receiver could not read its installed room");
+            }
+            try {
+                read.Invoke(null,new object[]{path,"5"});
+                throw new InvalidOperationException("Receiver accepted another room's settings");
+            } catch (TargetInvocationException e) {
+                if (!(e.InnerException is InvalidDataException)) throw;
+            }
+        } finally {File.Delete(path);}
     }
 
     static void Exchange(Assembly setup, string op, int status) {

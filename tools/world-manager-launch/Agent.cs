@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
@@ -26,6 +27,7 @@ internal sealed class Reply {
     [DataMember] public string request;
 }
 internal static class Watcher {
+    internal const string Version="1.1.1";
     internal const string InstanceName=@"Local\WorldKaraoke.ManagerLaunch.Watcher";
     internal const string ReadyName=@"Local\WorldKaraoke.ManagerLaunch.Ready";
     internal const string StopName=@"Local\WorldKaraoke.ManagerLaunch.Stop";
@@ -39,7 +41,7 @@ internal static class Watcher {
     }
     internal static Reply ExchangeHttp(Message data,HttpWebRequest req) {
         req.Method="POST";req.ContentType="application/json; charset=utf-8";req.Accept="application/json";
-        req.UserAgent="WorldKaraoke-Manager-PC/1.1.0";
+        req.UserAgent="WorldKaraoke-Manager-PC/"+Version;
         req.Timeout=6500;req.ReadWriteTimeout=6500;req.AllowAutoRedirect=false;
         req.ServicePoint.Expect100Continue=false;
         using(var encoded=new MemoryStream()){
@@ -105,8 +107,22 @@ internal static class Watcher {
             if(stop.WaitOne(wait))return;
         }
     }
+    internal static string ReadRoomToken(string path,string room) {
+        byte[] clear=ProtectedData.Unprotect(File.ReadAllBytes(path),Entropy,DataProtectionScope.CurrentUser);
+        try {
+            string[] config=Encoding.UTF8.GetString(clear).Split(new[] {'|'},StringSplitOptions.None);
+            if(config.Length!=2||config[0]!=room||!System.Text.RegularExpressions.Regex.IsMatch(config[1],@"\A[0-9a-f]{64}\z"))
+                throw new InvalidDataException();
+            return config[1];
+        } finally {Array.Clear(clear,0,clear.Length);}
+    }
     [MTAThread]
     static int Main(string[] args) {
+        try {return Run(args);}
+        catch(Exception e) {Record("도우미 시작 실패 · "+Explain(e)+" ("+e.GetType().Name+")");return 1;}
+    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static int Run(string[] args) {
         if(args.SequenceEqual(new[]{"--remove"})) {
             if(MessageBox.Show("이 PC에서 매니저 자동실행 도우미를 해제할까요?","월드가라오케",MessageBoxButtons.YesNo)!=DialogResult.Yes)return 0;
             using(var key=Registry.CurrentUser.CreateSubKey(RunKey))key.DeleteValue(Product,false);
@@ -123,12 +139,9 @@ internal static class Watcher {
         using(var stop=new EventWaitHandle(false,EventResetMode.AutoReset,StopName))
         using(var ready=new EventWaitHandle(false,EventResetMode.ManualReset,ReadyName)){
             if(!first)return 0;
-            try {
-                var clear=ProtectedData.Unprotect(File.ReadAllBytes(Path.Combine(Folder,"room.dat")),Entropy,DataProtectionScope.CurrentUser);
-                string[] config=Encoding.UTF8.GetString(clear).Split('|'); Array.Clear(clear,0,clear.Length);
-                if(config.Length!=2||config[0]!=room||!System.Text.RegularExpressions.Regex.IsMatch(config[1],@"\A[0-9a-f]{64}\z"))throw new InvalidDataException();
-                Listen(room,config[1],stop,ready);
-            } catch(Exception e){Record(Explain(e));return 1;}
+            string token=ReadRoomToken(Path.Combine(Folder,"room.dat"),room);
+            Record(room+"번방 도우미 시작 · 서버 연결 중");
+            Listen(room,token,stop,ready);
         }
         return 0;
     }
