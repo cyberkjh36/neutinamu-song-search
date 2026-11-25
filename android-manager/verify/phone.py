@@ -68,14 +68,14 @@ with tempfile.TemporaryDirectory() as tmp:
         apk=releases[-1]
         # The field-reported waiting screen shipped in World 1.0.1. Exercise a
         # direct update from it as well as the usual previous-release upgrade.
-        if product=='wk' and apk.name=='WorldKaraoke_Manager_Android_1.0.3.apk':
+        if product=='wk' and apk.name=='WorldKaraoke_Manager_Android_1.0.4.apk':
             reported=repo/'downloads/WorldKaraoke_Manager_Android_1.0.1.apk'
             adb('install','--no-streaming',reported)
             adb('install','--no-streaming','-r',apk)
             launch(pkg)
             wait_node(lambda n:n.get('class')=='android.widget.EditText')
             adb('uninstall',pkg)
-            print('Direct World manager 1.0.1 to 1.0.3 update opened on Android.',flush=True)
+            print('Direct World manager 1.0.1 to 1.0.4 update opened on Android.',flush=True)
         if len(releases)>1:
             print('Installing previous release:',releases[-2].name,flush=True)
             adb('install','--no-streaming','-r',releases[-2])

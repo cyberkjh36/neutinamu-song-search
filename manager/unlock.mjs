@@ -9,7 +9,7 @@ form.hidden=true;
 let loading, factory; try {factory=window.indexedDB;} catch {}
 function envelope() {
   const world=product==='wk';
-  if(!loading)loading=fetch(world?'./manager.sealed.json?v=1.0.3':'./manager.sealed.json?v=2',{credentials:'same-origin',cache:world?'no-store':'default'}).then(r=>{
+  if(!loading)loading=fetch(world?'./manager.sealed.json?v=1.0.4':'./manager.sealed.json?v=2',{credentials:'same-origin',cache:world?'no-store':'default'}).then(r=>{
     if(!r.ok)throw Error('앱 파일을 불러오지 못했습니다.');return r.json();
   }).catch(e=>{loading=null;throw e;});
   return loading;
