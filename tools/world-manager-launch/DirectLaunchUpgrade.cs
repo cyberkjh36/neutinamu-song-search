@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 
 // Installer only. Extend the room's own launcher while retaining its other updates.
 internal static class DirectLaunchUpgrade {
-    const string Marker = "EnablePhoneOnManagerLaunchV1";
+    const string Marker = "EnablePhoneOnManagerLaunchV2";
     const string Prefix = "WorldKaraokeLauncher.";
     static TypeDefinition Type(ModuleDefinition m, string name) { return m.Types.Single(t => t.FullName == Prefix + name); }
     static bool Calls(Instruction i, string type, string name) {
@@ -38,6 +38,31 @@ internal static class DirectLaunchUpgrade {
         } finally { if (File.Exists(temp)) File.Delete(temp); }
     }
 
+    static void AddReadySignal(ModuleDefinition m, TypeDefinition main, MethodDefinition shown) {
+        var host=main.Fields.Single(f=>f.Name=="phoneSearch");
+        var refs=m.GetMemberReferences().OfType<MethodReference>().ToList();
+        var visible=refs.First(r=>r.DeclaringType.FullName=="System.Windows.Forms.Control" && r.Name=="get_Visible");
+        var dispose=refs.First(r=>r.DeclaringType.FullName=="System.IDisposable" && r.Name=="Dispose");
+        var mutex=m.GetTypeReferences().FirstOrDefault(t=>t.FullName=="System.Threading.Mutex");
+        var scope=mutex!=null ? mutex.Scope : m.TypeSystem.Object.Scope;
+        var evt=new TypeReference("System.Threading","EventWaitHandle",m,scope);
+        var mode=new TypeReference("System.Threading","EventResetMode",m,scope,true);
+        var ctor=new MethodReference(".ctor",m.TypeSystem.Void,evt){HasThis=true};
+        ctor.Parameters.Add(new ParameterDefinition(m.TypeSystem.Boolean));ctor.Parameters.Add(new ParameterDefinition(mode));
+        ctor.Parameters.Add(new ParameterDefinition(m.TypeSystem.String));
+        var set=new MethodReference("Set",m.TypeSystem.Boolean,evt){HasThis=true};
+        var ret=shown.Body.Instructions.Last();
+        // Retarget every existing return path, including an already-visible phone window.
+        ret.OpCode=OpCodes.Ldarg_0;ret.Operand=null;
+        var il=shown.Body.GetILProcessor();
+        var finish=Instruction.Create(OpCodes.Ret);
+        il.Emit(OpCodes.Ldfld,host);il.Emit(OpCodes.Brfalse,finish);
+        il.Emit(OpCodes.Ldarg_0);il.Emit(OpCodes.Ldfld,host);il.Emit(OpCodes.Callvirt,visible);il.Emit(OpCodes.Brfalse,finish);
+        il.Emit(OpCodes.Ldc_I4_0);il.Emit(OpCodes.Ldc_I4_1); // ManualReset
+        il.Emit(OpCodes.Ldstr,RoomLaunch.PhoneReadyEvent);il.Emit(OpCodes.Newobj,ctor);
+        il.Emit(OpCodes.Dup);il.Emit(OpCodes.Callvirt,set);il.Emit(OpCodes.Pop);il.Emit(OpCodes.Callvirt,dispose);il.Append(finish);
+    }
+
     internal static byte[] Apply(byte[] original) {
         using (var input = new MemoryStream(original))
         using (var m = ModuleDefinition.ReadModule(input)) {
@@ -46,7 +71,15 @@ internal static class DirectLaunchUpgrade {
             var main = Type(m, "KaraokeForm");
             var run = Type(m, "Program").Methods.Single(x => x.Name == "RunWindows");
             if (main.Methods.Any(x => x.Name == Marker) &&
-                run.Body.Instructions.Any(i => Calls(i, main.FullName, "PrepareManagerRoomV1"))) return original;
+                run.Body.Instructions.Any(i => Calls(i, main.FullName, "PrepareManagerRoomV2"))) return original;
+            var v1 = main.Methods.SingleOrDefault(x => x.Name=="EnablePhoneOnManagerLaunchV1");
+            if (v1 != null) {
+                var previous=main.Methods.Single(x=>x.Name=="PrepareManagerRoomV1");
+                if(!run.Body.Instructions.Any(i=>Calls(i,main.FullName,previous.Name)))throw new InvalidDataException();
+                v1.Name=Marker; previous.Name="PrepareManagerRoomV2";
+                AddReadySignal(m,main,v1);
+                using(var result=new MemoryStream()){m.Write(result);return result.ToArray();}
+            }
             var modeType = Type(m, "YouTubeUseMode");
             int signIn = Convert.ToInt32(modeType.Fields.Single(f => f.Name == "SignIn" && f.HasConstant).Constant);
             var code = run.Body.Instructions;
@@ -116,7 +149,8 @@ internal static class DirectLaunchUpgrade {
             il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldfld, host); il.Emit(OpCodes.Callvirt, visible); il.Emit(OpCodes.Brtrue, end);
             il.Append(invoke); il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldarg_2); il.Emit(OpCodes.Call, phone); il.Append(end);
 
-            var prepare = new MethodDefinition("PrepareManagerRoomV1", MethodAttributes.Assembly | MethodAttributes.Static, main);
+            AddReadySignal(m,main,shown);
+            var prepare = new MethodDefinition("PrepareManagerRoomV2", MethodAttributes.Assembly | MethodAttributes.Static, main);
             prepare.Parameters.Add(new ParameterDefinition(main)); main.Methods.Add(prepare);
             var handler = refs.First(r => r.DeclaringType.FullName == "System.EventHandler" && r.Name == ".ctor");
             var form = ((MethodReference)runForm.Operand).Parameters[0].ParameterType;

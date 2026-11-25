@@ -74,14 +74,11 @@ internal static class WindowTest {
             Environment.SetEnvironmentVariable("WORLD_TEST_SESSION","1");
             Environment.SetEnvironmentVariable("WORLD_TEST_RESULT",coldLog);
             try {
-                if(RoomLaunch.Start(installed,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep)!="started")
-                    throw new Exception("Could not cold-start the desktop apphost");
+                string status=RoomLaunch.ConnectRoom(installed,false);
+                string trace=File.Exists(coldLog)?File.ReadAllText(coldLog):"(no launch recorded)";
+                if(status!="started")throw new Exception("Room cold start "+status+": "+trace);
                 int pid=RoomLaunch.Pid(installed);
-                bool paired=false;
-                var observer=new Thread(()=>{paired=PhoneWindow.Enable(pid,true);});
-                observer.SetApartmentState(ApartmentState.MTA);observer.Start();
-                if(!observer.Join(22000)||!paired)throw new Exception("Direct startup did not open phone pairing");
-                if(RoomLaunch.Start(installed,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep)!="running" || RoomLaunch.Pid(installed)!=pid)
+                if(RoomLaunch.ConnectRoom(installed,true)!="running" || RoomLaunch.Pid(installed)!=pid)
                     throw new Exception("Existing room was relaunched");
                 if(File.ReadAllText(coldLog)!="mode=SignIn\nlanguage=ko\nphone-ready\n") throw new Exception("Cold launch required a manual choice");
             } finally {

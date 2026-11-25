@@ -90,10 +90,7 @@ internal static class Watcher {
                     if(id!=last) {
                         try {
                             string root=RoomLaunch.FindRoot();
-                            lastStatus=RoomLaunch.Start(root,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep);
-                            if(lastStatus=="started" || (lastStatus=="running" && !poll.online)) {
-                                if(!PhoneWindow.Enable(RoomLaunch.Pid(root),lastStatus=="started"))lastStatus="failed";
-                            }
+                            lastStatus=RoomLaunch.ConnectRoom(root,poll.online);
                         }
                         catch {lastStatus="failed";}
                         last=id;

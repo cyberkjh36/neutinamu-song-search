@@ -8,6 +8,7 @@ using Microsoft.Win32;
 internal static class RoomLaunch
 {
     internal const string ManagerStartVariable = "NEUTINAMU_WORLD_MANAGER_START";
+    internal const string PhoneReadyEvent = @"Local\WorldKaraoke.ManagerLaunch.PhoneReady";
     internal const string Launcher = "WorldKaraokeYouTubeLauncher";
     internal static readonly string[] Rooms = {"5","6","7","8"};
     internal static string RoomOf(string machine)
@@ -60,6 +61,16 @@ internal static class RoomLaunch
         open(root);
         for(int i=0;i<40;i++){if(running(root))return "started";delay(250);}
         return "failed";
+    }
+    internal static string ConnectRoom(string root, bool online)
+    {
+        using (var ready = new EventWaitHandle(false, EventResetMode.ManualReset, PhoneReadyEvent)) {
+            ready.Reset();
+            string status = Start(root, IsRunning, Open, Thread.Sleep);
+            if (status == "started") return ready.WaitOne(18000) ? status : "failed";
+            if (status == "running" && !online && !PhoneWindow.Enable(Pid(root))) return "failed";
+            return status;
+        }
     }
     internal static void Open(string root)
     {

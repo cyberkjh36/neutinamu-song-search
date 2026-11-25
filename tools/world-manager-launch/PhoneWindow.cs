@@ -12,7 +12,7 @@ internal static class PhoneWindow {
         if(element==null||!element.Current.IsEnabled||!element.TryGetCurrentPattern(InvokePattern.Pattern,out pattern))return false;
         ((InvokePattern)pattern).Invoke();return true;
     }
-    internal static bool Enable(int pid, bool alreadyStarting = false) {
+    internal static bool Enable(int pid) {
         if(pid<=0)return false;
         bool mode=false,country=false,opened=false;
         var timer=Stopwatch.StartNew();
@@ -23,7 +23,7 @@ internal static class PhoneWindow {
                     string title=window.Current.Name??"";
                     if(title.Contains("Android / iPhone") || Named(window,"새 연결번호")!=null)return true;
                 }
-                if (!alreadyStarting) foreach(AutomationElement window in windows) {
+                foreach(AutomationElement window in windows) {
                     if(!mode && Named(window,"YouTube 사용 방식 / Choose how to use YouTube")!=null) {
                         mode=Click(Named(window,"로그인 사용 / Sign in")??Named(window,"로그인 사용\r\nSign in")??Named(window,"로그인 사용\nSign in")??Named(window,"로그인 사용 Sign in"));
                         continue;
