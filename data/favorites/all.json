@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-23T15:38:42.868Z",
+  "updatedAt": "2026-11-25T11:40:21.914Z",
   "countries": [
     "ko",
     "th",
@@ -614,8 +614,8 @@
       "id": "23cipSExADA",
       "title": "เพราะพี่รักจริง - หนึ่ง บีเคแบนด์ [OFFICIAL MV]",
       "url": "https://www.youtube.com/watch?v=23cipSExADA",
-      "count": 23,
-      "lastPlayed": "2026-11-19T14:20:17.7582867Z"
+      "count": 24,
+      "lastPlayed": "2026-11-25T10:37:03.0438006Z"
     },
     {
       "country": "th",
@@ -630,8 +630,16 @@
       "id": "Qqf31osNksc",
       "title": "คาราโอเกะ ขอใจเธอแลกเบอร์โทร (Kor-Jai-Ter-Lak-Ber-Toe) - หญิงลี ศรีจุมพล [ Original Karaoke ]",
       "url": "https://www.youtube.com/watch?v=Qqf31osNksc",
-      "count": 10,
-      "lastPlayed": "2026-11-18T13:13:30.8256895Z"
+      "count": 11,
+      "lastPlayed": "2026-11-25T10:41:26.0945603Z"
+    },
+    {
+      "country": "th",
+      "id": "qPeshXuuxMI",
+      "title": "แผลใหม่ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=qPeshXuuxMI",
+      "count": 9,
+      "lastPlayed": "2026-11-25T10:46:24.6439958Z"
     },
     {
       "country": "th",
@@ -672,14 +680,6 @@
       "url": "https://www.youtube.com/watch?v=IFJrhZnBrzM",
       "count": 8,
       "lastPlayed": "2026-11-19T13:49:12.0019371Z"
-    },
-    {
-      "country": "th",
-      "id": "qPeshXuuxMI",
-      "title": "แผลใหม่ คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=qPeshXuuxMI",
-      "count": 8,
-      "lastPlayed": "2026-11-19T13:44:06.5575941Z"
     },
     {
       "country": "th",
@@ -2128,6 +2128,54 @@
       "url": "https://www.youtube.com/watch?v=U7QjtwAajps",
       "count": 2,
       "lastPlayed": "2026-10-24T09:18:02.9289957Z"
+    },
+    {
+      "country": "th",
+      "id": "lzOAsJlhm94",
+      "title": "O.K.นะคะ - ศิลปิน แคทรียา อิงลิช - #เพลงม่วนๆ #เพลงมันๆ #เพลงสนุกๆ",
+      "url": "https://www.youtube.com/watch?v=lzOAsJlhm94",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:40:06.8370782Z"
+    },
+    {
+      "country": "th",
+      "id": "Wi2WlIORR2A",
+      "title": "ขว้างเธอไม่พ้นใจ คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=Wi2WlIORR2A",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:35:24.7833333Z"
+    },
+    {
+      "country": "th",
+      "id": "m8CEEkqQiiY",
+      "title": "The Cranberries - Zombie (Karaoke Version)",
+      "url": "https://www.youtube.com/watch?v=m8CEEkqQiiY",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:07:40.4639364Z"
+    },
+    {
+      "country": "th",
+      "id": "3fjT6vFk6pU",
+      "title": "เพลง : ซมซาน - คาราโอเกะ - เสก โลโซ",
+      "url": "https://www.youtube.com/watch?v=3fjT6vFk6pU",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:02:29.9852460Z"
+    },
+    {
+      "country": "th",
+      "id": "-cBOFLjR1uA",
+      "title": "นานเท่าไรก็รอ   -     Loso    [   เนื้อเพลง    ]",
+      "url": "https://www.youtube.com/watch?v=-cBOFLjR1uA",
+      "count": 1,
+      "lastPlayed": "2026-11-25T10:57:32.3061318Z"
+    },
+    {
+      "country": "th",
+      "id": "aUMOiKUnmEE",
+      "title": "แพ้ใจ - ใหม่ เจริญปุระ (เนื้อเพลง)",
+      "url": "https://www.youtube.com/watch?v=aUMOiKUnmEE",
+      "count": 1,
+      "lastPlayed": "2026-11-25T10:53:53.8924345Z"
     },
     {
       "country": "th",
@@ -7080,6 +7128,30 @@
       "url": "https://www.youtube.com/watch?v=UJzU_Q8xo_U",
       "count": 2,
       "lastPlayed": "2026-10-24T07:27:18.6734635Z"
+    },
+    {
+      "country": "fil",
+      "id": "0dnRnwQKNOI",
+      "title": "BIG BOOM IN THE ROOM (카붐 카붐) || DJ ILHAM || DJ ROWEL 리믹스 || 댄스 운동 || 틱톡 바이럴",
+      "url": "https://www.youtube.com/watch?v=0dnRnwQKNOI",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:23:48.8885277Z"
+    },
+    {
+      "country": "fil",
+      "id": "2_wzj6if8UY",
+      "title": "Big Boom - DJ.ILHAM (Lyrics) \"big boom in the room i go kaboom\"",
+      "url": "https://www.youtube.com/watch?v=2_wzj6if8UY",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:22:21.6732977Z"
+    },
+    {
+      "country": "fil",
+      "id": "KHjUWA2zsoo",
+      "title": "DIGIDI DIGIDI - DJ.ILHAM (Lyrics) Remix 2026🔥",
+      "url": "https://www.youtube.com/watch?v=KHjUWA2zsoo",
+      "count": 1,
+      "lastPlayed": "2026-11-25T11:15:28.1383477Z"
     },
     {
       "country": "fil",
