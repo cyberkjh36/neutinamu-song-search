@@ -26,6 +26,77 @@ internal static class WindowTest {
             return (bool)stop.Invoke(null,null) && old.Join(6000) && received && (bool)stop.Invoke(null,null);
         }
     }
+    static void VerifyDirectStartup() {
+        var setup=Assembly.LoadFile(Path.GetFullPath("downloads/WorldKaraoke_Manager_PC_Autostart_Setup.exe"));
+        const BindingFlags flags=BindingFlags.NonPublic|BindingFlags.Static;
+        setup.GetType("Setup").GetMethod("LoadUpdateTools",flags).Invoke(null,null);
+        var apply=setup.GetType("DirectLaunchUpgrade").GetMethod("Apply",flags);
+        string dir=Path.Combine(Path.GetTempPath(),Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
+        try {
+            string exe=Path.Combine(dir,"WorldKaraokeYouTubeLauncher.exe");
+            var options=new System.CodeDom.Compiler.CompilerParameters(new[]{"System.dll","System.Windows.Forms.dll","System.Drawing.dll"},exe) {
+                GenerateExecutable=true, CompilerOptions="/optimize+ /codepage:65001"
+            };
+            using (var compiler=new Microsoft.CSharp.CSharpCodeProvider()) {
+                var result=compiler.CompileAssemblyFromFile(options,Path.GetFullPath("tools/world-manager-launch/verify/DirectFixture.cs"));
+                if(result.Errors.HasErrors)throw new Exception(result.Errors[0].ToString());
+            }
+            var updated=(byte[])apply.Invoke(null,new object[]{File.ReadAllBytes(exe)});
+            if(!object.ReferenceEquals(updated,apply.Invoke(null,new object[]{updated})))throw new Exception("Non-idempotent update");
+            File.WriteAllBytes(exe,updated);
+            var installed=Path.Combine(dir,"installation"); var app=Path.Combine(installed,"app"); Directory.CreateDirectory(app);
+            string desktop=Path.Combine(installed,"START.exe"), inner=Path.Combine(app,"WorldKaraokeYouTubeLauncher.exe");
+            File.Copy(exe,desktop);File.Copy(exe,inner);
+            string decoy=Path.Combine(dir,"START.exe");File.Copy(exe,decoy);
+            foreach(var path in new[]{decoy,desktop,inner}) {
+                var host=new ProcessStartInfo(path){UseShellExecute=false};
+                host.EnvironmentVariables["WORLD_TEST_HOLD"]="1";
+                using(var child=Process.Start(host)) {
+                    try {
+                        bool found=false;
+                        for(int i=0;i<12;i++) {
+                            found=RoomLaunch.Pid(installed)==child.Id;
+                            if(found||path==decoy)break;Thread.Sleep(100);
+                        }
+                        if(found!=(path!=decoy))throw new Exception("Incorrect room process identity: "+path);
+                    } finally { if(!child.HasExited)child.Kill();child.WaitForExit(); }
+                }
+            }
+            string coldLog=Path.Combine(dir,"room-cold.txt");
+            Environment.SetEnvironmentVariable("WORLD_TEST_SESSION","1");
+            Environment.SetEnvironmentVariable("WORLD_TEST_RESULT",coldLog);
+            try {
+                if(RoomLaunch.Start(installed,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep)!="started")
+                    throw new Exception("Could not cold-start the desktop apphost");
+                int pid=RoomLaunch.Pid(installed);
+                bool paired=false;
+                var observer=new Thread(()=>{paired=PhoneWindow.Enable(pid,true);});
+                observer.SetApartmentState(ApartmentState.MTA);observer.Start();
+                if(!observer.Join(22000)||!paired)throw new Exception("Direct startup did not open phone pairing");
+                if(RoomLaunch.Start(installed,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep)!="running" || RoomLaunch.Pid(installed)!=pid)
+                    throw new Exception("Existing room was relaunched");
+                if(File.ReadAllText(coldLog)!="mode=SignIn\nlanguage=ko\nphone-ready\n") throw new Exception("Cold launch required a manual choice");
+            } finally {
+                Environment.SetEnvironmentVariable("WORLD_TEST_SESSION",null);
+                Environment.SetEnvironmentVariable("WORLD_TEST_RESULT",null);
+                int pid=RoomLaunch.Pid(installed);
+                if(pid!=0)using(var child=Process.GetProcessById(pid)){child.Kill();child.WaitForExit();}
+            }
+            foreach(bool direct in new[]{true,false}) {
+                string log=Path.Combine(dir,direct?"direct.txt":"manual.txt");
+                var start=new ProcessStartInfo(exe){UseShellExecute=false,WorkingDirectory=dir};
+                start.EnvironmentVariables.Remove(RoomLaunch.ManagerStartVariable);
+                if(direct)start.EnvironmentVariables[RoomLaunch.ManagerStartVariable]="1";
+                start.EnvironmentVariables["WORLD_TEST_RESULT"]=log;
+                using(var child=Process.Start(start)) {
+                    if(!child.WaitForExit(15000)){child.Kill();throw new Exception("Launcher did not finish");}
+                    if(child.ExitCode!=0)throw new Exception("Launcher exit "+child.ExitCode);
+                }
+                string expected=direct?"mode=SignIn\nlanguage=ko\nphone-ready\n":"chooser\nmode=Guest\n";
+                if(File.ReadAllText(log)!=expected)throw new Exception("Incorrect startup sequence: "+File.ReadAllText(log));
+            }
+        } finally {Directory.Delete(dir,true);}
+    }
     [STAThread] static int Main(string[] args) {
         if(args.Length==2 && (args[0]=="--window" || args[0]=="--connected")) {
             Application.EnableVisualStyles();
@@ -40,7 +111,7 @@ internal static class WindowTest {
             }
             var subtitle=new Label{Text="YouTube 사용 방식 / Choose how to use YouTube",AutoSize=true};
             var guest=new Button{Text="게스트 사용\r\nGuest",AutoSize=true};
-            var login=new Button{Text="로그인 사용\r\nSign in",AutoSize=true};
+            var login=new Button{Text="로그인 사용\r\nSign in",AccessibleName="로그인 사용 / Sign in",AutoSize=true};
             list.Controls.Add(subtitle);list.Controls.Add(guest);list.Controls.Add(login);
             guest.Click+=(s,e)=>{File.WriteAllText(args[1],"guest");f.Close();};
             login.Click+=(s,e)=>{
@@ -70,6 +141,7 @@ internal static class WindowTest {
             }
         }
         if(!CheckHelperUpgrade())return 6;
+        VerifyDirectStartup();
         ReceiverTest.Run();
         Console.WriteLine("Receiver registration, HTTP polling, acknowledgements, errors, saved login mode, pairing, existing session, helper upgrade and room restrictions passed.");return 0;
     }

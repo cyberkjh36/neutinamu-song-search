@@ -8,6 +8,7 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument('--compiler',required=True)
     p.add_argument('--uia',type=Path,required=True)
+    p.add_argument('--cecil',type=Path,required=True)
     p.add_argument('--keys',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     opts=p.parse_args()
@@ -32,6 +33,6 @@ def main():
         enc=Cipher(algorithms.AES(key[:32]),modes.CBC(iv)).encryptor()
         data=b'P2UPD001'+salt+iv+enc.update(padded)+enc.finalize()
         resource=dest/'update.protected';resource.write_bytes(data+hmac.digest(key[32:],data,'sha256'))
-        subprocess.run(common+['-main:Setup','-out:'+str(opts.output),'-resource:'+str(resource)+',update.protected']+
-                       source+[str(root/'Setup.cs'),str(shared/'ProtectedPayload.cs'),str(shared/'InstallPasswordDialog.cs')],check=True)
+        subprocess.run(common+['-r:'+str(opts.cecil),'-resource:'+str(opts.cecil)+',manager.cecil','-resource:'+str(root/'Cecil-LICENSE.txt')+',Cecil-LICENSE.txt','-main:Setup','-out:'+str(opts.output),'-resource:'+str(resource)+',update.protected']+
+                       source+[str(root/'Setup.cs'),str(root/'DirectLaunchUpgrade.cs'),str(shared/'ProtectedPayload.cs'),str(shared/'InstallPasswordDialog.cs')],check=True)
 if __name__=='__main__':main()

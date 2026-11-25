@@ -39,7 +39,7 @@ internal static class Watcher {
     }
     internal static Reply ExchangeHttp(Message data,HttpWebRequest req) {
         req.Method="POST";req.ContentType="application/json; charset=utf-8";req.Accept="application/json";
-        req.UserAgent="WorldKaraoke-Manager-PC/1.0.2";
+        req.UserAgent="WorldKaraoke-Manager-PC/1.1.0";
         req.Timeout=6500;req.ReadWriteTimeout=6500;req.AllowAutoRedirect=false;
         req.ServicePoint.Expect100Continue=false;
         using(var encoded=new MemoryStream()){
@@ -92,7 +92,7 @@ internal static class Watcher {
                             string root=RoomLaunch.FindRoot();
                             lastStatus=RoomLaunch.Start(root,RoomLaunch.IsRunning,RoomLaunch.Open,Thread.Sleep);
                             if(lastStatus=="started" || (lastStatus=="running" && !poll.online)) {
-                                if(!PhoneWindow.Enable(RoomLaunch.Pid(root)))lastStatus="failed";
+                                if(!PhoneWindow.Enable(RoomLaunch.Pid(root),lastStatus=="started"))lastStatus="failed";
                             }
                         }
                         catch {lastStatus="failed";}
