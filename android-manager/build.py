@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 EDITION = {
     'p2wifi': ('kr.neutinamu.manager.p2', 'P2 매니저', 'p2-icon.xml', 'Neutinamu_P2_Manager_Android_1.0.1.apk'),
-    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.2.apk')
+    'wk': ('kr.neutinamu.manager.world', '월드가라오케 매니저', 'world-icon.xml', 'WorldKaraoke_Manager_Android_1.0.3.apk')
 }
 
 def run(*args):
@@ -72,7 +72,7 @@ def main():
             res=work/'res';shutil.copytree(HERE/'res',res)
             (res/'drawable').mkdir();shutil.copy2(HERE/icon,res/'drawable/manager_icon.xml')
             manifest=work/'AndroidManifest.xml'
-            version_code,version_name = (3,'1.0.2') if edition=='wk' else (2,'1.0.1')
+            version_code,version_name = (4,'1.0.3') if edition=='wk' else (2,'1.0.1')
             manifest.write_text((HERE/'AndroidManifest.xml').read_text().replace('APP_PACKAGE',package)
                                 .replace('APP_LABEL',label).replace('VERSION_CODE',str(version_code))
                                 .replace('VERSION_NAME',version_name))
