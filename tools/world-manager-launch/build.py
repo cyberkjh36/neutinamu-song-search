@@ -8,10 +8,12 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument('--compiler',required=True)
     p.add_argument('--uia',type=Path,required=True)
-    p.add_argument('--cecil',type=Path,required=True)
+    p.add_argument('--cecil',type=Path,required=True,help='Mono.Cecil 0.11.6 NuGet lib/net40/Mono.Cecil.dll')
     p.add_argument('--keys',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     opts=p.parse_args()
+    if hashlib.sha256(opts.cecil.read_bytes()).hexdigest() != 'c41bdb9ffd3c5f6e17d2382c1012d73703e035e3f1100245fdd4e08c8dc6eb5b':
+        raise ValueError('Use the Windows .NET Framework build of Mono.Cecil 0.11.6 (lib/net40).')
     root=Path(__file__).resolve().parent
     shared=root.parent/'room-shortcut/setup'
     common=[opts.compiler,'-target:winexe','-platform:anycpu','-optimize+','-r:System.Windows.Forms','-r:System.Drawing','-r:System.Security','-r:System.Runtime.Serialization','-r:System.Xml']

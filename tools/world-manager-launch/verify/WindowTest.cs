@@ -41,12 +41,20 @@ internal static class WindowTest {
                 var result=compiler.CompileAssemblyFromFile(options,Path.GetFullPath("tools/world-manager-launch/verify/DirectFixture.cs"));
                 if(result.Errors.HasErrors)throw new Exception(result.Errors[0].ToString());
             }
-            var updated=(byte[])apply.Invoke(null,new object[]{File.ReadAllBytes(exe)});
+            var original=File.ReadAllBytes(exe);
+            var updated=(byte[])apply.Invoke(null,new object[]{original});
             if(!object.ReferenceEquals(updated,apply.Invoke(null,new object[]{updated})))throw new Exception("Non-idempotent update");
             File.WriteAllBytes(exe,updated);
             var installed=Path.Combine(dir,"installation"); var app=Path.Combine(installed,"app"); Directory.CreateDirectory(app);
             string desktop=Path.Combine(installed,"START.exe"), inner=Path.Combine(app,"WorldKaraokeYouTubeLauncher.exe");
             File.Copy(exe,desktop);File.Copy(exe,inner);
+            string library=Path.Combine(app,"WorldKaraokeYouTubeLauncher.dll");
+            File.WriteAllBytes(library,original);
+            var install=setup.GetType("DirectLaunchUpgrade").GetMethod("Install",flags);
+            install.Invoke(null,new object[]{installed});install.Invoke(null,new object[]{installed});
+            var backups=Directory.GetFiles(app,"*.bak");
+            if(backups.Length!=1 || !System.Linq.Enumerable.SequenceEqual(original,File.ReadAllBytes(backups[0])) ||
+                System.Linq.Enumerable.SequenceEqual(original,File.ReadAllBytes(library)))throw new Exception("Room update/backup failed");
             string decoy=Path.Combine(dir,"START.exe");File.Copy(exe,decoy);
             foreach(var path in new[]{decoy,desktop,inner}) {
                 var host=new ProcessStartInfo(path){UseShellExecute=false};
