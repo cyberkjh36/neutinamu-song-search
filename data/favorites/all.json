@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-25T11:40:21.914Z",
+  "updatedAt": "2026-11-25T12:57:43.202Z",
   "countries": [
     "ko",
     "th",
@@ -22,16 +22,16 @@
       "id": "mYtLhe3yGHY",
       "title": "미련이 춤을 춰 / Dancing in Regret / 未練が踊る Emotional Korean Ballad · Sad Love Story",
       "url": "https://www.youtube.com/watch?v=mYtLhe3yGHY",
-      "count": 24,
-      "lastPlayed": "2026-11-22T14:55:20.0534259Z"
+      "count": 25,
+      "lastPlayed": "2026-11-25T12:55:01.3714291Z"
     },
     {
       "country": "ko",
       "id": "rZ4ztl-HcMM",
       "title": "조덕배 - 슬픈 노래는 부르지 않을꺼야 (1988年)",
       "url": "https://www.youtube.com/watch?v=rZ4ztl-HcMM",
-      "count": 16,
-      "lastPlayed": "2026-11-22T13:54:25.7756494Z"
+      "count": 17,
+      "lastPlayed": "2026-11-25T12:57:30.0347151Z"
     },
     {
       "country": "ko",
@@ -1328,6 +1328,14 @@
       "url": "https://www.youtube.com/watch?v=aWjz_-RKbc4",
       "count": 3,
       "lastPlayed": "2026-10-24T12:31:43.4833646Z"
+    },
+    {
+      "country": "th",
+      "id": "by-ABvNLtdI",
+      "title": "ปี้จนป่น คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=by-ABvNLtdI",
+      "count": 2,
+      "lastPlayed": "2026-11-25T11:44:58.2998435Z"
     },
     {
       "country": "th",
@@ -4880,14 +4888,6 @@
       "url": "https://www.youtube.com/watch?v=Hh_3kwEFHGY",
       "count": 1,
       "lastPlayed": "2026-11-05T12:45:23.6235670Z"
-    },
-    {
-      "country": "th",
-      "id": "by-ABvNLtdI",
-      "title": "ปี้จนป่น คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=by-ABvNLtdI",
-      "count": 1,
-      "lastPlayed": "2026-11-05T12:41:06.0617533Z"
     },
     {
       "country": "th",

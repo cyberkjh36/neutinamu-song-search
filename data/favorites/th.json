@@ -1,7 +1,7 @@
 {
   "format": "WorldKaraoke.CloudFavorites",
   "version": 1,
-  "updatedAt": "2026-11-25T11:40:21.914Z",
+  "updatedAt": "2026-11-25T12:57:43.202Z",
   "countries": [
     "th"
   ],
@@ -725,6 +725,14 @@
       "url": "https://www.youtube.com/watch?v=aWjz_-RKbc4",
       "count": 3,
       "lastPlayed": "2026-10-24T12:31:43.4833646Z"
+    },
+    {
+      "country": "th",
+      "id": "by-ABvNLtdI",
+      "title": "ปี้จนป่น คาราโอเกะ",
+      "url": "https://www.youtube.com/watch?v=by-ABvNLtdI",
+      "count": 2,
+      "lastPlayed": "2026-11-25T11:44:58.2998435Z"
     },
     {
       "country": "th",
@@ -4277,14 +4285,6 @@
       "url": "https://www.youtube.com/watch?v=Hh_3kwEFHGY",
       "count": 1,
       "lastPlayed": "2026-11-05T12:45:23.6235670Z"
-    },
-    {
-      "country": "th",
-      "id": "by-ABvNLtdI",
-      "title": "ปี้จนป่น คาราโอเกะ",
-      "url": "https://www.youtube.com/watch?v=by-ABvNLtdI",
-      "count": 1,
-      "lastPlayed": "2026-11-05T12:41:06.0617533Z"
     },
     {
       "country": "th",
