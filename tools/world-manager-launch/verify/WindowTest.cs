@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -66,6 +70,88 @@ internal static class WindowTest {
             }
         }
         if(!CheckHelperUpgrade())return 6;
-        Console.WriteLine("Saved login mode, pairing, existing session, helper upgrade and room restrictions passed.");return 0;
+        ReceiverTest.Run();
+        Console.WriteLine("Receiver registration, HTTP polling, acknowledgements, errors, saved login mode, pairing, existing session, helper upgrade and room restrictions passed.");return 0;
+    }
+}
+
+// Exercise the exact receiver transport shipped in the installer against a local relay.
+internal static class ReceiverTest {
+    const BindingFlags InternalStatic = BindingFlags.NonPublic | BindingFlags.Static;
+
+    static void Check(bool condition, string description) {
+        if (!condition) throw new InvalidOperationException(description);
+    }
+
+    public static void Run() {
+        var setup = Assembly.LoadFile(Path.GetFullPath("downloads/WorldKaraoke_Manager_PC_Autostart_Setup.exe"));
+        var wait = setup.GetType("Setup", true).GetMethod("WaitForRegistration", InternalStatic);
+        using (var ready = new EventWaitHandle(false, EventResetMode.ManualReset))
+        using (var self = Process.GetCurrentProcess()) {
+            Check(!(bool)wait.Invoke(null, new object[]{ready, self, 100}), "Unregistered process was declared ready");
+            ready.Set();
+            Check((bool)wait.Invoke(null, new object[]{ready, self, 200}), "Registered process was not recognized");
+        }
+        Exchange(setup, "managerPoll", 200);
+        Exchange(setup, "managerAck", 200);
+        Exchange(setup, "managerPoll", 403);
+    }
+
+    static void Exchange(Assembly setup, string op, int status) {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        Exception serverError = null;
+        string body = null;
+        var headers = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+        var server = new Thread(delegate() {
+            try {
+                using (var client = listener.AcceptTcpClient()) {
+                    client.ReceiveTimeout = 4000;
+                    using (var stream = client.GetStream())
+                    using (var reader = new StreamReader(stream, Encoding.ASCII)) {
+                        Check(reader.ReadLine() == "POST /api/relay HTTP/1.1", "Incorrect method or path");
+                        string line;
+                        while (!String.IsNullOrEmpty(line = reader.ReadLine())) {
+                            int separator = line.IndexOf(':');
+                            headers[line.Substring(0, separator)] = line.Substring(separator + 1).Trim();
+                        }
+                        var chars = new char[int.Parse(headers["Content-Length"])];
+                        Check(reader.ReadBlock(chars, 0, chars.Length) == chars.Length, "Incomplete request");
+                        body = new string(chars);
+                        string json = status == 200 ? "{\"ok\":true,\"request\":null}" : "{\"ok\":false}";
+                        byte[] response = Encoding.ASCII.GetBytes("HTTP/1.1 " + status + (status == 200 ? " OK" : " Forbidden")
+                            + "\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: " + json.Length + "\r\n\r\n" + json);
+                        stream.Write(response, 0, response.Length);
+                    }
+                }
+            } catch (Exception e) { serverError = e; }
+        });
+        server.IsBackground = true;
+        server.Start();
+        try {
+            var message = setup.GetType("Message", true);
+            var packet = Activator.CreateInstance(message);
+            var expected = new Dictionary<string,string>{{"op",op},{"label","5"},{"pc","NULTI-05"},{"key",new string('a',64)}};
+            if (op == "managerAck") { expected.Add("request",new string('b',32)); expected.Add("status","started"); }
+            foreach (var field in expected) message.GetField(field.Key).SetValue(packet, field.Value);
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:" + port + "/api/relay");
+            request.Proxy = null;
+            var watcher = setup.GetType("Watcher", true);
+            try {
+                var reply = watcher.GetMethod("ExchangeHttp", InternalStatic).Invoke(null, new object[]{packet, request});
+                Check(status == 200 && (bool)reply.GetType().GetField("ok").GetValue(reply), "Missing response");
+            } catch (TargetInvocationException e) {
+                if (status != 403 || !(e.InnerException is WebException)) throw;
+                string explanation = (string)watcher.GetMethod("Explain", InternalStatic).Invoke(null, new object[]{e.InnerException});
+                Check(explanation.Contains("403"), "Rejected registration must show the HTTP error");
+            }
+            Check(server.Join(5000), "Local test relay did not finish");
+            if (serverError != null) throw serverError;
+            Check(headers["User-Agent"].StartsWith("WorldKaraoke-Manager-PC/"), "Missing receiver identifier");
+            Check(!headers.ContainsKey("Expect"), "Unexpected 100-continue");
+            foreach (var field in expected)
+                Check(body.Contains("\"" + field.Key + "\":\"" + field.Value + "\""), "Missing field " + field.Key);
+        } finally { listener.Stop(); }
     }
 }

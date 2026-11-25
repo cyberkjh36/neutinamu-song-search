@@ -30,6 +30,18 @@ internal static class Setup {
         }
         return false;
     }
+    internal static bool WaitForRegistration(EventWaitHandle ready,Process watcher,int milliseconds) {
+        var elapsed=Stopwatch.StartNew();
+        while(elapsed.ElapsedMilliseconds<milliseconds && !watcher.HasExited){
+            if(ready.WaitOne(150))return !watcher.HasExited;
+        }
+        return false;
+    }
+    static string LastError() {
+        try {return File.ReadAllText(Watcher.StatusPath).Trim();}
+        catch(IOException){return "현재 방 PC에서 연결 서버의 응답을 기다리고 있습니다.";}
+        catch(UnauthorizedAccessException){return "상태 파일을 읽을 수 없습니다."; }
+    }
     [STAThread]
     static int Main() {
         Application.EnableVisualStyles();const string title="월드가라오케 매니저 · 방 PC 자동실행";
@@ -58,16 +70,29 @@ internal static class Setup {
                 finally{Array.Clear(clear,0,clear.Length);}
                 using(var run=Registry.CurrentUser.CreateSubKey(Watcher.RunKey))run.SetValue(Watcher.Product,"\""+path+"\"");
                 using(var reg=Registry.CurrentUser.CreateSubKey(Watcher.UninstallKey)){
-                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion","1.0.1");
+                    reg.SetValue("DisplayName","월드가라오케 매니저 방 PC 자동실행");reg.SetValue("DisplayVersion","1.0.2");
                     reg.SetValue("UninstallString","\""+path+"\" --remove");
                 }
                 if(!StopPreviousWatcher()){
                     MessageBox.Show("업데이트를 설치했습니다. 자동실행 도우미를 교체하려면 Windows에서 로그아웃한 뒤 다시 로그인해 주세요.",title);
                     return 0;
                 }
-                using(var p=Process.Start(new ProcessStartInfo(path){WorkingDirectory=folder,UseShellExecute=false})){}
+                File.Delete(Watcher.StatusPath);
+                using(var ready=new EventWaitHandle(false,EventResetMode.ManualReset,Watcher.ReadyName)){
+                    ready.Reset();
+                    using(var watcher=Process.Start(new ProcessStartInfo(path){WorkingDirectory=folder,UseShellExecute=false})){
+                        while(!WaitForRegistration(ready,watcher,12000)){
+                            if(watcher.HasExited){
+                                MessageBox.Show("도우미가 시작되지 않았습니다. "+LastError()+" (종료 코드 "+watcher.ExitCode+")",title);
+                                return 1;
+                            }
+                            var retry=MessageBox.Show(room+"번방 도우미가 설치되었지만 서버 연결이 아직 확인되지 않았습니다.\r\n"+LastError()+"\r\n\r\n다시 시도하면 연결을 다시 확인합니다. 닫아도 도우미는 계속 연결을 시도합니다.",title,MessageBoxButtons.RetryCancel);
+                            if(retry!=DialogResult.Retry)return 1;
+                        }
+                    }
+                }
             }
-            MessageBox.Show(room+"번방 등록을 마쳤습니다. 휴대폰의 월드가라오케 매니저에서 "+room+"번방을 눌러 주세요.",title);return 0;
+            MessageBox.Show(room+"번방 도우미가 서버에 연결되었습니다. 휴대폰의 월드가라오케 매니저에서 "+room+"번방을 눌러 주세요.",title);return 0;
         } catch(Exception e){MessageBox.Show("설치하지 못했습니다. "+e.Message,title);return 1;}
         finally{Array.Clear(payload,0,payload.Length);}
     }
