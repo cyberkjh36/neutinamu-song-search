@@ -113,6 +113,8 @@
     <p id="favorites-hint">영상을 누르면 PC에 예약됩니다.</p>
     <p id="favorites-storage" role="status" hidden></p>
     <div id="favorites-panel" hidden>
+      <label id="favorites-mode-label" for="favorites-mode" hidden>노래방 후보</label>
+      <select id="favorites-mode" aria-labelledby="favorites-mode-label" hidden></select>
       <label id="favorites-query-label" for="favorites-query">애창곡 제목 검색</label>
       <div class="favorites-search-line"><div class="country-input-line"><input id="favorites-query" inputmode="text" lang="ko-KR" aria-describedby="favorites-keyboard-help" type="search" maxlength="160" autocomplete="off" spellcheck="false"><button id="favorites-keyboard" type="button" class="country-keyboard-toggle" aria-label="휴대폰 키보드" aria-controls="favorites-query"><svg viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="4"/><path d="M6 7h2m4 0h2m4 0h2m4 0h2M6 12h2m4 0h2m4 0h2m4 0h2M9 17h14"/></svg></button></div><button id="favorites-search" type="button" class="secondary">검색</button></div>
       <p id="favorites-keyboard-help" hidden></p>
@@ -181,7 +183,7 @@
   </div>
   <div class="country-keyboard-footer"><button id="country-keyboard-native" type="button">휴대폰 키보드</button><button id="country-keyboard-search" type="button" disabled>검색</button></div>
 </section>
-<script type="module" src="app.mjs?v=3.25"></script>
+<script type="module" src="app.mjs?v=3.26"></script>
 </body>
 </html>
 

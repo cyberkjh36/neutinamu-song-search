@@ -1,3 +1,4 @@
+import {favoriteModeText,favoriteModes} from './favorites-classifier.mjs?v=1';
 import {volumeWords} from './volume-text.mjs?v=3.22';
 import {windowWords} from './window-text.mjs?v=3.20';
 import {REMOTE_TEXT} from './ui-text.mjs?v=3.13';
@@ -6,9 +7,9 @@ import {readCatalog} from './browse-protocol.mjs?v=3.0';
 import {bindTypedSearch,normalizeTypedQuery} from './typed-search.mjs?v=3.7.2';
 export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()=>{},$=id=>document.getElementById(id),doc=document}){
  let generation=connection.generation,language=getLanguage(),pending=false,controlStatus='',favoriteStatus='',failed=false,rows=[],page=0,applied='',loaded=false;
- let displayedSnapshot, more=false, loadSequence=0, menuOpen=false;
+ let displayedSnapshot, more=false, loadSequence=0, menuOpen=false, favoriteMode='karaoke';
  const retries=new Map(),words=()=>REMOTE_TEXT[getLanguage()],connected=()=>['ready','sending'].includes(connection.state);
- function reset(){menuOpen=false;displayedSnapshot=undefined;more=false;generation=connection.generation;pending=false;controlStatus='';favoriteStatus='';failed=false;rows=[];page=0;applied='';loaded=false;retries.clear();$('favorites-list').replaceChildren();$('favorites-query').value='';$('favorites-panel').hidden=true;}
+ function reset(){favoriteMode='karaoke';menuOpen=false;displayedSnapshot=undefined;more=false;generation=connection.generation;pending=false;controlStatus='';favoriteStatus='';failed=false;rows=[];page=0;applied='';loaded=false;retries.clear();$('favorites-list').replaceChildren();$('favorites-query').value='';$('favorites-panel').hidden=true;}
  function render(){
   if(generation!==connection.generation)reset();
   if(cache?.snapshot && cache.snapshot!==displayedSnapshot && loaded && !pending && !$('favorites-panel').hidden){
@@ -53,7 +54,18 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   $('favorites-open').textContent=w.favorites;$('favorites-open').disabled=browseOff;
   $('favorites-open').setAttribute('aria-expanded',String(!$('favorites-panel').hidden));
   $('favorites-hint').textContent=!connected()?w.connect:!connection.favoritesSupported?w.upgrade:w.hint;
-  $('favorites-query-label').textContent=w.query;$('favorites-query').placeholder=w.query;$('favorites-query').disabled=browseOff;
+  const modeSelect=$('favorites-mode'), modeLabel=$('favorites-mode-label'), modeWords=favoriteModeText[getLanguage()]||favoriteModeText['ko-KR'];
+   if(modeSelect&&modeLabel){
+    modeSelect.hidden=modeLabel.hidden=!cache?.snapshot;
+    modeSelect.disabled=browseOff;
+    if(modeSelect.dataset.language!==getLanguage()){
+     modeSelect.replaceChildren(...favoriteModes.map((value,i)=>{const option=doc.createElement('option');option.value=value;option.textContent=modeWords[i];return option;}));
+     modeSelect.dataset.language=getLanguage();
+    }
+    modeSelect.value=favoriteMode;modeLabel.textContent=modeWords[favoriteModes.indexOf(favoriteMode)];
+   }
+   if(!cache?.snapshot&&loaded)$('favorites-hint').textContent=modeWords[6];
+   $('favorites-query-label').textContent=w.query;$('favorites-query').placeholder=w.query;$('favorites-query').disabled=browseOff;
   $('favorites-search').textContent=w.search;$('favorites-search').disabled=browseOff;
   $('favorites-previous').textContent=w.previous;$('favorites-previous').disabled=browseOff||!loaded||page===0;
   $('favorites-more').textContent=w.more;$('favorites-more').disabled=browseOff||!loaded||!more;
@@ -119,7 +131,7 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   });
  }
  function showSaved(target,query,keepButtons=false){
-  const result=cache.page(getLanguage(),query,target);
+  const result=cache.page(getLanguage(),query,target,favoriteMode);
   show(result.catalog,keepButtons);page=result.page;more=result.more;applied=query;loaded=true;displayedSnapshot=cache.snapshot;
   favoriteStatus=rows.length?'':'empty';failed=false;
  }
@@ -153,11 +165,12 @@ export function createRemoteUi({connection,getLanguage,blocked,cache,onRender=()
   const field=$('favorites-query');field.value=normalizeTypedQuery(field.value);
   return load(0,field.value);
  }
- $('favorites-search').addEventListener('click',searchFavorites);
+ $('favorites-mode')?.addEventListener('change',()=>{const mode=$('favorites-mode').value;if(!favoriteModes.includes(mode)||!cache?.snapshot||pending||blocked())return;favoriteMode=mode;void load(0,applied);});
+  $('favorites-search').addEventListener('click',searchFavorites);
  bindTypedSearch({field:$('favorites-query'),submit:searchFavorites,
   canSubmit:()=>!$('favorites-search').disabled&&!$('favorites-panel').hidden,onDraft:()=>{}});
  $('favorites-previous').addEventListener('click',()=>{if(!$('favorites-previous').disabled)void load(page-1,applied);});
  $('favorites-more').addEventListener('click',()=>{if(!$('favorites-more').disabled)void load(page+1,applied);});
- function changeLanguage(){if(language===getLanguage())return;language=getLanguage();rows=[];loaded=false;page=0;applied='';favoriteStatus='';$('favorites-list').replaceChildren();$('favorites-query').value='';render();if(!$('favorites-panel').hidden)void load(0,'');}
+ function changeLanguage(){if(language===getLanguage())return;language=getLanguage();favoriteMode='karaoke';rows=[];loaded=false;page=0;applied='';favoriteStatus='';$('favorites-list').replaceChildren();$('favorites-query').value='';render();if(!$('favorites-panel').hidden)void load(0,'');}
  return{render,changeLanguage};
 }

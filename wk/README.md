@@ -349,3 +349,6 @@ the relay's per-phone limit and command nonce. No relay database change.
 The root TJ P2 app is unchanged. 11 locale labels; Android Chrome/iPhone Safari
 web UI. wk-tests/playlist-preview.html is a synthetic display fixture only.
 
+
+### 공유 애창곡 분류 (2026-11-26)
+공개 원본 스냅샷과 개인 기록은 수정하지 않는다. 전체 영상 ID를 한 번 합산하고 제목 문자 및 제한된 곡명/가수 후보표로 언어·영상 종류를 추정한다. 실제 음원 검증이 아니므로 노래방 후보로 표시한다. 영어 후보, 일반 영상, 미분류, 선택 국가 기록, 전체 영상 목록을 제공한다. 동일곡의 다른 영상 ID는 합치지 않으며 검증된 곡 식별자 도입 전까지 개별 예약을 유지한다. PC 직접 조회는 기존 미분류 목록으로 안내한다. 기존 PC 서버와 설치파일은 변경하지 않는다.

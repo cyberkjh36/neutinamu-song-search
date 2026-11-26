@@ -1,3 +1,4 @@
+import {projectFavorites,listFavorites} from './favorites-classifier.mjs?v=1';
 // Only the public, all-country song list is shared across rooms and visits.
 const countries = ['ko','th','fil','vi','ne','mn','id','lo','my','zh-CN','ja','und'];
 const sources = [
@@ -66,12 +67,14 @@ const byRank = (a,b) => b.count-a.count || (a.lastPlayed < b.lastPlayed ? 1 : a.
   (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 export function createFavoritesCache({onChange = () => {}, fetchList = (...args) => fetch(...args)} = {}) {
-  let current, refreshing, visit, saved = false;
+  let current, projected, refreshing, visit, saved = false;
   const rankedCountries=new Map();
   function accept(snapshot, persisted) {
     if (!snapshot || (current && revision(snapshot) < revision(current))) return;
     if (current && revision(snapshot) === revision(current) && (saved || !persisted)) return;
+    const next=projectFavorites(snapshot.rows);
     if(current!==snapshot)rankedCountries.clear();
+    projected=next;
     current = snapshot;
     saved = persisted;
     onChange();
@@ -114,14 +117,15 @@ export function createFavoritesCache({onChange = () => {}, fetchList = (...args)
     refreshing = undefined;
   }
 
-  function page(language, query, requestedPage) {
+  function page(language, query, requestedPage, mode='karaoke') {
     const country = language === 'zh-CN' ? language : language.split('-')[0];
     const terms = query.trim().split(/\s+/u).map(searchKey).filter(Boolean);
-    if(!rankedCountries.has(country)){
-      const rows=current.rows.filter(row=>row.country===country).sort(byRank);
-      rankedCountries.set(country,rows.map(row=>({row,titleKey:searchKey(row.title)})));
+    const cacheKey=country+':'+mode;
+    if(!rankedCountries.has(cacheKey)){
+      const rows=listFavorites(projected,country,mode).sort(byRank);
+      rankedCountries.set(cacheKey,rows.map(row=>({row,titleKey:searchKey(row.title)})));
     }
-    const ranked=rankedCountries.get(country);
+    const ranked=rankedCountries.get(cacheKey);
     const matches=terms.length?ranked.filter(entry=>terms.every(term=>entry.titleKey.includes(term))):ranked;
     const page = Math.min(requestedPage, Math.max(0, Math.ceil(matches.length/20)-1));
     const items = matches.slice(page*20, (page+1)*20).map(({row}) => ({

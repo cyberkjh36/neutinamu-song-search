@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {IDBFactory} from 'fake-indexeddb';
 import {createFavoritesCache} from '../wk/favorites-cache.mjs';
+import {projectFavorites,listFavorites} from '../wk/favorites-classifier.mjs';
 import {readCatalog} from '../wk/browse-protocol.mjs';
 
 const countries = ['ko','th','fil','vi','ne','mn','id','lo','my','zh-CN','ja','und'];
@@ -42,7 +43,7 @@ test('one download on join saves the entire actual multilingual list and local p
       if(!result.more) break;
     }
     const country=lang==='zh-CN'?lang:lang.split('-')[0];
-    assert.deepEqual(ids,all.rows.filter(row=>row.country===country).map(row=>row.id));
+    assert.deepEqual(ids,listFavorites(projectFavorites(all.rows),country).sort((a,b)=>b.count-a.count||(a.lastPlayed<b.lastPlayed?1:a.lastPlayed>b.lastPlayed?-1:0)||(a.id<b.id?-1:a.id>b.id?1:0)).map(row=>row.id));
   }
   assert.equal(d.fetches.length,1);
   assert.equal(d.fetches[0].init.credentials,'omit');
@@ -54,10 +55,10 @@ test('reconnect updates titles, new songs, counts and removals, while failed or 
   const d=device(first), a=d.open();
   await a.refresh();
   const b=d.open();await b.restore();
-  assert.equal(b.page('ko-KR','',0).catalog.items[0].title,'이전 곡');
+  assert.equal(b.page('ko-KR','이전',0,'all').catalog.items[0].title,'이전 곡');
   d.set(second);await b.refresh();
-  assert.equal(b.page('ko-KR','날  비',0).catalog.items[0].channel,'12');
-  assert.equal(b.page('th-TH','',0).catalog.items[0].title,'เพลงใหม่');
+  assert.equal(b.page('ko-KR','날  비',0,'all').catalog.items[0].channel,'12');
+  assert.equal(b.page('th-TH','เพลงใหม่',0,'all').catalog.items[0].title,'เพลงใหม่');
   for(const bad of [first,{...second,rows:[second.rows[0],second.rows[0]]},new Error('offline')]){
     d.set(bad);await a.refresh();
     const c=d.open();await c.restore();
@@ -86,7 +87,7 @@ test('storage denial still allows in-session browsing and long titles remain res
   ]))});
   await cache.refresh();
   assert.equal(cache.saved,false);
-  assert.equal(readCatalog(cache.page('ko-KR','가',0).catalog).items[0].title,'가'.repeat(199));
+  assert.equal(readCatalog(cache.page('ko-KR','가',0,'all').catalog).items[0].title,'가'.repeat(199));
 });
 
 test('a failed primary uses the published mirror without saving a partial response',async()=>{
@@ -115,4 +116,20 @@ test('leaving the page cancels its download without starting a mirror request an
   await cache.refresh();
   assert.deepEqual(calls,[calls[0],calls[0]]);
   assert.equal(cache.saved,true);
+});
+
+test('actual projection preserves all plays, separates Thai and MV from Filipino favorites',async()=>{
+ const all=JSON.parse(await readFile(new URL('../data/favorites/all.json',import.meta.url)));
+ const cache=device(all).open();await cache.refresh();
+ const projected=projectFavorites(all.rows);
+ assert.equal(projected.reduce((a,r)=>a+r.count,0),all.rows.reduce((a,r)=>a+r.count,0));
+ assert.equal(projected.length,new Set(all.rows.map(r=>r.id)).size);
+ const allIds=[];for(let p=0;;p++){const x=cache.page('fil-PH','',p,'all');allIds.push(...readCatalog(x.catalog).items.map(v=>v.id));if(!x.more)break;}
+ assert.equal(allIds.length,projected.length);assert.equal(new Set(allIds).size,projected.length);
+ const fixtures=[song('fil','1','เพลง คาราโอเกะ',3),song('th','1','เพลง คาราโอเกะ',2),song('fil','2','Title Official MV',4)];
+ const c=device(snapshot(12,fixtures)).open();await c.refresh();
+ assert.equal(c.page('fil-PH','',0).catalog.items.length,0);
+ assert.equal(c.page('th-TH','',0).catalog.items[0].channel,'5');
+ assert.equal(c.page('fil-PH','',0,'other').catalog.items[0].channel,'4');
+ assert.equal(c.snapshot.rows.length,3);
 });
